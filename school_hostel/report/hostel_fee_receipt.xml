@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <template id="hostel_fee_reciept1">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="hostel">
+                <t t-call="web.external_layout">
+                    <div class="row mb-2" align="center">
+                        <h2>Hostel Fee Receipt</h2>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Hostel Address:</strong>
+                                <div t-field="hostel.hostel_info_id" />
+                                <span t-field="hostel.hostel_info_id.street" /> <span
+                                t-field="hostel.hostel_info_id.street2"
+                            />
+                                <br />
+                                <span t-field="hostel.hostel_info_id.city" />  <span
+                                t-field="hostel.hostel_info_id.state_id"
+                            />
+                                <br />
+                                <span t-field="hostel.hostel_info_id.country_id" />
+                        </div>
+                        <div class="col-6">
+                            <strong>Tenant Address:</strong>
+                                <div t-field="hostel.student_id" />
+                                <span t-field="hostel.student_id.street" /> <span
+                                t-field="hostel.student_id.street2"
+                            />
+                                <br />
+                                <span t-field="hostel.student_id.city" />  <span
+                                t-field="hostel.student_id.state_id"
+                            />
+                                <br />
+                                <span t-field="hostel.student_id.country_id" />
+                        </div>
+                    </div>
+                    <div class="page">
+                        <div class="oe_structure" />
+                        <div class="row mt-4 mb-2" id="informations">
+                            <div
+                                class="col-auto col-3 mw-100 mb-2"
+                                name="admission_date"
+                            >
+                                <strong>Admission Date:</strong><br />
+                                <span class="m-0" t-field="hostel.admission_date" />
+                            </div>
+                            <div
+                                class="col-auto col-3 mw-100 mb-2"
+                                name="discharge_date"
+                            >
+                                <strong>Discharge Date:</strong><br />
+                                <span class="m-0" t-field="hostel.discharge_date" />
+                            </div>
+                            <div class="col-auto col-3 mw-100 mb-2" name="room_id">
+                                <strong>Room No:</strong><br />
+                                <span class="m-0" t-field="hostel.room_id" />
+                            </div>
+                            <div class="col-auto col-3 mw-100 mb-2" name="school_id">
+                                <strong>School Name:</strong><br />
+                                <span
+                                    class="m-0"
+                                    t-field="hostel.student_id.school_id.name"
+                                />
+                            </div>
+                        </div>
+                        <br />
+                        <br />
+                        <table class="table table-bordered mt-4" style="border:medium ">
+                            <thead>
+                                <tr style="background: #e6e6e6;">
+                                    <th
+                                        name="th_description"
+                                        class="text-start"
+                                    >Description</th>
+                                    <th
+                                        name="th_duration"
+                                        class="text-start"
+                                    >Duration</th>
+                                    <th
+                                        name="th_priceunit"
+                                        class="text-start"
+                                    >Unit Price</th>
+                                    <th name="th_subtotal" class="text-start">
+                                        <span>Amount</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="sale_tbody">
+                                <td name="td_description"><span
+                                        t-field="hostel.hostel_info_id"
+                                    /> - <span t-field="hostel.room_id" /></td>
+                                <td name="td_duration"><span
+                                        t-field="hostel.duration"
+                                    /></td>
+                                <td name="td_priceunit"><span
+                                        t-field="hostel.room_id.rent_amount"
+                                    /></td>
+                                <td name="td_total"><span
+                                        t-field="hostel.room_rent"
+                                    /></td>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
