@@ -1,0 +1,97 @@
+.o_school_dashboard {
+    padding: 24px;
+    background-color: #f8f9fa;
+    min-height: 100%;
+}
+
+.o_school_dashboard .kpi_card {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.o_school_dashboard .kpi_card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+.o_school_dashboard .bg-gradient-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+}
+
+.o_school_dashboard .bg-gradient-success {
+    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+}
+
+.o_school_dashboard .bg-gradient-warning {
+    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+}
+
+.o_school_dashboard .bg-gradient-info {
+    background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
+}
+
+.o_school_dashboard .bg-white-20 {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.o_school_dashboard .icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.o_school_dashboard .bg-light-primary {
+    background-color: rgba(78, 115, 223, 0.1);
+}
+
+.o_school_dashboard .bg-light-success {
+    background-color: rgba(28, 200, 138, 0.1);
+}
+
+.o_school_dashboard .bg-light-warning {
+    background-color: rgba(246, 194, 62, 0.1);
+}
+
+.o_school_dashboard .bg-light-info {
+    background-color: rgba(54, 185, 204, 0.1);
+}
+
+.o_school_dashboard .text-primary {
+    color: #4e73df !important;
+}
+
+.o_school_dashboard .text-success {
+    color: #1cc88a !important;
+}
+
+.o_school_dashboard .text-warning {
+    color: #f6c23e !important;
+}
+
+.o_school_dashboard .text-info {
+    color: #36b9cc !important;
+}
+
+.o_school_dashboard .cursor-pointer {
+    cursor: pointer;
+}
+
+.o_school_dashboard .card {
+    border-radius: 12px !important;
+}
+
+.o_school_dashboard .gap-2 {
+    gap: 0.5rem;
+}
+
+.o_school_dashboard .gap-3 {
+    gap: 1rem;
+}
+
+.o_school_dashboard .badge-pill {
+    border-radius: 50rem !important;
+}

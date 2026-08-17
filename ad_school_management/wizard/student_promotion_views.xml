@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_student_promotion_form" model="ir.ui.view">
+        <field name="name">school.student.promotion.form</field>
+        <field name="model">school.student.promotion</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group string="Source (From)">
+                        <field name="academic_year_from_id"/>
+                        <field name="class_from_id"/>
+                    </group>
+                    <group string="Destination (To)">
+                        <field name="academic_year_to_id"/>
+                        <field name="class_to_id"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_bulk_promote" string="Promote Students" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_student_promotion" model="ir.actions.act_window">
+        <field name="name">Bulk Student Promotion</field>
+        <field name="res_model">school.student.promotion</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

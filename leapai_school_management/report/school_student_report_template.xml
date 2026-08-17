@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_school_student_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <h2>Student Profile</h2>
+                                <hr/>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-8">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold" style="width:35%">Student ID</td>
+                                            <td><t t-esc="o.code"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Student Name</td>
+                                            <td><t t-esc="o.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Class</td>
+                                            <td><t t-esc="o.class_id.name or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Academic Year</td>
+                                            <td><t t-esc="o.academic_year_id.name or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Admission Date</td>
+                                            <td><t t-esc="o.admission_date"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Status</td>
+                                            <td><t t-esc="dict(o._fields['state'].selection).get(o.state, '')"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-4 text-center">
+                                <t t-if="o.image">
+                                    <img t-att-src="'data:image/png;base64,' + (o.image.decode() if isinstance(o.image, bytes) else o.image)"
+                                         style="max-width:150px; max-height:150px; border:1px solid #ccc;"/>
+                                </t>
+                                <t t-else="">
+                                    <div style="width:150px; height:150px; border:1px solid #ccc; line-height:150px; text-align:center; color:#999; margin:auto;">
+                                        No Photo
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h4>Personal Information</h4>
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold" style="width:25%">Date of Birth</td>
+                                            <td><t t-esc="o.date_of_birth or ''"/></td>
+                                            <td class="fw-bold" style="width:25%">Age</td>
+                                            <td><t t-esc="o.age or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Gender</td>
+                                            <td><t t-esc="dict(o._fields['gender'].selection).get(o.gender, '') if o.gender else ''"/></td>
+                                            <td class="fw-bold">Blood Group</td>
+                                            <td><t t-esc="o.blood_group or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Nationality</td>
+                                            <td><t t-esc="o.nationality.name if o.nationality else ''"/></td>
+                                            <td class="fw-bold">Religion</td>
+                                            <td><t t-esc="o.religion or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Phone</td>
+                                            <td><t t-esc="o.phone or ''"/></td>
+                                            <td class="fw-bold">Email</td>
+                                            <td><t t-esc="o.email or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Address</td>
+                                            <td colspan="3"><t t-esc="o.address or ''"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h4>Parent / Guardian Information</h4>
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold" style="width:25%">Father's Name</td>
+                                            <td><t t-esc="o.father_name or ''"/></td>
+                                            <td class="fw-bold" style="width:25%">Father's Phone</td>
+                                            <td><t t-esc="o.father_phone or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Father's Occupation</td>
+                                            <td><t t-esc="o.father_occupation or ''"/></td>
+                                            <td class="fw-bold">Mother's Name</td>
+                                            <td><t t-esc="o.mother_name or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Mother's Phone</td>
+                                            <td><t t-esc="o.mother_phone or ''"/></td>
+                                            <td class="fw-bold">Guardian Name</td>
+                                            <td><t t-esc="o.guardian_name or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Guardian Phone</td>
+                                            <td><t t-esc="o.guardian_phone or ''"/></td>
+                                            <td class="fw-bold">Guardian Relation</td>
+                                            <td><t t-esc="o.guardian_relation or ''"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <t t-if="o.transport_route_id or o.hostel_allocation_id">
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h4>Additional Services</h4>
+                                    <table class="table table-bordered">
+                                        <tbody>
+                                            <tr t-if="o.transport_route_id">
+                                                <td class="fw-bold" style="width:25%">Transport Route</td>
+                                                <td><t t-esc="o.transport_route_id.name"/></td>
+                                            </tr>
+                                            <tr t-if="o.hostel_allocation_id">
+                                                <td class="fw-bold">Hostel Room</td>
+                                                <td><t t-esc="o.hostel_allocation_id.room_id.name if o.hostel_allocation_id.room_id else ''"/></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

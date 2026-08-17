@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_bulk_admission_form" model="ir.ui.view">
+        <field name="name">school.bulk.admission.form</field>
+        <field name="model">school.bulk.admission</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="academic_year_id"/>
+                        <field name="class_id"/>
+                    </group>
+                    <group>
+                        <field name="section_id" domain="[('class_id', '=', class_id)]"/>
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Applicants" name="applicants">
+                        <field name="line_ids">
+                            <list editable="bottom">
+                                <field name="first_name"/>
+                                <field name="last_name"/>
+                                <field name="date_of_birth"/>
+                                <field name="gender"/>
+                                <field name="parent_name"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+                <footer>
+                    <button name="action_register" string="Process Admissions" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_bulk_admission" model="ir.actions.act_window">
+        <field name="name">Bulk Admission</field>
+        <field name="res_model">school.bulk.admission</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

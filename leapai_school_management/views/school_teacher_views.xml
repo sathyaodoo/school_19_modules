@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Teacher Form View -->
+    <record id="view_school_teacher_form" model="ir.ui.view">
+        <field name="name">school.teacher.form</field>
+        <field name="model">school.teacher</field>
+        <field name="arch" type="xml">
+            <form string="Teacher">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_classes" type="object"
+                                class="oe_stat_button" icon="fa-chalkboard-teacher">
+                            <field name="class_ids" widget="statinfo" string="Classes"/>
+                        </button>
+                        <button name="action_view_students" type="object"
+                                class="oe_stat_button" icon="fa-users">
+                            <field name="student_count" widget="statinfo" string="Students"/>
+                        </button>
+                    </div>
+                    <field name="image" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Teacher Name"/>
+                        </h1>
+                        <h2>
+                            <field name="code" readonly="1"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="employee_id"/>
+                            <field name="qualification"/>
+                            <field name="experience_years"/>
+                        </group>
+                        <group>
+                            <field name="phone"/>
+                            <field name="email"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Subjects">
+                            <field name="subject_ids" widget="many2many_tags"/>
+                        </page>
+                        <page string="Classes">
+                            <field name="class_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="academic_year_id"/>
+                                    <field name="student_count"/>
+                                    <field name="capacity"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Teacher List View -->
+    <record id="view_school_teacher_list" model="ir.ui.view">
+        <field name="name">school.teacher.list</field>
+        <field name="model">school.teacher</field>
+        <field name="arch" type="xml">
+            <list string="Teachers">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="qualification"/>
+                <field name="experience_years"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Teacher Kanban View -->
+    <record id="view_school_teacher_kanban" model="ir.ui.view">
+        <field name="name">school.teacher.kanban</field>
+        <field name="model">school.teacher</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="image"/>
+                <field name="qualification"/>
+                <templates>
+                    <t t-name="card">
+                        <aside>
+                            <field name="image" widget="image" class="o_kanban_image"/>
+                        </aside>
+                        <main>
+                            <field name="name" class="fw-bold fs-5"/>
+                            <span class="text-muted"><field name="code"/></span>
+                            <div><field name="qualification"/></div>
+                            <div><field name="phone"/></div>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Teacher Action -->
+    <record id="action_school_teacher" model="ir.actions.act_window">
+        <field name="name">Teachers</field>
+        <field name="res_model">school.teacher</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first teacher!
+            </p>
+        </field>
+    </record>
+</odoo>

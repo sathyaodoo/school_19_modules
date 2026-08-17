@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_bulk_attendance_form" model="ir.ui.view">
+        <field name="name">school.bulk.attendance.form</field>
+        <field name="model">school.bulk.attendance</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="class_id"/>
+                        <field name="section_id" domain="[('class_id', '=', class_id)]"/>
+                    </group>
+                    <group>
+                        <field name="date"/>
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Students Attendance sheet" name="sheet">
+                        <field name="line_ids" force_save="1">
+                            <list editable="bottom" create="false" delete="false">
+                                <field name="student_id"/>
+                                <field name="status"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+                <footer>
+                    <button name="action_save_attendance" string="Save Attendance" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_bulk_attendance" model="ir.actions.act_window">
+        <field name="name">Bulk Mark Attendance</field>
+        <field name="res_model">school.bulk.attendance</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

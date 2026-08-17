@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Exam Form View -->
+    <record id="view_school_exam_form" model="ir.ui.view">
+        <field name="name">school.exam.form</field>
+        <field name="model">school.exam</field>
+        <field name="arch" type="xml">
+            <form string="Examination">
+                <header>
+                    <button name="action_schedule" string="Schedule" type="object"
+                            invisible="state != 'draft'"
+                            class="oe_highlight"/>
+                    <button name="action_complete" string="Mark Complete" type="object"
+                            invisible="state != 'scheduled'"
+                            class="oe_highlight"/>
+                    <button name="action_publish" string="Publish Results" type="object"
+                            invisible="state != 'completed'"
+                            class="oe_highlight"/>
+                    <button name="action_generate_results" string="Generate Results" type="object"
+                            invisible="state not in ('scheduled', 'completed')"/>
+                    <button name="action_reset_draft" string="Reset to Draft" type="object"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,scheduled,completed,published"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Exam Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="exam_type"/>
+                            <field name="class_id"/>
+                            <field name="subject_id"/>
+                            <field name="academic_year_id"/>
+                        </group>
+                        <group>
+                            <field name="exam_date"/>
+                            <field name="total_marks"/>
+                            <field name="pass_marks"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Results">
+                            <field name="result_ids">
+                                <list editable="bottom">
+                                    <field name="student_id"/>
+                                    <field name="marks_obtained"/>
+                                    <field name="percentage" readonly="1"/>
+                                    <field name="grade" readonly="1"/>
+                                    <field name="result_state" readonly="1" widget="badge"
+                                           decoration-success="result_state == 'pass'"
+                                           decoration-danger="result_state == 'fail'"/>
+                                    <field name="remarks"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Exam List View -->
+    <record id="view_school_exam_list" model="ir.ui.view">
+        <field name="name">school.exam.list</field>
+        <field name="model">school.exam</field>
+        <field name="arch" type="xml">
+            <list string="Examinations">
+                <field name="name"/>
+                <field name="exam_type"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="exam_date"/>
+                <field name="total_marks"/>
+                <field name="pass_marks"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'published'"
+                       decoration-info="state in ('draft', 'scheduled')"
+                       decoration-warning="state == 'completed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Exam Action -->
+    <record id="action_school_exam" model="ir.actions.act_window">
+        <field name="name">Examinations</field>
+        <field name="res_model">school.exam</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first examination!
+            </p>
+        </field>
+    </record>
+
+    <!-- Exam Result Form View -->
+    <record id="view_school_exam_result_form" model="ir.ui.view">
+        <field name="name">school.exam.result.form</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <form string="Exam Result">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="exam_id"/>
+                            <field name="student_id"/>
+                            <field name="marks_obtained"/>
+                        </group>
+                        <group>
+                            <field name="percentage" readonly="1"/>
+                            <field name="grade" readonly="1"/>
+                            <field name="result_state" readonly="1"/>
+                            <field name="remarks"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Exam Result List View -->
+    <record id="view_school_exam_result_list" model="ir.ui.view">
+        <field name="name">school.exam.result.list</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <list string="Exam Results">
+                <field name="exam_id"/>
+                <field name="student_id"/>
+                <field name="marks_obtained"/>
+                <field name="percentage"/>
+                <field name="grade"/>
+                <field name="result_state" widget="badge"
+                       decoration-success="result_state == 'pass'"
+                       decoration-danger="result_state == 'fail'"/>
+                <field name="remarks"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Exam Result Action -->
+    <record id="action_school_exam_result" model="ir.actions.act_window">
+        <field name="name">Exam Results</field>
+        <field name="res_model">school.exam.result</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No exam results found!
+            </p>
+        </field>
+    </record>
+</odoo>

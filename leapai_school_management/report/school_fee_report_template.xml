@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_school_fee_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <h2>Fee Receipt</h2>
+                                <t t-if="o.state == 'paid'">
+                                    <div style="position:absolute; top:80px; right:40px; border:3px solid green; padding:5px 15px; color:green; font-size:24px; font-weight:bold; transform:rotate(-15deg); opacity:0.7;">
+                                        PAID
+                                    </div>
+                                </t>
+                                <hr/>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold" style="width:45%">Receipt No.</td>
+                                            <td><t t-esc="o.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Payment Date</td>
+                                            <td><t t-esc="o.payment_date"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Payment Method</td>
+                                            <td><t t-esc="dict(o._fields['payment_method'].selection).get(o.payment_method, '') if o.payment_method else ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Reference</td>
+                                            <td><t t-esc="o.reference or ''"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-6">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold" style="width:45%">Student Name</td>
+                                            <td><t t-esc="o.student_id.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Student ID</td>
+                                            <td><t t-esc="o.student_id.code or ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Class</td>
+                                            <td><t t-esc="o.student_id.class_id.name if o.student_id.class_id else ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Academic Year</td>
+                                            <td><t t-esc="o.student_id.academic_year_id.name if o.student_id.academic_year_id else ''"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h4>Fee Details</h4>
+                                <table class="table table-bordered">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th>Fee Description</th>
+                                            <th>Fee Type</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><t t-esc="o.fee_structure_id.name if o.fee_structure_id else 'General Fee'"/></td>
+                                            <td><t t-esc="dict(o.fee_structure_id._fields['fee_type'].selection).get(o.fee_structure_id.fee_type, '') if o.fee_structure_id and o.fee_structure_id.fee_type else ''"/></td>
+                                            <td class="text-end">
+                                                <t t-esc="o.currency_id.symbol or ''"/>
+                                                <t t-esc="'{:,.2f}'.format(o.amount)"/>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="table-secondary">
+                                        <tr>
+                                            <td colspan="2" class="fw-bold text-end">Total Amount</td>
+                                            <td class="fw-bold text-end">
+                                                <t t-esc="o.currency_id.symbol or ''"/>
+                                                <t t-esc="'{:,.2f}'.format(o.amount)"/>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <t t-if="o.note">
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <strong>Notes:</strong> <t t-esc="o.note"/>
+                                </div>
+                            </div>
+                        </t>
+                        <div class="row mt-5">
+                            <div class="col-6 text-center">
+                                <div style="border-top:1px solid #000; padding-top:5px;">Received By</div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <div style="border-top:1px solid #000; padding-top:5px;">Parent / Guardian Signature</div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

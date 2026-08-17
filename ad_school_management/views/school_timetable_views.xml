@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_timetable_tree" model="ir.ui.view">
+        <field name="name">school.timetable.tree</field>
+        <field name="model">school.timetable</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="academic_year_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_timetable_form" model="ir.ui.view">
+        <field name="name">school.timetable.form</field>
+        <field name="model">school.timetable</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="class_id"/>
+                            <field name="section_id" domain="[('class_id', '=', class_id)]"/>
+                        </group>
+                        <group>
+                            <field name="academic_year_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Schedule Lines" name="lines">
+                            <field name="timetable_line_ids">
+                                <list editable="bottom">
+                                    <field name="day_of_week"/>
+                                    <field name="subject_id" domain="[('class_ids', 'in', parent.class_id)]"/>
+                                    <field name="teacher_id"/>
+                                    <field name="classroom"/>
+                                    <field name="start_time" widget="float_time"/>
+                                    <field name="end_time" widget="float_time"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_timetable_search" model="ir.ui.view">
+        <field name="name">school.timetable.search</field>
+        <field name="model">school.timetable</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="academic_year_id"/>
+                <group>
+                    <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Academic Year" name="group_by_year" context="{'group_by': 'academic_year_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_timetable" model="ir.actions.act_window">
+        <field name="name">Timetables</field>
+        <field name="res_model">school.timetable</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_timetable_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a Class Timetable!
+            </p>
+        </field>
+    </record>
+</odoo>

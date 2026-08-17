@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <template id="portal_my_home_school" inherit_id="portal.portal_my_home" priority="30">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">School Profile(s)</t>
+                <t t-set="url" t-value="'/my/school/students'"/>
+                <t t-set="placeholder_count" t-value="'student_count'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_breadcrumbs_school" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'school_students' or page_name == 'school_student_profile'" class="breadcrumb-item active">
+                <a t-if="page_name == 'school_student_profile'" href="/my/school/students">School Profiles</a>
+                <t t-else="">School Profiles</t>
+            </li>
+            <li t-if="page_name == 'school_student_profile'" class="breadcrumb-item active">
+                <t t-out="student.name"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="portal_my_students" name="My School Students">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h3 class="mb-4">Associated Student Profiles</h3>
+                        <div class="row" t-if="students">
+                            <t t-foreach="students" t-as="student">
+                                <div class="col-md-4 col-sm-6 mb-4">
+                                    <div class="card h-100 shadow-sm border-0">
+                                        <div class="card-body text-center">
+                                            <img t-att-src="image_data_uri(student.photo) if student.photo else '/web/static/img/placeholder.png'"
+                                                 class="rounded-circle mb-3 border" style="width: 100px; height: 100px; object-fit: cover;"/>
+                                            <h5 class="card-title text-primary"><t t-out="student.name"/></h5>
+                                            <p class="card-text text-muted mb-1">Admission No: <t t-out="student.admission_no"/></p>
+                                            <p class="card-text text-muted mb-3">Class: <t t-out="student.class_id.name"/> - <t t-out="student.section_id.name"/></p>
+                                            <a t-attf-href="/my/school/student/#{student.id}" class="btn btn-outline-primary btn-sm">View Profile &amp; Dashboard</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                        <div t-else="" class="alert alert-info">
+                            No student profiles found associated with your portal user.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_my_student_profile" name="Student Dashboard">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3">
+                
+                <div class="card shadow-sm border-0 mb-4 bg-light">
+                    <div class="card-body d-flex align-items-center">
+                        <img t-att-src="image_data_uri(student.photo) if student.photo else '/web/static/img/placeholder.png'"
+                             class="rounded-circle border me-4" style="width: 120px; height: 120px; object-fit: cover;"/>
+                        <div>
+                            <h2 class="text-primary mb-1"><t t-out="student.name"/></h2>
+                            <p class="mb-1"><strong>Admission No:</strong> <t t-out="student.admission_no"/> | <strong>Roll Number:</strong> <t t-out="student.roll_number"/></p>
+                            <p class="mb-0"><strong>Class:</strong> <t t-out="student.class_id.name"/> - <t t-out="student.section_id.name"/> | <strong>Academic Year:</strong> <t t-out="student.academic_year_id.name"/></p>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs mb-4" id="studentTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">Profile Details</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab" aria-controls="attendance" aria-selected="false">Attendance</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab" aria-controls="results" aria-selected="false">Results</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="timetable-tab" data-bs-toggle="tab" data-bs-target="#timetable" type="button" role="tab" aria-controls="timetable" aria-selected="false">Timetable</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button" role="tab" aria-controls="invoices" aria-selected="false">Invoices/Fees</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="studentTabContent">
+                    
+                    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                        <div class="card shadow-sm border-0 p-4">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <h5 class="text-secondary border-bottom pb-2">Personal Information</h5>
+                                    <p><strong>Date of Birth:</strong> <t t-out="student.date_of_birth"/></p>
+                                    <p><strong>Gender:</strong> <t t-out="student.gender"/></p>
+                                    <p><strong>Blood Group:</strong> <t t-out="student.blood_group"/></p>
+                                    <p><strong>Nationality:</strong> <t t-out="student.nationality_id.name"/></p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h5 class="text-secondary border-bottom pb-2">Contact Details</h5>
+                                    <p><strong>Email:</strong> <t t-out="student.email"/></p>
+                                    <p><strong>Phone:</strong> <t t-out="student.phone"/></p>
+                                    <p><strong>Address:</strong> <t t-out="student.contact_address"/></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="attendance" role="tabpanel" aria-labelledby="attendance-tab">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h5 class="text-secondary mb-3">Recent Attendance Logs (Max 15)</h5>
+                            <div class="table-responsive" t-if="attendances">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Class / Section</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="attendances" t-as="att">
+                                            <tr>
+                                                <td><t t-out="att.date"/></td>
+                                                <td><t t-out="att.class_id.name"/> - <t t-out="att.section_id.name"/></td>
+                                                <td>
+                                                    <span t-attf-class="badge bg-#{'success' if att.status == 'present' else 'danger' if att.status == 'absent' else 'warning' if att.status == 'late' else 'info'}">
+                                                        <t t-out="att.status.capitalize()"/>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div t-else="" class="alert alert-info mb-0">
+                                No attendance records found.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="results" role="tabpanel" aria-labelledby="results-tab">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h5 class="text-secondary mb-3">Academic Results</h5>
+                            <div class="table-responsive" t-if="results">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Exam</th>
+                                            <th>Subject</th>
+                                            <th>Obtained Marks</th>
+                                            <th>Max Marks</th>
+                                            <th>Grade</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="results" t-as="res">
+                                            <tr>
+                                                <td><t t-out="res.exam_id.name"/></td>
+                                                <td><t t-out="res.subject_id.name"/></td>
+                                                <td><t t-out="res.marks_obtained"/></td>
+                                                <td><t t-out="res.max_marks"/></td>
+                                                <td><t t-out="res.grade_id.grade or '-'"/> (GPA: <t t-out="res.gpa"/>)</td>
+                                                <td>
+                                                    <span t-attf-class="badge bg-#{'success' if res.result_status == 'pass' else 'danger'}">
+                                                        <t t-out="res.result_status.capitalize()"/>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div t-else="" class="alert alert-info mb-0">
+                                No exam results published yet.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="timetable" role="tabpanel" aria-labelledby="timetable-tab">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h5 class="text-secondary mb-3">Class Timetable Schedule</h5>
+                            <div class="table-responsive" t-if="timetable and timetable.timetable_line_ids">
+                                <table class="table table-bordered">
+                                    <thead class="table-light text-center">
+                                        <tr>
+                                            <th>Day</th>
+                                            <th>Subject</th>
+                                            <th>Teacher</th>
+                                            <th>Classroom</th>
+                                            <th>Start Time</th>
+                                            <th>End Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="timetable.timetable_line_ids" t-as="line">
+                                            <tr>
+                                                <td><strong class="text-capitalize"><t t-out="line.day_of_week"/></strong></td>
+                                                <td><t t-out="line.subject_id.name"/></td>
+                                                <td><t t-out="line.teacher_id.name"/></td>
+                                                <td><t t-out="line.classroom"/></td>
+                                                <td class="text-center"><t t-out="line.start_time" t-options="{'widget': 'float_time'}"/></td>
+                                                <td class="text-center"><t t-out="line.end_time" t-options="{'widget': 'float_time'}"/></td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div t-else="" class="alert alert-info mb-0">
+                                No timetable schedule configured for this class.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h5 class="text-secondary mb-3">Fee Invoices &amp; Payments</h5>
+                            <div class="table-responsive" t-if="invoices">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Invoice Reference</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Payment Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="invoices" t-as="inv">
+                                            <tr>
+                                                <td>
+                                                    <a t-attf-href="/my/invoices/#{inv.id}"><t t-out="inv.name"/></a>
+                                                </td>
+                                                <td><t t-out="inv.invoice_date"/></td>
+                                                <td><t t-out="inv.amount_total" t-options="{'widget': 'monetary', 'display_currency': inv.currency_id}"/></td>
+                                                <td>
+                                                    <span t-attf-class="badge bg-#{'success' if inv.payment_state == 'paid' else 'warning' if inv.payment_state == 'not_paid' else 'info'}">
+                                                        <t t-out="inv.payment_state.replace('_', ' ').capitalize() if inv.payment_state else 'Not Paid'"/>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div t-else="" class="alert alert-info mb-0">
+                                No fee invoices generated.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

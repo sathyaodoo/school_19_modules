@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="view_school_vehicle_tree" model="ir.ui.view">
+        <field name="name">school.vehicle.tree</field>
+        <field name="model">school.vehicle</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="vehicle_number"/>
+                <field name="capacity"/>
+                <field name="driver_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_vehicle_form" model="ir.ui.view">
+        <field name="name">school.vehicle.form</field>
+        <field name="model">school.vehicle</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Bus 1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="vehicle_number" placeholder="e.g. XY-123-AB"/>
+                            <field name="capacity"/>
+                        </group>
+                        <group>
+                            <field name="driver_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_vehicle" model="ir.actions.act_window">
+        <field name="name">School Vehicles</field>
+        <field name="res_model">school.vehicle</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a School Vehicle!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_school_transport_route_tree" model="ir.ui.view">
+        <field name="name">school.transport.route.tree</field>
+        <field name="model">school.transport.route</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="cost"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_transport_route_form" model="ir.ui.view">
+        <field name="name">school.transport.route.form</field>
+        <field name="model">school.transport.route</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Route A - North City"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="vehicle_id"/>
+                            <field name="driver_id"/>
+                        </group>
+                        <group>
+                            <field name="cost"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Stops" name="stops">
+                            <field name="stop_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="time" widget="float_time"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_transport_route" model="ir.actions.act_window">
+        <field name="name">Transport Routes</field>
+        <field name="res_model">school.transport.route</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure a Transport Route!
+            </p>
+        </field>
+    </record>
+</odoo>

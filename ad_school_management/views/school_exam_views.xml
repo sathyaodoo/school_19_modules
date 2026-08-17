@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="view_school_exam_tree" model="ir.ui.view">
+        <field name="name">school.exam.tree</field>
+        <field name="model">school.exam</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-success="state == 'completed'" decoration-warning="state == 'scheduled'" decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="academic_year_id"/>
+                <field name="term_id"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'completed'" decoration-warning="state == 'scheduled'" decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_exam_form" model="ir.ui.view">
+        <field name="name">school.exam.form</field>
+        <field name="model">school.exam</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_schedule" type="object" string="Schedule Exam" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_complete" type="object" string="Complete Exam" class="oe_highlight" invisible="state != 'scheduled'"/>
+                    <button name="action_cancel" type="object" string="Cancel Exam" invisible="state in ('completed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,scheduled,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Mid-Term 2026"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="academic_year_id"/>
+                        </group>
+                        <group>
+                            <field name="term_id" domain="[('academic_year_id', '=', academic_year_id)]"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Exam Schedule" name="schedule">
+                            <field name="exam_subject_ids">
+                                <list editable="bottom">
+                                    <field name="subject_id"/>
+                                    <field name="date"/>
+                                    <field name="time_start" widget="float_time"/>
+                                    <field name="time_end" widget="float_time"/>
+                                    <field name="max_marks"/>
+                                    <field name="min_marks"/>
+                                    <field name="room"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_exam" model="ir.actions.act_window">
+        <field name="name">Exams</field>
+        <field name="res_model">school.exam</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create an Exam schedule!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_school_exam_result_tree" model="ir.ui.view">
+        <field name="name">school.exam.result.tree</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <list decoration-success="result_status == 'pass'" decoration-danger="result_status == 'fail'">
+                <field name="exam_id"/>
+                <field name="student_id"/>
+                <field name="subject_id"/>
+                <field name="marks_obtained"/>
+                <field name="max_marks"/>
+                <field name="percentage"/>
+                <field name="grade_id"/>
+                <field name="gpa"/>
+                <field name="result_status" widget="badge" decoration-success="result_status == 'pass'" decoration-danger="result_status == 'fail'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_exam_result_form" model="ir.ui.view">
+        <field name="name">school.exam.result.form</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Exam Information">
+                            <field name="exam_id"/>
+                            <field name="student_id"/>
+                            <field name="subject_id"/>
+                        </group>
+                        <group string="Marks &amp; Results">
+                            <field name="marks_obtained"/>
+                            <field name="max_marks"/>
+                            <field name="min_marks"/>
+                            <field name="percentage"/>
+                            <field name="grade_id"/>
+                            <field name="gpa"/>
+                            <field name="result_status"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_exam_result_graph" model="ir.ui.view">
+        <field name="name">school.exam.result.graph</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <graph string="Exam Result Analysis" type="bar">
+                <field name="student_id"/>
+                <field name="marks_obtained" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_exam_result_pivot" model="ir.ui.view">
+        <field name="name">school.exam.result.pivot</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <pivot string="Exam Results Matrix">
+                <field name="student_id" type="row"/>
+                <field name="subject_id" type="col"/>
+                <field name="marks_obtained" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_exam_result_search" model="ir.ui.view">
+        <field name="name">school.exam.result.search</field>
+        <field name="model">school.exam.result</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="exam_id"/>
+                <field name="student_id"/>
+                <field name="subject_id"/>
+                <filter string="Passed" name="passed" domain="[('result_status', '=', 'pass')]"/>
+                <filter string="Failed" name="failed" domain="[('result_status', '=', 'fail')]"/>
+                <group>
+                    <filter string="Exam" name="group_by_exam" context="{'group_by': 'exam_id'}"/>
+                    <filter string="Student" name="group_by_student" context="{'group_by': 'student_id'}"/>
+                    <filter string="Subject" name="group_by_subject" context="{'group_by': 'subject_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_exam_result" model="ir.actions.act_window">
+        <field name="name">Exam Results</field>
+        <field name="res_model">school.exam.result</field>
+        <field name="view_mode">list,graph,pivot,form</field>
+        <field name="search_view_id" ref="view_school_exam_result_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record student exam results!
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Fee Structure Form View -->
+    <record id="view_school_fee_structure_form" model="ir.ui.view">
+        <field name="name">school.fee.structure.form</field>
+        <field name="model">school.fee.structure</field>
+        <field name="arch" type="xml">
+            <form string="Fee Structure">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="fee_type"/>
+                            <field name="class_id"/>
+                            <field name="academic_year_id"/>
+                        </group>
+                        <group>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount"/>
+                            <field name="due_date"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Fee Structure List View -->
+    <record id="view_school_fee_structure_list" model="ir.ui.view">
+        <field name="name">school.fee.structure.list</field>
+        <field name="model">school.fee.structure</field>
+        <field name="arch" type="xml">
+            <list string="Fee Structures">
+                <field name="name"/>
+                <field name="fee_type"/>
+                <field name="class_id"/>
+                <field name="academic_year_id"/>
+                <field name="amount"/>
+                <field name="currency_id" optional="hide"/>
+                <field name="due_date"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Fee Structure Action -->
+    <record id="action_school_fee_structure" model="ir.actions.act_window">
+        <field name="name">Fee Structures</field>
+        <field name="res_model">school.fee.structure</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first fee structure!
+            </p>
+        </field>
+    </record>
+
+    <!-- Fee Payment Form View -->
+    <record id="view_school_fee_payment_form" model="ir.ui.view">
+        <field name="name">school.fee.payment.form</field>
+        <field name="model">school.fee.payment</field>
+        <field name="arch" type="xml">
+            <form string="Fee Payment">
+                <header>
+                    <button name="action_pay" string="Confirm Payment" type="object"
+                            invisible="state != 'draft'"
+                            class="oe_highlight"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            invisible="state in ('cancelled',)"/>
+                    <button name="action_reset_draft" string="Reset to Draft" type="object"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="fee_structure_id"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount"/>
+                        </group>
+                        <group>
+                            <field name="payment_date"/>
+                            <field name="payment_method"/>
+                            <field name="reference"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Fee Payment List View -->
+    <record id="view_school_fee_payment_list" model="ir.ui.view">
+        <field name="name">school.fee.payment.list</field>
+        <field name="model">school.fee.payment</field>
+        <field name="arch" type="xml">
+            <list string="Fee Payments">
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="fee_structure_id"/>
+                <field name="amount"/>
+                <field name="currency_id" optional="hide"/>
+                <field name="payment_date"/>
+                <field name="payment_method"/>
+                <field name="reference"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'paid'"
+                       decoration-info="state == 'draft'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Fee Payment Action -->
+    <record id="action_school_fee_payment" model="ir.actions.act_window">
+        <field name="name">Fee Payments</field>
+        <field name="res_model">school.fee.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record your first fee payment!
+            </p>
+        </field>
+    </record>
+</odoo>

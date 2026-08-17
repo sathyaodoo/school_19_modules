@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_school_dashboard_client" model="ir.actions.client">
+        <field name="name">School Dashboard</field>
+        <field name="tag">school_dashboard</field>
+        <field name="target">current</field>
+    </record>
+
+    <record id="action_school_dashboard" model="ir.actions.server">
+        <field name="name">School Dashboard</field>
+        <field name="model_id" ref="ad_school_management.model_school_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">
+            action = model.action_open_dashboard()
+        </field>
+    </record>
+</odoo>

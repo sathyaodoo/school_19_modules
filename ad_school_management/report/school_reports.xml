@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="action_report_student_id_card" model="ir.actions.report">
+        <field name="name">Student ID Card</field>
+        <field name="model">school.student</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_student_id_card</field>
+        <field name="report_file">ad_school_management.report_student_id_card</field>
+        <field name="binding_model_id" ref="ad_school_management.model_school_student"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_student_report_card" model="ir.actions.report">
+        <field name="name">Academic Report Card</field>
+        <field name="model">school.student</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_student_report_card</field>
+        <field name="report_file">ad_school_management.report_student_report_card</field>
+        <field name="binding_model_id" ref="ad_school_management.model_school_student"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_student_fee_receipt" model="ir.actions.report">
+        <field name="name">Fee Payment Receipt</field>
+        <field name="model">school.student.fee</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_student_fee_receipt</field>
+        <field name="report_file">ad_school_management.report_student_fee_receipt</field>
+        <field name="binding_model_id" ref="ad_school_management.model_school_student_fee"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_student_id_card">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="student">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <div style="border: 2px solid #333; padding: 20px; width: 350px; border-radius: 10px; margin: auto; font-family: sans-serif; background-color: #f9f9f9;">
+                            <div style="text-align: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 15px;">
+                                <h4 style="color: #0056b3; margin: 0;"><span t-out="res_company.name"/></h4>
+                                <small style="color: #666;">STUDENT IDENTITY CARD</small>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <div style="margin-right: 20px;">
+                                    <img t-if="student.photo" t-att-src="image_data_uri(student.photo)" style="width: 100px; height: 100px; border-radius: 5px; object-fit: cover; border: 1px solid #ccc;"/>
+                                    <div t-if="not student.photo" style="width: 100px; height: 100px; border: 1px solid #ccc; background-color: #ddd; text-align: center; line-height: 100px; color: #666;">No Photo</div>
+                                </div>
+                                <div style="font-size: 14px;">
+                                    <p style="margin: 0 0 5px 0;"><strong>Name:</strong> <span t-field="student.name"/></p>
+                                    <p style="margin: 0 0 5px 0;"><strong>Admission No:</strong> <span t-field="student.admission_no"/></p>
+                                    <p style="margin: 0 0 5px 0;"><strong>Class:</strong> <span t-field="student.class_id.name"/> - <span t-field="student.section_id.name"/></p>
+                                    <p style="margin: 0 0 5px 0;"><strong>Roll No:</strong> <span t-field="student.roll_number"/></p>
+                                    <p style="margin: 0;"><strong>Blood Grp:</strong> <span t-field="student.blood_group"/></p>
+                                </div>
+                            </div>
+                            <div style="border-top: 1px solid #ddd; margin-top: 15px; padding-top: 10px; text-align: center; font-size: 11px; color: #777;">
+                                Emergency Contact: <span t-field="student.phone"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_student_report_card">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="student">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center mb-4">
+                            <img t-if="res_company.logo" t-att-src="image_data_uri(res_company.logo)" style="max-height: 80px; margin-bottom: 10px;"/>
+                            <h2><span t-out="res_company.name"/></h2>
+                            <h4>ACADEMIC PROGRESS REPORT</h4>
+                        </div>
+                        <hr/>
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>Student Name:</strong> <span t-field="student.name"/><br/>
+                                <strong>Admission No:</strong> <span t-field="student.admission_no"/><br/>
+                                <strong>Roll Number:</strong> <span t-field="student.roll_number"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Class:</strong> <span t-field="student.class_id.name"/> - <span t-field="student.section_id.name"/><br/>
+                                <strong>Academic Year:</strong> <span t-field="student.academic_year_id.name"/>
+                            </div>
+                        </div>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr class="table-primary">
+                                    <th>Exam</th>
+                                    <th>Subject</th>
+                                    <th class="text-end">Obtained Marks</th>
+                                    <th class="text-end">Max Marks</th>
+                                    <th>Grade</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-set="results" t-value="request.env['school.exam.result'].search([('student_id', '=', student.id)])"/>
+                                <tr t-foreach="results" t-as="res">
+                                    <td><span t-field="res.exam_id.name"/></td>
+                                    <td><span t-field="res.subject_id.name"/></td>
+                                    <td class="text-end"><span t-field="res.marks_obtained"/></td>
+                                    <td class="text-end"><span t-field="res.max_marks"/></td>
+                                    <td><span t-field="res.grade_id.grade"/> (GPA: <span t-field="res.gpa"/>)</td>
+                                    <td>
+                                        <span t-if="res.result_status == 'pass'" class="text-success">PASS</span>
+                                        <span t-if="res.result_status == 'fail'" class="text-danger">FAIL</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_student_fee_receipt">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="fee">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <div class="text-center mb-4">
+                            <img t-if="res_company.logo" t-att-src="image_data_uri(res_company.logo)" style="max-height: 80px; margin-bottom: 10px;"/>
+                            <h2><span t-out="res_company.name"/></h2>
+                            <p style="margin: 0; font-size: 13px; color: #666;">
+                                <span t-if="res_company.street"><span t-out="res_company.street"/>, </span>
+                                <span t-if="res_company.city"><span t-out="res_company.city"/> </span>
+                                <span t-if="res_company.phone">| Phone: <span t-out="res_company.phone"/> </span>
+                                <span t-if="res_company.email">| Email: <span t-out="res_company.email"/></span>
+                            </p>
+                            <h4 class="mt-3">FEE RECEIPT / STATEMENT</h4>
+                        </div>
+                        <hr/>
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>Receipt No:</strong> <span t-field="fee.name"/><br/>
+                                <strong>Student Name:</strong> <span t-field="fee.student_id.name"/><br/>
+                                <strong>Admission No:</strong> <span t-field="fee.student_id.admission_no"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Academic Year:</strong> <span t-field="fee.academic_year_id.name"/><br/>
+                                <strong>Payment Status:</strong> <span t-field="fee.state" class="badge text-bg-info"/>
+                            </div>
+                        </div>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fee Component</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="fee.structure_id.line_ids" t-as="line">
+                                    <td><span t-field="line.name"/></td>
+                                    <td class="text-end"><span t-field="line.amount" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                </tr>
+                                <tr t-if="fee.discount > 0" class="text-muted">
+                                    <td>Flat Discount Allowed</td>
+                                    <td class="text-end">- <span t-field="fee.discount" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                </tr>
+                                <tr t-if="fee.scholarship > 0" class="text-muted">
+                                    <td>Scholarship (<span t-field="fee.scholarship"/>%)</td>
+                                    <td class="text-end">- <span t-esc="(fee.amount - fee.discount) * (fee.scholarship / 100)" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                </tr>
+                                <tr class="border-top table-primary font-weight-bold">
+                                    <td><strong>Net Total Paid / Due</strong></td>
+                                    <td class="text-end"><strong><span t-field="fee.net_amount" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

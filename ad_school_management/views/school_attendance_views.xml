@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_attendance_tree" model="ir.ui.view">
+        <field name="name">school.attendance.tree</field>
+        <field name="model">school.attendance</field>
+        <field name="arch" type="xml">
+            <list decoration-success="status == 'present'" decoration-danger="status == 'absent'" decoration-warning="status == 'late'" decoration-info="status == 'leave'">
+                <field name="date"/>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="status" widget="badge" decoration-success="status == 'present'" decoration-danger="status == 'absent'" decoration-warning="status == 'late'" decoration-info="status == 'leave'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_attendance_form" model="ir.ui.view">
+        <field name="name">school.attendance.form</field>
+        <field name="model">school.attendance</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="class_id"/>
+                            <field name="section_id" domain="[('class_id', '=', class_id)]"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="status"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_attendance_calendar" model="ir.ui.view">
+        <field name="name">school.attendance.calendar</field>
+        <field name="model">school.attendance</field>
+        <field name="arch" type="xml">
+            <calendar string="Attendance Calendar" date_start="date" color="status">
+                <field name="student_id"/>
+                <field name="class_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_school_attendance_graph" model="ir.ui.view">
+        <field name="name">school.attendance.graph</field>
+        <field name="model">school.attendance</field>
+        <field name="arch" type="xml">
+            <graph string="Attendance Analysis" type="bar">
+                <field name="class_id"/>
+                <field name="status"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_attendance_pivot" model="ir.ui.view">
+        <field name="name">school.attendance.pivot</field>
+        <field name="model">school.attendance</field>
+        <field name="arch" type="xml">
+            <pivot string="Attendance Analysis">
+                <field name="class_id" type="row"/>
+                <field name="status" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_attendance_search" model="ir.ui.view">
+        <field name="name">school.attendance.search</field>
+        <field name="model">school.attendance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="date"/>
+                <filter string="Present" name="present" domain="[('status', '=', 'present')]"/>
+                <filter string="Absent" name="absent" domain="[('status', '=', 'absent')]"/>
+                <filter string="Leave" name="leave" domain="[('status', '=', 'leave')]"/>
+                <filter string="Late" name="late" domain="[('status', '=', 'late')]"/>
+                <group>
+                    <filter string="Date" name="group_by_date" context="{'group_by': 'date:day'}"/>
+                    <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Status" name="group_by_status" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_attendance" model="ir.actions.act_window">
+        <field name="name">Student Attendance</field>
+        <field name="res_model">school.attendance</field>
+        <field name="view_mode">list,calendar,graph,pivot,form</field>
+        <field name="search_view_id" ref="view_school_attendance_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Mark Student Attendance!
+            </p>
+        </field>
+    </record>
+</odoo>

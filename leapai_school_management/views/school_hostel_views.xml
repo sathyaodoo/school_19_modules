@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Hostel Form View -->
+    <record id="view_school_hostel_form" model="ir.ui.view">
+        <field name="name">school.hostel.form</field>
+        <field name="model">school.hostel</field>
+        <field name="arch" type="xml">
+            <form string="Hostel">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_rooms" type="object"
+                                class="oe_stat_button" icon="fa-bed">
+                            <field name="room_count" widget="statinfo" string="Rooms"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Hostel Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="hostel_type"/>
+                            <field name="warden_name"/>
+                            <field name="warden_phone"/>
+                        </group>
+                        <group>
+                            <field name="capacity" readonly="1"/>
+                            <field name="occupied" readonly="1"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Rooms">
+                            <field name="room_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="room_type"/>
+                                    <field name="floor"/>
+                                    <field name="capacity"/>
+                                    <field name="monthly_fee"/>
+                                    <field name="occupied" readonly="1"/>
+                                    <field name="available" readonly="1"/>
+                                    <field name="state" readonly="1" widget="badge"
+                                           decoration-success="state == 'available'"
+                                           decoration-warning="state == 'partial'"
+                                           decoration-danger="state == 'full'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Hostel List View -->
+    <record id="view_school_hostel_list" model="ir.ui.view">
+        <field name="name">school.hostel.list</field>
+        <field name="model">school.hostel</field>
+        <field name="arch" type="xml">
+            <list string="Hostels">
+                <field name="name"/>
+                <field name="hostel_type"/>
+                <field name="warden_name"/>
+                <field name="warden_phone"/>
+                <field name="room_count"/>
+                <field name="capacity"/>
+                <field name="occupied"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Hostel Action -->
+    <record id="action_school_hostel" model="ir.actions.act_window">
+        <field name="name">Hostels</field>
+        <field name="res_model">school.hostel</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first hostel!
+            </p>
+        </field>
+    </record>
+
+    <!-- Hostel Room Form View -->
+    <record id="view_school_hostel_room_form" model="ir.ui.view">
+        <field name="name">school.hostel.room.form</field>
+        <field name="model">school.hostel.room</field>
+        <field name="arch" type="xml">
+            <form string="Hostel Room">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="hostel_id"/>
+                            <field name="room_type"/>
+                            <field name="floor"/>
+                        </group>
+                        <group>
+                            <field name="capacity"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="monthly_fee"/>
+                            <field name="occupied" readonly="1"/>
+                            <field name="available" readonly="1"/>
+                            <field name="state" readonly="1" widget="badge"
+                                   decoration-success="state == 'available'"
+                                   decoration-warning="state == 'partial'"
+                                   decoration-danger="state == 'full'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Allocations">
+                            <field name="allocation_ids">
+                                <list editable="bottom">
+                                    <field name="student_id"/>
+                                    <field name="check_in"/>
+                                    <field name="check_out"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-muted="state == 'checked_out'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Hostel Room List View -->
+    <record id="view_school_hostel_room_list" model="ir.ui.view">
+        <field name="name">school.hostel.room.list</field>
+        <field name="model">school.hostel.room</field>
+        <field name="arch" type="xml">
+            <list string="Hostel Rooms">
+                <field name="name"/>
+                <field name="hostel_id"/>
+                <field name="room_type"/>
+                <field name="floor"/>
+                <field name="capacity"/>
+                <field name="monthly_fee"/>
+                <field name="occupied"/>
+                <field name="available"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'available'"
+                       decoration-warning="state == 'partial'"
+                       decoration-danger="state == 'full'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Hostel Room Action -->
+    <record id="action_school_hostel_room" model="ir.actions.act_window">
+        <field name="name">Hostel Rooms</field>
+        <field name="res_model">school.hostel.room</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add hostel rooms!
+            </p>
+        </field>
+    </record>
+
+    <!-- Hostel Allocation Form View -->
+    <record id="view_school_hostel_allocation_form" model="ir.ui.view">
+        <field name="name">school.hostel.allocation.form</field>
+        <field name="model">school.hostel.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Hostel Allocation">
+                <header>
+                    <button name="action_check_out" string="Check Out" type="object"
+                            invisible="state != 'active'"
+                            class="oe_highlight"/>
+                    <field name="state" widget="statusbar" statusbar_visible="active,checked_out"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="room_id"/>
+                        </group>
+                        <group>
+                            <field name="check_in"/>
+                            <field name="check_out"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Hostel Allocation List View -->
+    <record id="view_school_hostel_allocation_list" model="ir.ui.view">
+        <field name="name">school.hostel.allocation.list</field>
+        <field name="model">school.hostel.allocation</field>
+        <field name="arch" type="xml">
+            <list string="Hostel Allocations">
+                <field name="student_id"/>
+                <field name="room_id"/>
+                <field name="check_in"/>
+                <field name="check_out"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-muted="state == 'checked_out'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Hostel Allocation Action -->
+    <record id="action_school_hostel_allocation" model="ir.actions.act_window">
+        <field name="name">Hostel Allocations</field>
+        <field name="res_model">school.hostel.allocation</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a hostel allocation!
+            </p>
+        </field>
+    </record>
+</odoo>

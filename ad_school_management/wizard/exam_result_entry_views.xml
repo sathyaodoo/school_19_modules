@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_exam_result_entry_form" model="ir.ui.view">
+        <field name="name">school.exam.result.entry.form</field>
+        <field name="model">school.exam.result.entry</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="exam_id"/>
+                        <field name="class_id"/>
+                    </group>
+                    <group>
+                        <field name="section_id" domain="[('class_id', '=', class_id)]"/>
+                        <field name="subject_id" domain="[('class_ids', 'in', class_id)]"/>
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Result Entries" name="results">
+                        <field name="line_ids" force_save="1">
+                            <list editable="bottom" create="false" delete="false">
+                                <field name="student_id"/>
+                                <field name="marks_obtained"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+                <footer>
+                    <button name="action_save_results" string="Save Results" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_exam_result_entry" model="ir.actions.act_window">
+        <field name="name">Exam Result Entry</field>
+        <field name="res_model">school.exam.result.entry</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>School Management System - Odoo 19</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1e293b;">
+<style>
+    *{box-sizing:border-box;}
+    a{color:#2563eb;text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    .hero{background:linear-gradient(135deg,#0f2d52 0%,#1a3c6e 55%,#2d6ab0 100%);color:#fff;padding:60px 40px;text-align:center;}
+    .hero h1{font-size:3em;margin:0 0 16px;font-weight:800;letter-spacing:-1px;}
+    .hero .tagline{font-size:1.25em;color:#bfdbfe;margin-bottom:32px;max-width:740px;margin-left:auto;margin-right:auto;}
+    .badges{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+    .badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 18px;font-size:.9em;color:#dbeafe;}
+    .badge.blue{background:rgba(37,99,235,.35);border-color:#3b82f6;color:#bfdbfe;}
+    .section{padding:60px 40px;max-width:1100px;margin:0 auto;}
+    .section-title{font-size:2em;font-weight:700;text-align:center;margin-bottom:8px;color:#0f2d52;}
+    .section-sub{text-align:center;color:#64748b;margin-bottom:40px;font-size:1.05em;}
+    .gallery-wrap{background:#0f2d52;padding:50px 40px;}
+    .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:0 auto;}
+    .gallery-thumb{cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #1a3c6e;transition:border-color .2s,transform .2s;}
+    .gallery-thumb:hover{border-color:#60a5fa;transform:scale(1.02);}
+    .gallery-thumb img{width:100%;height:190px;object-fit:cover;display:block;}
+    .gallery-thumb p{background:#1e293b;color:#cbd5e1;font-size:.83em;margin:0;padding:8px 12px;text-align:center;}
+    .lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:9999;justify-content:center;align-items:center;}
+    .lightbox.open{display:flex;}
+    .lightbox img{max-width:90%;max-height:85vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+    .lightbox-close{position:absolute;top:20px;right:30px;color:#fff;font-size:2.5em;cursor:pointer;line-height:1;}
+    .lightbox-caption{position:absolute;bottom:20px;color:#e2e8f0;font-size:1em;text-align:center;width:100%;}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+    .feature-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:box-shadow .2s;}
+    .feature-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.1);}
+    .feature-icon{font-size:2.5em;margin-bottom:14px;}
+    .feature-card h3{font-size:1.1em;font-weight:700;margin:0 0 8px;color:#0f2d52;}
+    .feature-card p{color:#64748b;font-size:.93em;line-height:1.6;margin:0;}
+    .how-wrap{background:linear-gradient(135deg,#0f2d52,#1a3c6e);padding:60px 40px;color:#fff;}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1100px;margin:0 auto;}
+    .step{text-align:center;padding:24px 12px;}
+    .step-num{width:52px;height:52px;border-radius:50%;background:#3b82f6;color:#fff;font-size:1.3em;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+    .step h3{font-size:1em;font-weight:700;margin:0 0 8px;color:#bfdbfe;}
+    .step p{color:#94a3b8;font-size:.88em;line-height:1.6;margin:0;}
+    .modules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+    .module-card{background:#fff;border-left:4px solid #2563eb;border-radius:0 8px 8px 0;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+    .module-card h3{margin:0 0 6px;font-size:1em;color:#0f2d52;font-weight:700;}
+    .module-card p{margin:0;color:#64748b;font-size:.88em;line-height:1.5;}
+    .states-row{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin:28px 0;}
+    .state-box{background:#fff;border:2px solid #e2e8f0;border-radius:8px;padding:9px 18px;font-weight:600;font-size:.88em;color:#64748b;}
+    .state-box.active{background:#1a3c6e;border-color:#1a3c6e;color:#fff;}
+    .state-arrow{color:#94a3b8;font-size:1.4em;padding:0 5px;}
+    .compat-section{background:#fff;padding:60px 40px;}
+    .compat-grid{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:900px;margin:0 auto;}
+    .compat-badge{background:#0f2d52;color:#fff;border-radius:8px;padding:10px 22px;font-weight:700;font-size:1.05em;}
+    .compat-badge.current{background:#2563eb;}
+    .support-wrap{background:linear-gradient(135deg,#0f2d52,#1a3c6e);padding:60px 40px;color:#fff;}
+    .support-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1100px;margin:0 auto;}
+    .support-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:30px 22px;text-align:center;}
+    .support-card h3{font-size:1.15em;font-weight:700;margin:0 0 12px;color:#bfdbfe;}
+    .support-card p{color:#94a3b8;font-size:.93em;line-height:1.6;margin:0 0 20px;}
+    .btn{display:inline-block;padding:10px 24px;border-radius:6px;font-weight:600;font-size:.93em;}
+    .btn-blue{background:#2563eb;color:#fff;}
+    .btn-blue:hover{background:#1d4ed8;text-decoration:none;}
+    .btn-dark{background:#0f2d52;color:#fff;border:1px solid rgba(255,255,255,.3);}
+    .btn-dark:hover{background:#1a3c6e;text-decoration:none;}
+    .footer{background:#070f1e;color:#64748b;padding:32px 40px;text-align:center;}
+    .footer a{color:#60a5fa;}
+    @media(max-width:900px){
+        .gallery{grid-template-columns:1fr 1fr;}
+        .features-grid,.modules-grid{grid-template-columns:1fr;}
+        .steps{grid-template-columns:1fr 1fr;}
+        .support-grid{grid-template-columns:1fr;}
+        .hero h1{font-size:2em;}
+    }
+</style>
+
+<div class="hero">
+    <div style="font-size:.9em;color:#60a5fa;margin-bottom:12px;letter-spacing:2px;text-transform:uppercase;">Odoo 19 | Education</div>
+    <img src="icon.png" alt="School" style="width:80px;height:80px;border-radius:16px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.35);"/>
+    <h1>School Management System</h1>
+    <p class="tagline">A complete school administration platform — students, teachers, exams, fees, attendance, transport and hostel, all in one Odoo module</p>
+    <div class="badges">
+        <span class="badge blue">&#10003; Odoo Online</span>
+        <span class="badge blue">&#10003; Odoo.sh</span>
+        <span class="badge blue">&#10003; On-Premise</span>
+        <span class="badge">&#127891; Students</span>
+        <span class="badge">&#128200; Exams &amp; Results</span>
+        <span class="badge">&#128176; Fees</span>
+        <span class="badge">&#127968; Hostel</span>
+        <span class="badge">&#128652; Transport</span>
+    </div>
+</div>
+
+<div class="gallery-wrap">
+    <div style="text-align:center;margin-bottom:32px;">
+        <h2 style="color:#fff;font-size:1.8em;margin:0 0 8px;">See It In Action</h2>
+        <p style="color:#bfdbfe;margin:0;">Live Odoo 19 screenshots — click any image to enlarge</p>
+    </div>
+    <div class="gallery">
+        <div class="gallery-thumb" onclick="openLightbox('screenshot_01_students_list.png','All Students — List View')">
+            <img src="screenshot_01_students_list.png" alt="Students List"/>
+            <p>&#128101; All Students — List View</p>
+        </div>
+        <div class="gallery-thumb" onclick="openLightbox('screenshot_02_student_form.png','Student Form — Full Profile')">
+            <img src="screenshot_02_student_form.png" alt="Student Form"/>
+            <p>&#128196; Student Form — Full Profile</p>
+        </div>
+        <div class="gallery-thumb" onclick="openLightbox('screenshot_03_exam_results.png','Exam Results — Grades')">
+            <img src="screenshot_03_exam_results.png" alt="Exam Results"/>
+            <p>&#128200; Exam Results — Grades &amp; Pass/Fail</p>
+        </div>
+        <div class="gallery-thumb" onclick="openLightbox('screenshot_04_fee_payment.png','Fee Payments')">
+            <img src="screenshot_04_fee_payment.png" alt="Fee Payments"/>
+            <p>&#128176; Fee Payments — Multi-type</p>
+        </div>
+        <div class="gallery-thumb" onclick="openLightbox('screenshot_05_hostel.png','Hostel Management')">
+            <img src="screenshot_05_hostel.png" alt="Hostel"/>
+            <p>&#127968; Hostel — Room Occupancy</p>
+        </div>
+        <div class="gallery-thumb" onclick="openLightbox('screenshot_06_student_report.png','Student PDF Report')">
+            <img src="screenshot_06_student_report.png" alt="Student Report"/>
+            <p>&#128203; Student Profile PDF Report</p>
+        </div>
+    </div>
+</div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+    <img id="lightbox-img" src="" alt=""/>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<div class="section">
+    <h2 class="section-title">Student Lifecycle</h2>
+    <p class="section-sub">Track every student from admission to graduation</p>
+    <div class="states-row">
+        <div class="state-box">Draft</div>
+        <div class="state-arrow">&#8594;</div>
+        <div class="state-box">Enrolled</div>
+        <div class="state-arrow">&#8594;</div>
+        <div class="state-box active">Active</div>
+        <div class="state-arrow">&#8594;</div>
+        <div class="state-box" style="border-color:#198754;color:#198754;">Graduated</div>
+        <div class="state-arrow" style="color:#dc3545;"> / </div>
+        <div class="state-box" style="border-color:#dc3545;color:#dc3545;">Expelled</div>
+    </div>
+    <p style="text-align:center;color:#64748b;max-width:680px;margin:0 auto;">
+        Students start in <strong>Draft</strong>, get <strong>Enrolled</strong> when fees are raised, become
+        <strong>Active</strong> once confirmed, and finally <strong>Graduate</strong> at year end. Full chatter and activity tracking on every record.
+    </p>
+</div>
+
+<div style="background:#f1f5f9;padding:60px 40px;">
+    <div style="max-width:1100px;margin:0 auto;">
+        <h2 class="section-title">Key Features</h2>
+        <p class="section-sub">Everything a school needs — in one module, no extra apps</p>
+        <div class="features-grid">
+            <div class="feature-card"><div class="feature-icon">&#127891;</div><h3>Student Management</h3><p>Complete profiles: personal info, parent/guardian details, photo, blood group, nationality. Full lifecycle workflow with chatter.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#128218;</div><h3>Class &amp; Subject Management</h3><p>Organise classes by academic year, assign teachers and classrooms. Track capacity, enrollment counts, and subject links.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#128101;</div><h3>Teacher Management</h3><p>Teacher profiles with qualifications, experience and subject assignments. Smart buttons show total students and classes.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#128200;</div><h3>Examinations &amp; Results</h3><p>Schedule exams, auto-generate result cards. Grades computed automatically (A+/A/B+/B/C/D/F). Publish results in one click.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#128176;</div><h3>Fee Management</h3><p>Fee structures by class and type (tuition/transport/hostel/exam). Payment tracking with PDF receipts and PAID stamp.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#9989;</div><h3>Attendance Tracking</h3><p>Daily attendance: Present, Absent, Late or Excused. Unique constraint prevents duplicates. History view per student.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#128652;</div><h3>Transport Management</h3><p>Vehicles with plate numbers and driver info. Routes with stops and pickup times. Assign students to routes.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#127968;</div><h3>Hostel Management</h3><p>Boys/Girls hostels, room types (single/double/triple/dorm), real-time occupancy, check-in/check-out allocations.</p></div>
+            <div class="feature-card"><div class="feature-icon">&#128196;</div><h3>PDF Reports</h3><p>Student profile report, fee receipt with PAID stamp, exam result card — all with company letterhead.</p></div>
+        </div>
+    </div>
+</div>
+
+<div class="how-wrap">
+    <div style="text-align:center;margin-bottom:40px;">
+        <h2 style="color:#fff;font-size:1.8em;margin:0 0 8px;">How It Works</h2>
+        <p style="color:#bfdbfe;margin:0;">Set up your school in four simple steps</p>
+    </div>
+    <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>Configure Structure</h3><p>Set up academic year, classrooms, classes and subjects. Assign class teachers and link subjects.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>Enroll Students</h3><p>Add student profiles with parent details. Assign to a class. Generate fee invoices and mark active.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>Daily Operations</h3><p>Mark attendance, schedule exams, record results, collect fees and manage hostel/transport.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>Reports</h3><p>Print student profiles, fee receipts and exam result cards. Review stats per class or student.</p></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-title">What's Included</h2>
+    <p class="section-sub">9 fully functional sub-modules</p>
+    <div class="modules-grid">
+        <div class="module-card"><h3>&#127891; Students</h3><p>Enrollment, lifecycle, parent details, smart buttons for fees, exams and attendance.</p></div>
+        <div class="module-card" style="border-left-color:#10b981;"><h3>&#128218; Classes &amp; Subjects</h3><p>Academic year, classrooms, class-teacher-subject links, capacity tracking.</p></div>
+        <div class="module-card" style="border-left-color:#f59e0b;"><h3>&#128101; Teachers</h3><p>Profiles, qualifications, subject and class assignments, student count.</p></div>
+        <div class="module-card" style="border-left-color:#8b5cf6;"><h3>&#128200; Exams &amp; Results</h3><p>Scheduling, auto-generate results, grade computation, PDF export.</p></div>
+        <div class="module-card" style="border-left-color:#ec4899;"><h3>&#128176; Fees</h3><p>Fee structures by type, payment tracking, PDF fee receipt with PAID stamp.</p></div>
+        <div class="module-card" style="border-left-color:#14b8a6;"><h3>&#9989; Attendance</h3><p>Daily attendance per student: Present / Absent / Late / Excused.</p></div>
+        <div class="module-card" style="border-left-color:#f97316;"><h3>&#128652; Transport</h3><p>Vehicles, drivers, routes with stops and timing, student assignment.</p></div>
+        <div class="module-card" style="border-left-color:#6366f1;"><h3>&#127968; Hostel</h3><p>Room types, real-time occupancy, check-in/out allocation management.</p></div>
+        <div class="module-card" style="border-left-color:#0ea5e9;"><h3>&#128196; PDF Reports</h3><p>Student Profile · Fee Receipt · Exam Result Card.</p></div>
+    </div>
+</div>
+
+<div class="compat-section">
+    <h2 class="section-title">Compatibility</h2>
+    <p class="section-sub">Built for Odoo 19 — works on all deployments</p>
+    <div class="compat-grid">
+        <span class="compat-badge">Odoo 17</span>
+        <span class="compat-badge">Odoo 18</span>
+        <span class="compat-badge current">Odoo 19 &#10003;</span>
+    </div>
+    <p style="text-align:center;color:#64748b;margin:36px 0 12px;font-weight:600;">Dependencies</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+        <span style="background:#f1f5f9;border:2px solid #e2e8f0;color:#0f2d52;border-radius:8px;padding:10px 20px;font-weight:600;">base</span>
+        <span style="background:#f1f5f9;border:2px solid #e2e8f0;color:#0f2d52;border-radius:8px;padding:10px 20px;font-weight:600;">mail</span>
+        <span style="background:#f1f5f9;border:2px solid #e2e8f0;color:#0f2d52;border-radius:8px;padding:10px 20px;font-weight:600;">account</span>
+        <span style="background:#f1f5f9;border:2px solid #e2e8f0;color:#0f2d52;border-radius:8px;padding:10px 20px;font-weight:600;">hr</span>
+    </div>
+</div>
+
+<div class="support-wrap">
+    <div style="text-align:center;margin-bottom:40px;">
+        <h2 style="color:#fff;font-size:1.8em;margin:0 0 8px;">Support &amp; Services</h2>
+        <p style="color:#bfdbfe;margin:0;">We help you go live quickly</p>
+    </div>
+    <div class="support-grid">
+        <div class="support-card"><h3>&#127381; Free Demo</h3><p>Try the module live with demo data — see all 9 modules working before purchase.</p><a href="mailto:abdzoro89@gmail.com?subject=School Management Demo" class="btn btn-blue">Request Demo</a></div>
+        <div class="support-card"><h3>&#127863; 1-Year Support</h3><p>Priority email support, bug fixes and updates included. Extended plans available.</p><a href="mailto:abdzoro89@gmail.com" class="btn btn-dark">Contact Support</a></div>
+        <div class="support-card"><h3>&#9881; Customisation</h3><p>Timetable, parent portal, SMS, library, custom reports? We build it for you.</p><a href="mailto:abdzoro89@gmail.com?subject=School Customisation" class="btn btn-blue">Get a Quote</a></div>
+    </div>
+    <div style="text-align:center;margin-top:40px;color:#64748b;font-size:.95em;">
+        <strong style="color:#bfdbfe;">Email:</strong>&#160;<a href="mailto:abdzoro89@gmail.com" style="color:#60a5fa;">abdzoro89@gmail.com</a>
+        &#160;|&#160;
+        <strong style="color:#bfdbfe;">Website:</strong>&#160;<a href="https://leapai.ai" style="color:#60a5fa;">leapai.ai</a>
+    </div>
+</div>
+
+<div class="footer">
+    <p style="margin:0 0 8px;font-size:1.1em;color:#e2e8f0;font-weight:600;">School Management System for Odoo 19</p>
+    <p style="margin:0 0 8px;">Built by <a href="https://leapai.ai">leapai.ai</a> &#160;|&#160; <a href="mailto:abdzoro89@gmail.com">abdzoro89@gmail.com</a></p>
+    <p style="margin:0;font-size:.85em;">Licensed under LGPL-3 &#160;|&#160; Version 19.0.1.0.0</p>
+</div>
+
+<script>
+function openLightbox(src,caption){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox-caption').textContent=caption;document.getElementById('lightbox').classList.add('open');document.body.style.overflow='hidden';}
+function closeLightbox(e){if(!e||e.target===document.getElementById('lightbox')||e.target.classList.contains('lightbox-close')){document.getElementById('lightbox').classList.remove('open');document.body.style.overflow='';}}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLightbox({target:document.getElementById('lightbox')});});
+</script>
+</body>
+</html>

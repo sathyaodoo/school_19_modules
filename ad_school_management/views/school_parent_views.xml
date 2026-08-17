@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_parent_tree" model="ir.ui.view">
+        <field name="name">school.parent.tree</field>
+        <field name="model">school.parent</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="relation"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="occupation"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_parent_form" model="ir.ui.view">
+        <field name="name">school.parent.form</field>
+        <field name="model">school.parent</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_partner"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-user"
+                                string="Contact Profile">
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="Parent Name" required="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="relation"/>
+                            <field name="occupation"/>
+                            <field name="annual_income"/>
+                        </group>
+                        <group>
+                            <field name="email"/>
+                            <field name="phone"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Children" name="children">
+                            <field name="student_ids">
+                                <list>
+                                    <field name="admission_no"/>
+                                    <field name="name"/>
+                                    <field name="class_id"/>
+                                    <field name="section_id"/>
+                                    <field name="roll_number"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_parent_search" model="ir.ui.view">
+        <field name="name">school.parent.search</field>
+        <field name="model">school.parent</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="email"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_parent" model="ir.actions.act_window">
+        <field name="name">Parents &amp; Guardians</field>
+        <field name="res_model">school.parent</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_parent_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register a parent/guardian profile!
+            </p>
+        </field>
+    </record>
+</odoo>

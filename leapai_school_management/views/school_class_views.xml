@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Classroom Form View -->
+    <record id="view_school_class_room_form" model="ir.ui.view">
+        <field name="name">school.class.room.form</field>
+        <field name="model">school.class.room</field>
+        <field name="arch" type="xml">
+            <form string="Classroom">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="floor"/>
+                        </group>
+                        <group>
+                            <field name="capacity"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Classroom List View -->
+    <record id="view_school_class_room_list" model="ir.ui.view">
+        <field name="name">school.class.room.list</field>
+        <field name="model">school.class.room</field>
+        <field name="arch" type="xml">
+            <list string="Classrooms">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="floor"/>
+                <field name="capacity"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Classroom Action -->
+    <record id="action_school_class_room" model="ir.actions.act_window">
+        <field name="name">Classrooms</field>
+        <field name="res_model">school.class.room</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first classroom!
+            </p>
+        </field>
+    </record>
+
+    <!-- Class Form View -->
+    <record id="view_school_class_form" model="ir.ui.view">
+        <field name="name">school.class.form</field>
+        <field name="model">school.class</field>
+        <field name="arch" type="xml">
+            <form string="Class">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Class Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="academic_year_id"/>
+                            <field name="teacher_id"/>
+                        </group>
+                        <group>
+                            <field name="room_id"/>
+                            <field name="capacity"/>
+                            <field name="student_count" readonly="1"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Subjects">
+                            <field name="subject_ids" widget="many2many_tags"/>
+                        </page>
+                        <page string="Students">
+                            <field name="student_ids" readonly="1">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="gender"/>
+                                    <field name="phone"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-info="state in ('draft', 'enrolled')"
+                                           decoration-warning="state == 'graduated'"
+                                           decoration-danger="state == 'expelled'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Class List View -->
+    <record id="view_school_class_list" model="ir.ui.view">
+        <field name="name">school.class.list</field>
+        <field name="model">school.class</field>
+        <field name="arch" type="xml">
+            <list string="Classes">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="academic_year_id"/>
+                <field name="teacher_id"/>
+                <field name="room_id"/>
+                <field name="student_count"/>
+                <field name="capacity"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Class Action -->
+    <record id="action_school_class" model="ir.actions.act_window">
+        <field name="name">Classes</field>
+        <field name="res_model">school.class</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first class!
+            </p>
+        </field>
+    </record>
+</odoo>

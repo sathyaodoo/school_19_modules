@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Transport Vehicle Form View -->
+    <record id="view_school_transport_vehicle_form" model="ir.ui.view">
+        <field name="name">school.transport.vehicle.form</field>
+        <field name="model">school.transport.vehicle</field>
+        <field name="arch" type="xml">
+            <form string="Transport Vehicle">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="plate_number"/>
+                            <field name="capacity"/>
+                        </group>
+                        <group>
+                            <field name="driver_name"/>
+                            <field name="driver_phone"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Transport Vehicle List View -->
+    <record id="view_school_transport_vehicle_list" model="ir.ui.view">
+        <field name="name">school.transport.vehicle.list</field>
+        <field name="model">school.transport.vehicle</field>
+        <field name="arch" type="xml">
+            <list string="Vehicles">
+                <field name="name"/>
+                <field name="plate_number"/>
+                <field name="capacity"/>
+                <field name="driver_name"/>
+                <field name="driver_phone"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Transport Vehicle Action -->
+    <record id="action_school_transport_vehicle" model="ir.actions.act_window">
+        <field name="name">Vehicles</field>
+        <field name="res_model">school.transport.vehicle</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first vehicle!
+            </p>
+        </field>
+    </record>
+
+    <!-- Transport Route Form View -->
+    <record id="view_school_transport_route_form" model="ir.ui.view">
+        <field name="name">school.transport.route.form</field>
+        <field name="model">school.transport.route</field>
+        <field name="arch" type="xml">
+            <form string="Transport Route">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_students" type="object"
+                                class="oe_stat_button" icon="fa-users">
+                            <field name="student_count" widget="statinfo" string="Students"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Route Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="vehicle_id"/>
+                            <field name="pickup_time"/>
+                            <field name="dropoff_time"/>
+                        </group>
+                        <group>
+                            <field name="student_count" readonly="1"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="stops"/>
+                    </group>
+                    <notebook>
+                        <page string="Students">
+                            <field name="student_ids" readonly="1">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="class_id"/>
+                                    <field name="phone"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-info="state in ('draft', 'enrolled')"
+                                           decoration-warning="state == 'graduated'"
+                                           decoration-danger="state == 'expelled'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Transport Route List View -->
+    <record id="view_school_transport_route_list" model="ir.ui.view">
+        <field name="name">school.transport.route.list</field>
+        <field name="model">school.transport.route</field>
+        <field name="arch" type="xml">
+            <list string="Routes">
+                <field name="name"/>
+                <field name="vehicle_id"/>
+                <field name="pickup_time"/>
+                <field name="dropoff_time"/>
+                <field name="student_count"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Transport Route Action -->
+    <record id="action_school_transport_route" model="ir.actions.act_window">
+        <field name="name">Transport Routes</field>
+        <field name="res_model">school.transport.route</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first route!
+            </p>
+        </field>
+    </record>
+</odoo>

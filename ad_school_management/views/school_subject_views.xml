@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_subject_tree" model="ir.ui.view">
+        <field name="name">school.subject.tree</field>
+        <field name="model">school.subject</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="credits"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_subject_form" model="ir.ui.view">
+        <field name="name">school.subject.form</field>
+        <field name="model">school.subject</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Mathematics"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="e.g. MATH101"/>
+                        </group>
+                        <group>
+                            <field name="credits"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Assigned Classes" name="classes">
+                            <field name="class_ids" widget="many2many_tags"/>
+                        </page>
+                        <page string="Teachers" name="teachers">
+                            <field name="teacher_ids" widget="many2many_tags"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_subject_search" model="ir.ui.view">
+        <field name="name">school.subject.search</field>
+        <field name="model">school.subject</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_subject" model="ir.actions.act_window">
+        <field name="name">Subjects</field>
+        <field name="res_model">school.subject</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_subject_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Subject!
+            </p>
+        </field>
+    </record>
+</odoo>

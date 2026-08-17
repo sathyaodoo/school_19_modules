@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_academic_term_tree" model="ir.ui.view">
+        <field name="name">school.academic.term.tree</field>
+        <field name="model">school.academic.term</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="academic_year_id"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_academic_term_form" model="ir.ui.view">
+        <field name="name">school.academic.term.form</field>
+        <field name="model">school.academic.term</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="e.g. First Semester"/>
+                            <field name="academic_year_id"/>
+                        </group>
+                        <group>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_academic_term_search" model="ir.ui.view">
+        <field name="name">school.academic.term.search</field>
+        <field name="model">school.academic.term</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="academic_year_id"/>
+                <group>
+                    <filter string="Academic Year" name="group_by_year" context="{'group_by': 'academic_year_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_academic_term" model="ir.actions.act_window">
+        <field name="name">Academic Terms</field>
+        <field name="res_model">school.academic.term</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_academic_term_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Academic Term!
+            </p>
+        </field>
+    </record>
+</odoo>

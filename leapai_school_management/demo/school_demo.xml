@@ -1,0 +1,1166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- ============================================================
+             ACADEMIC YEARS
+        ============================================================ -->
+        <record id="academic_year_2024_2025" model="school.academic.year">
+            <field name="name">2024-2025</field>
+            <field name="date_start">2024-09-01</field>
+            <field name="date_end">2025-06-30</field>
+            <field name="state">active</field>
+        </record>
+
+        <record id="academic_year_2025_2026" model="school.academic.year">
+            <field name="name">2025-2026</field>
+            <field name="date_start">2025-09-01</field>
+            <field name="date_end">2026-06-30</field>
+            <field name="state">draft</field>
+        </record>
+
+        <!-- ============================================================
+             CLASSROOMS
+        ============================================================ -->
+        <record id="room_101" model="school.class.room">
+            <field name="name">Room 101</field>
+            <field name="code">R101</field>
+            <field name="floor">1</field>
+            <field name="capacity">35</field>
+        </record>
+
+        <record id="room_102" model="school.class.room">
+            <field name="name">Room 102</field>
+            <field name="code">R102</field>
+            <field name="floor">1</field>
+            <field name="capacity">35</field>
+        </record>
+
+        <record id="room_201" model="school.class.room">
+            <field name="name">Room 201</field>
+            <field name="code">R201</field>
+            <field name="floor">2</field>
+            <field name="capacity">30</field>
+        </record>
+
+        <record id="room_202" model="school.class.room">
+            <field name="name">Room 202</field>
+            <field name="code">R202</field>
+            <field name="floor">2</field>
+            <field name="capacity">30</field>
+        </record>
+
+        <record id="room_lab" model="school.class.room">
+            <field name="name">Science Lab</field>
+            <field name="code">LAB</field>
+            <field name="floor">1</field>
+            <field name="capacity">25</field>
+        </record>
+
+        <!-- ============================================================
+             SUBJECTS
+        ============================================================ -->
+        <record id="subject_math" model="school.subject">
+            <field name="name">Mathematics</field>
+            <field name="code">MATH</field>
+        </record>
+
+        <record id="subject_english" model="school.subject">
+            <field name="name">English Language</field>
+            <field name="code">ENG</field>
+        </record>
+
+        <record id="subject_science" model="school.subject">
+            <field name="name">General Science</field>
+            <field name="code">SCI</field>
+        </record>
+
+        <record id="subject_physics" model="school.subject">
+            <field name="name">Physics</field>
+            <field name="code">PHY</field>
+        </record>
+
+        <record id="subject_chemistry" model="school.subject">
+            <field name="name">Chemistry</field>
+            <field name="code">CHEM</field>
+        </record>
+
+        <record id="subject_biology" model="school.subject">
+            <field name="name">Biology</field>
+            <field name="code">BIO</field>
+        </record>
+
+        <record id="subject_history" model="school.subject">
+            <field name="name">History</field>
+            <field name="code">HIST</field>
+        </record>
+
+        <record id="subject_geography" model="school.subject">
+            <field name="name">Geography</field>
+            <field name="code">GEO</field>
+        </record>
+
+        <record id="subject_arabic" model="school.subject">
+            <field name="name">Arabic Language</field>
+            <field name="code">ARB</field>
+        </record>
+
+        <record id="subject_ict" model="school.subject">
+            <field name="name">Information Technology</field>
+            <field name="code">ICT</field>
+        </record>
+
+        <!-- ============================================================
+             TEACHERS
+        ============================================================ -->
+        <record id="teacher_ahmed" model="school.teacher">
+            <field name="name">Ahmed Al-Rashidi</field>
+            <field name="qualification">M.Sc. Mathematics</field>
+            <field name="experience_years">12</field>
+            <field name="phone">+966-50-111-2001</field>
+            <field name="email">ahmed.rashidi@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_math')])]"/>
+        </record>
+
+        <record id="teacher_sarah" model="school.teacher">
+            <field name="name">Sarah Johnson</field>
+            <field name="qualification">B.Ed. English Literature</field>
+            <field name="experience_years">8</field>
+            <field name="phone">+966-50-111-2002</field>
+            <field name="email">sarah.johnson@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_english')])]"/>
+        </record>
+
+        <record id="teacher_khalid" model="school.teacher">
+            <field name="name">Khalid Al-Otaibi</field>
+            <field name="qualification">M.Sc. Physics</field>
+            <field name="experience_years">15</field>
+            <field name="phone">+966-50-111-2003</field>
+            <field name="email">khalid.otaibi@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_physics'), ref('subject_science')])]"/>
+        </record>
+
+        <record id="teacher_fatima" model="school.teacher">
+            <field name="name">Fatima Al-Zahrani</field>
+            <field name="qualification">M.Sc. Chemistry</field>
+            <field name="experience_years">10</field>
+            <field name="phone">+966-50-111-2004</field>
+            <field name="email">fatima.zahrani@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_chemistry'), ref('subject_biology')])]"/>
+        </record>
+
+        <record id="teacher_omar" model="school.teacher">
+            <field name="name">Omar Al-Harbi</field>
+            <field name="qualification">B.A. History &amp; Geography</field>
+            <field name="experience_years">7</field>
+            <field name="phone">+966-50-111-2005</field>
+            <field name="email">omar.harbi@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_history'), ref('subject_geography')])]"/>
+        </record>
+
+        <record id="teacher_nadia" model="school.teacher">
+            <field name="name">Nadia Al-Shamsi</field>
+            <field name="qualification">B.Ed. Arabic Language</field>
+            <field name="experience_years">9</field>
+            <field name="phone">+966-50-111-2006</field>
+            <field name="email">nadia.shamsi@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_arabic')])]"/>
+        </record>
+
+        <record id="teacher_james" model="school.teacher">
+            <field name="name">James Carter</field>
+            <field name="qualification">B.Sc. Computer Science</field>
+            <field name="experience_years">5</field>
+            <field name="phone">+966-50-111-2007</field>
+            <field name="email">james.carter@school.edu</field>
+            <field name="subject_ids" eval="[(6, 0, [ref('subject_ict')])]"/>
+        </record>
+
+        <!-- ============================================================
+             CLASSES
+        ============================================================ -->
+        <record id="class_grade7a" model="school.class">
+            <field name="name">Grade 7-A</field>
+            <field name="code">G7A</field>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="teacher_id" ref="teacher_ahmed"/>
+            <field name="room_id" ref="room_101"/>
+            <field name="capacity">35</field>
+            <field name="subject_ids" eval="[(6, 0, [
+                ref('subject_math'),
+                ref('subject_english'),
+                ref('subject_science'),
+                ref('subject_history'),
+                ref('subject_geography'),
+                ref('subject_arabic'),
+                ref('subject_ict'),
+            ])]"/>
+        </record>
+
+        <record id="class_grade7b" model="school.class">
+            <field name="name">Grade 7-B</field>
+            <field name="code">G7B</field>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="teacher_id" ref="teacher_sarah"/>
+            <field name="room_id" ref="room_102"/>
+            <field name="capacity">35</field>
+            <field name="subject_ids" eval="[(6, 0, [
+                ref('subject_math'),
+                ref('subject_english'),
+                ref('subject_science'),
+                ref('subject_history'),
+                ref('subject_geography'),
+                ref('subject_arabic'),
+                ref('subject_ict'),
+            ])]"/>
+        </record>
+
+        <record id="class_grade8a" model="school.class">
+            <field name="name">Grade 8-A</field>
+            <field name="code">G8A</field>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="teacher_id" ref="teacher_khalid"/>
+            <field name="room_id" ref="room_201"/>
+            <field name="capacity">30</field>
+            <field name="subject_ids" eval="[(6, 0, [
+                ref('subject_math'),
+                ref('subject_english'),
+                ref('subject_physics'),
+                ref('subject_chemistry'),
+                ref('subject_history'),
+                ref('subject_arabic'),
+                ref('subject_ict'),
+            ])]"/>
+        </record>
+
+        <record id="class_grade9a" model="school.class">
+            <field name="name">Grade 9-A</field>
+            <field name="code">G9A</field>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="teacher_id" ref="teacher_fatima"/>
+            <field name="room_id" ref="room_202"/>
+            <field name="capacity">30</field>
+            <field name="subject_ids" eval="[(6, 0, [
+                ref('subject_math'),
+                ref('subject_english'),
+                ref('subject_physics'),
+                ref('subject_chemistry'),
+                ref('subject_biology'),
+                ref('subject_arabic'),
+                ref('subject_ict'),
+            ])]"/>
+        </record>
+
+        <!-- ============================================================
+             TRANSPORT
+        ============================================================ -->
+        <record id="vehicle_bus1" model="school.transport.vehicle">
+            <field name="name">School Bus 1</field>
+            <field name="plate_number">ABC-1001</field>
+            <field name="capacity">45</field>
+            <field name="driver_name">Mohammed Al-Ghamdi</field>
+            <field name="driver_phone">+966-55-321-0001</field>
+        </record>
+
+        <record id="vehicle_bus2" model="school.transport.vehicle">
+            <field name="name">School Bus 2</field>
+            <field name="plate_number">ABC-1002</field>
+            <field name="capacity">45</field>
+            <field name="driver_name">Abdullah Al-Dosari</field>
+            <field name="driver_phone">+966-55-321-0002</field>
+        </record>
+
+        <record id="vehicle_van1" model="school.transport.vehicle">
+            <field name="name">Mini Van 1</field>
+            <field name="plate_number">XYZ-2001</field>
+            <field name="capacity">15</field>
+            <field name="driver_name">Sami Al-Rasheed</field>
+            <field name="driver_phone">+966-55-321-0003</field>
+        </record>
+
+        <record id="route_north" model="school.transport.route">
+            <field name="name">Route A - North District</field>
+            <field name="vehicle_id" ref="vehicle_bus1"/>
+            <field name="pickup_time">7:00 AM</field>
+            <field name="dropoff_time">2:30 PM</field>
+            <field name="stops">Al-Noor Area, Al-Salam Street, Al-Faisal Square, School Gate</field>
+        </record>
+
+        <record id="route_south" model="school.transport.route">
+            <field name="name">Route B - South District</field>
+            <field name="vehicle_id" ref="vehicle_bus2"/>
+            <field name="pickup_time">6:45 AM</field>
+            <field name="dropoff_time">2:45 PM</field>
+            <field name="stops">Al-Andalus, Prince Sultan Road, Al-Rawabi, School Gate</field>
+        </record>
+
+        <record id="route_east" model="school.transport.route">
+            <field name="name">Route C - East District</field>
+            <field name="vehicle_id" ref="vehicle_van1"/>
+            <field name="pickup_time">7:15 AM</field>
+            <field name="dropoff_time">2:15 PM</field>
+            <field name="stops">Al-Hamra, Al-Waha, School Gate</field>
+        </record>
+
+        <!-- ============================================================
+             HOSTEL
+        ============================================================ -->
+        <record id="hostel_boys" model="school.hostel">
+            <field name="name">Boys Hostel</field>
+            <field name="hostel_type">boys</field>
+            <field name="warden_name">Hassan Al-Mutairi</field>
+            <field name="warden_phone">+966-50-444-0001</field>
+        </record>
+
+        <record id="hostel_girls" model="school.hostel">
+            <field name="name">Girls Hostel</field>
+            <field name="hostel_type">girls</field>
+            <field name="warden_name">Maha Al-Qahtani</field>
+            <field name="warden_phone">+966-50-444-0002</field>
+        </record>
+
+        <!-- Boys Hostel Rooms -->
+        <record id="hostel_boys_room101" model="school.hostel.room">
+            <field name="name">B-101</field>
+            <field name="hostel_id" ref="hostel_boys"/>
+            <field name="room_type">double</field>
+            <field name="capacity">2</field>
+            <field name="floor">1</field>
+            <field name="monthly_fee">800</field>
+        </record>
+
+        <record id="hostel_boys_room102" model="school.hostel.room">
+            <field name="name">B-102</field>
+            <field name="hostel_id" ref="hostel_boys"/>
+            <field name="room_type">double</field>
+            <field name="capacity">2</field>
+            <field name="floor">1</field>
+            <field name="monthly_fee">800</field>
+        </record>
+
+        <record id="hostel_boys_room201" model="school.hostel.room">
+            <field name="name">B-201</field>
+            <field name="hostel_id" ref="hostel_boys"/>
+            <field name="room_type">triple</field>
+            <field name="capacity">3</field>
+            <field name="floor">2</field>
+            <field name="monthly_fee">650</field>
+        </record>
+
+        <!-- Girls Hostel Rooms -->
+        <record id="hostel_girls_room101" model="school.hostel.room">
+            <field name="name">G-101</field>
+            <field name="hostel_id" ref="hostel_girls"/>
+            <field name="room_type">single</field>
+            <field name="capacity">1</field>
+            <field name="floor">1</field>
+            <field name="monthly_fee">1000</field>
+        </record>
+
+        <record id="hostel_girls_room102" model="school.hostel.room">
+            <field name="name">G-102</field>
+            <field name="hostel_id" ref="hostel_girls"/>
+            <field name="room_type">double</field>
+            <field name="capacity">2</field>
+            <field name="floor">1</field>
+            <field name="monthly_fee">800</field>
+        </record>
+
+        <!-- ============================================================
+             FEE STRUCTURES - Grade 7
+        ============================================================ -->
+        <record id="fee_tuition_g7a" model="school.fee.structure">
+            <field name="name">Tuition Fee - Grade 7-A (2024-2025)</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">tuition</field>
+            <field name="amount">5000</field>
+            <field name="due_date">2024-10-01</field>
+        </record>
+
+        <record id="fee_exam_g7a" model="school.fee.structure">
+            <field name="name">Exam Fee - Grade 7-A (2024-2025)</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">exam</field>
+            <field name="amount">500</field>
+            <field name="due_date">2024-11-01</field>
+        </record>
+
+        <record id="fee_library_g7a" model="school.fee.structure">
+            <field name="name">Library Fee - Grade 7-A (2024-2025)</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">library</field>
+            <field name="amount">200</field>
+            <field name="due_date">2024-10-01</field>
+        </record>
+
+        <record id="fee_tuition_g7b" model="school.fee.structure">
+            <field name="name">Tuition Fee - Grade 7-B (2024-2025)</field>
+            <field name="class_id" ref="class_grade7b"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">tuition</field>
+            <field name="amount">5000</field>
+            <field name="due_date">2024-10-01</field>
+        </record>
+
+        <record id="fee_exam_g7b" model="school.fee.structure">
+            <field name="name">Exam Fee - Grade 7-B (2024-2025)</field>
+            <field name="class_id" ref="class_grade7b"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">exam</field>
+            <field name="amount">500</field>
+            <field name="due_date">2024-11-01</field>
+        </record>
+
+        <record id="fee_tuition_g8a" model="school.fee.structure">
+            <field name="name">Tuition Fee - Grade 8-A (2024-2025)</field>
+            <field name="class_id" ref="class_grade8a"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">tuition</field>
+            <field name="amount">5500</field>
+            <field name="due_date">2024-10-01</field>
+        </record>
+
+        <record id="fee_exam_g8a" model="school.fee.structure">
+            <field name="name">Exam Fee - Grade 8-A (2024-2025)</field>
+            <field name="class_id" ref="class_grade8a"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">exam</field>
+            <field name="amount">600</field>
+            <field name="due_date">2024-11-01</field>
+        </record>
+
+        <record id="fee_tuition_g9a" model="school.fee.structure">
+            <field name="name">Tuition Fee - Grade 9-A (2024-2025)</field>
+            <field name="class_id" ref="class_grade9a"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="fee_type">tuition</field>
+            <field name="amount">6000</field>
+            <field name="due_date">2024-10-01</field>
+        </record>
+
+        <!-- ============================================================
+             STUDENTS - Grade 7-A (6 students)
+        ============================================================ -->
+        <record id="student_ali" model="school.student">
+            <field name="name">Ali Hassan Al-Mansouri</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="date_of_birth">2012-03-15</field>
+            <field name="gender">male</field>
+            <field name="blood_group">A+</field>
+            <field name="phone">+966-50-200-1001</field>
+            <field name="email">ali.mansouri@student.edu</field>
+            <field name="address">12 Al-Noor Street, North District</field>
+            <field name="father_name">Hassan Al-Mansouri</field>
+            <field name="father_phone">+966-50-300-1001</field>
+            <field name="father_occupation">Engineer</field>
+            <field name="mother_name">Layla Al-Mansouri</field>
+            <field name="mother_phone">+966-50-300-1002</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_north"/>
+        </record>
+
+        <record id="student_sara" model="school.student">
+            <field name="name">Sara Ahmed Al-Khalidi</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="date_of_birth">2012-07-22</field>
+            <field name="gender">female</field>
+            <field name="blood_group">B+</field>
+            <field name="phone">+966-50-200-1002</field>
+            <field name="email">sara.khalidi@student.edu</field>
+            <field name="address">25 Al-Salam Street, North District</field>
+            <field name="father_name">Ahmed Al-Khalidi</field>
+            <field name="father_phone">+966-50-300-1003</field>
+            <field name="father_occupation">Doctor</field>
+            <field name="mother_name">Hana Al-Khalidi</field>
+            <field name="mother_phone">+966-50-300-1004</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_north"/>
+        </record>
+
+        <record id="student_omar" model="school.student">
+            <field name="name">Omar Khalid Al-Enezi</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="date_of_birth">2011-11-05</field>
+            <field name="gender">male</field>
+            <field name="blood_group">O+</field>
+            <field name="phone">+966-50-200-1003</field>
+            <field name="email">omar.enezi@student.edu</field>
+            <field name="address">7 Prince Fahad Road, South District</field>
+            <field name="father_name">Khalid Al-Enezi</field>
+            <field name="father_phone">+966-50-300-1005</field>
+            <field name="father_occupation">Businessman</field>
+            <field name="mother_name">Reem Al-Enezi</field>
+            <field name="mother_phone">+966-50-300-1006</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <record id="student_lina" model="school.student">
+            <field name="name">Lina Mohammed Al-Qurashi</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="date_of_birth">2012-01-30</field>
+            <field name="gender">female</field>
+            <field name="blood_group">AB+</field>
+            <field name="phone">+966-50-200-1004</field>
+            <field name="email">lina.qurashi@student.edu</field>
+            <field name="address">33 Al-Andalus District, South</field>
+            <field name="father_name">Mohammed Al-Qurashi</field>
+            <field name="father_phone">+966-50-300-1007</field>
+            <field name="father_occupation">Teacher</field>
+            <field name="mother_name">Amal Al-Qurashi</field>
+            <field name="mother_phone">+966-50-300-1008</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <record id="student_yusuf" model="school.student">
+            <field name="name">Yusuf Ibrahim Al-Tamimi</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="date_of_birth">2012-05-18</field>
+            <field name="gender">male</field>
+            <field name="blood_group">O-</field>
+            <field name="phone">+966-50-200-1005</field>
+            <field name="email">yusuf.tamimi@student.edu</field>
+            <field name="address">18 Al-Hamra Street, East District</field>
+            <field name="father_name">Ibrahim Al-Tamimi</field>
+            <field name="father_phone">+966-50-300-1009</field>
+            <field name="father_occupation">Accountant</field>
+            <field name="mother_name">Nour Al-Tamimi</field>
+            <field name="mother_phone">+966-50-300-1010</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_east"/>
+        </record>
+
+        <record id="student_mariam" model="school.student">
+            <field name="name">Mariam Saad Al-Dosari</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="date_of_birth">2011-09-12</field>
+            <field name="gender">female</field>
+            <field name="blood_group">B-</field>
+            <field name="phone">+966-50-200-1006</field>
+            <field name="email">mariam.dosari@student.edu</field>
+            <field name="address">5 Al-Waha Street, East District</field>
+            <field name="father_name">Saad Al-Dosari</field>
+            <field name="father_phone">+966-50-300-1011</field>
+            <field name="father_occupation">Pilot</field>
+            <field name="mother_name">Dina Al-Dosari</field>
+            <field name="mother_phone">+966-50-300-1012</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_east"/>
+        </record>
+
+        <!-- ============================================================
+             STUDENTS - Grade 7-B (4 students)
+        ============================================================ -->
+        <record id="student_faisal" model="school.student">
+            <field name="name">Faisal Nasser Al-Shahrani</field>
+            <field name="class_id" ref="class_grade7b"/>
+            <field name="date_of_birth">2012-02-14</field>
+            <field name="gender">male</field>
+            <field name="blood_group">A-</field>
+            <field name="phone">+966-50-200-1007</field>
+            <field name="email">faisal.shahrani@student.edu</field>
+            <field name="address">10 Al-Rawabi Street, South District</field>
+            <field name="father_name">Nasser Al-Shahrani</field>
+            <field name="father_phone">+966-50-300-1013</field>
+            <field name="father_occupation">Lawyer</field>
+            <field name="mother_name">Noha Al-Shahrani</field>
+            <field name="mother_phone">+966-50-300-1014</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <record id="student_hessa" model="school.student">
+            <field name="name">Hessa Turki Al-Mutairi</field>
+            <field name="class_id" ref="class_grade7b"/>
+            <field name="date_of_birth">2012-08-09</field>
+            <field name="gender">female</field>
+            <field name="blood_group">O+</field>
+            <field name="phone">+966-50-200-1008</field>
+            <field name="email">hessa.mutairi@student.edu</field>
+            <field name="address">22 King Fahad Road, North District</field>
+            <field name="father_name">Turki Al-Mutairi</field>
+            <field name="father_phone">+966-50-300-1015</field>
+            <field name="father_occupation">Architect</field>
+            <field name="mother_name">Wafa Al-Mutairi</field>
+            <field name="mother_phone">+966-50-300-1016</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_north"/>
+        </record>
+
+        <record id="student_tariq" model="school.student">
+            <field name="name">Tariq Waleed Al-Ghamdi</field>
+            <field name="class_id" ref="class_grade7b"/>
+            <field name="date_of_birth">2011-12-20</field>
+            <field name="gender">male</field>
+            <field name="blood_group">AB-</field>
+            <field name="phone">+966-50-200-1009</field>
+            <field name="email">tariq.ghamdi@student.edu</field>
+            <field name="address">45 Al-Noor Street, North District</field>
+            <field name="father_name">Waleed Al-Ghamdi</field>
+            <field name="father_phone">+966-50-300-1017</field>
+            <field name="father_occupation">Pharmacist</field>
+            <field name="mother_name">Fatima Al-Ghamdi</field>
+            <field name="mother_phone">+966-50-300-1018</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">enrolled</field>
+            <field name="transport_route_id" ref="route_north"/>
+        </record>
+
+        <record id="student_rawan" model="school.student">
+            <field name="name">Rawan Sultan Al-Harbi</field>
+            <field name="class_id" ref="class_grade7b"/>
+            <field name="date_of_birth">2012-04-03</field>
+            <field name="gender">female</field>
+            <field name="blood_group">A+</field>
+            <field name="phone">+966-50-200-1010</field>
+            <field name="email">rawan.harbi@student.edu</field>
+            <field name="address">8 Al-Andalus District, South</field>
+            <field name="father_name">Sultan Al-Harbi</field>
+            <field name="father_phone">+966-50-300-1019</field>
+            <field name="father_occupation">Manager</field>
+            <field name="mother_name">Rana Al-Harbi</field>
+            <field name="mother_phone">+966-50-300-1020</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <!-- ============================================================
+             STUDENTS - Grade 8-A (4 students)
+        ============================================================ -->
+        <record id="student_abdulrahman" model="school.student">
+            <field name="name">Abdulrahman Fahad Al-Saud</field>
+            <field name="class_id" ref="class_grade8a"/>
+            <field name="date_of_birth">2010-06-25</field>
+            <field name="gender">male</field>
+            <field name="blood_group">B+</field>
+            <field name="phone">+966-50-200-1011</field>
+            <field name="email">abdulrahman.saud@student.edu</field>
+            <field name="address">3 Prince Sultan Road, South District</field>
+            <field name="father_name">Fahad Al-Saud</field>
+            <field name="father_phone">+966-50-300-1021</field>
+            <field name="father_occupation">Professor</field>
+            <field name="mother_name">Mona Al-Saud</field>
+            <field name="mother_phone">+966-50-300-1022</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <record id="student_noura" model="school.student">
+            <field name="name">Noura Abdullah Al-Otaibi</field>
+            <field name="class_id" ref="class_grade8a"/>
+            <field name="date_of_birth">2010-10-17</field>
+            <field name="gender">female</field>
+            <field name="blood_group">O+</field>
+            <field name="phone">+966-50-200-1012</field>
+            <field name="email">noura.otaibi@student.edu</field>
+            <field name="address">14 Al-Faisal Square, North District</field>
+            <field name="father_name">Abdullah Al-Otaibi</field>
+            <field name="father_phone">+966-50-300-1023</field>
+            <field name="father_occupation">Dentist</field>
+            <field name="mother_name">Hind Al-Otaibi</field>
+            <field name="mother_phone">+966-50-300-1024</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_north"/>
+        </record>
+
+        <record id="student_bader" model="school.student">
+            <field name="name">Bader Mansour Al-Shehri</field>
+            <field name="class_id" ref="class_grade8a"/>
+            <field name="date_of_birth">2011-02-08</field>
+            <field name="gender">male</field>
+            <field name="blood_group">A+</field>
+            <field name="phone">+966-50-200-1013</field>
+            <field name="email">bader.shehri@student.edu</field>
+            <field name="address">29 Al-Hamra Street, East District</field>
+            <field name="father_name">Mansour Al-Shehri</field>
+            <field name="father_phone">+966-50-300-1025</field>
+            <field name="father_occupation">Contractor</field>
+            <field name="mother_name">Aisha Al-Shehri</field>
+            <field name="mother_phone">+966-50-300-1026</field>
+            <field name="admission_date">2024-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_east"/>
+        </record>
+
+        <!-- ============================================================
+             STUDENTS - Grade 9-A (3 students)
+        ============================================================ -->
+        <record id="student_dalal" model="school.student">
+            <field name="name">Dalal Hamad Al-Buainain</field>
+            <field name="class_id" ref="class_grade9a"/>
+            <field name="date_of_birth">2009-08-14</field>
+            <field name="gender">female</field>
+            <field name="blood_group">AB+</field>
+            <field name="phone">+966-50-200-1014</field>
+            <field name="email">dalal.buainain@student.edu</field>
+            <field name="address">6 Al-Waha Street, East District</field>
+            <field name="father_name">Hamad Al-Buainain</field>
+            <field name="father_phone">+966-50-300-1027</field>
+            <field name="father_occupation">General Manager</field>
+            <field name="mother_name">Latifa Al-Buainain</field>
+            <field name="mother_phone">+966-50-300-1028</field>
+            <field name="admission_date">2022-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_east"/>
+        </record>
+
+        <record id="student_majed" model="school.student">
+            <field name="name">Majed Saleh Al-Zahrani</field>
+            <field name="class_id" ref="class_grade9a"/>
+            <field name="date_of_birth">2009-05-29</field>
+            <field name="gender">male</field>
+            <field name="blood_group">O+</field>
+            <field name="phone">+966-50-200-1015</field>
+            <field name="email">majed.zahrani@student.edu</field>
+            <field name="address">17 Al-Rawabi Street, South District</field>
+            <field name="father_name">Saleh Al-Zahrani</field>
+            <field name="father_phone">+966-50-300-1029</field>
+            <field name="father_occupation">Banker</field>
+            <field name="mother_name">Suha Al-Zahrani</field>
+            <field name="mother_phone">+966-50-300-1030</field>
+            <field name="admission_date">2022-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <record id="student_ghada" model="school.student">
+            <field name="name">Ghada Riad Al-Amri</field>
+            <field name="class_id" ref="class_grade9a"/>
+            <field name="date_of_birth">2009-11-03</field>
+            <field name="gender">female</field>
+            <field name="blood_group">B+</field>
+            <field name="phone">+966-50-200-1016</field>
+            <field name="email">ghada.amri@student.edu</field>
+            <field name="address">41 Prince Sultan Road, South District</field>
+            <field name="father_name">Riad Al-Amri</field>
+            <field name="father_phone">+966-50-300-1031</field>
+            <field name="father_occupation">Surgeon</field>
+            <field name="mother_name">Safa Al-Amri</field>
+            <field name="mother_phone">+966-50-300-1032</field>
+            <field name="admission_date">2022-09-01</field>
+            <field name="state">active</field>
+            <field name="transport_route_id" ref="route_south"/>
+        </record>
+
+        <!-- ============================================================
+             HOSTEL ALLOCATIONS
+        ============================================================ -->
+        <record id="hostel_alloc_yusuf" model="school.hostel.allocation">
+            <field name="student_id" ref="student_yusuf"/>
+            <field name="room_id" ref="hostel_boys_room101"/>
+            <field name="check_in">2024-09-01</field>
+            <field name="state">active</field>
+        </record>
+
+        <record id="hostel_alloc_bader" model="school.hostel.allocation">
+            <field name="student_id" ref="student_bader"/>
+            <field name="room_id" ref="hostel_boys_room101"/>
+            <field name="check_in">2024-09-01</field>
+            <field name="state">active</field>
+        </record>
+
+        <record id="hostel_alloc_majed" model="school.hostel.allocation">
+            <field name="student_id" ref="student_majed"/>
+            <field name="room_id" ref="hostel_boys_room201"/>
+            <field name="check_in">2024-09-01</field>
+            <field name="state">active</field>
+        </record>
+
+        <record id="hostel_alloc_mariam" model="school.hostel.allocation">
+            <field name="student_id" ref="student_mariam"/>
+            <field name="room_id" ref="hostel_girls_room101"/>
+            <field name="check_in">2024-09-01</field>
+            <field name="state">active</field>
+        </record>
+
+        <record id="hostel_alloc_dalal" model="school.hostel.allocation">
+            <field name="student_id" ref="student_dalal"/>
+            <field name="room_id" ref="hostel_girls_room102"/>
+            <field name="check_in">2024-09-01</field>
+            <field name="state">active</field>
+        </record>
+
+        <record id="hostel_alloc_noura" model="school.hostel.allocation">
+            <field name="student_id" ref="student_noura"/>
+            <field name="room_id" ref="hostel_girls_room102"/>
+            <field name="check_in">2024-09-01</field>
+            <field name="state">active</field>
+        </record>
+
+        <!-- ============================================================
+             EXAMS
+        ============================================================ -->
+        <!-- Grade 7-A Exams -->
+        <record id="exam_g7a_math_midterm" model="school.exam">
+            <field name="name">Mathematics Mid-Term - Grade 7-A</field>
+            <field name="exam_type">midterm</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="subject_id" ref="subject_math"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="exam_date">2024-11-15</field>
+            <field name="total_marks">100</field>
+            <field name="pass_marks">40</field>
+            <field name="state">published</field>
+        </record>
+
+        <record id="exam_g7a_eng_midterm" model="school.exam">
+            <field name="name">English Mid-Term - Grade 7-A</field>
+            <field name="exam_type">midterm</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="subject_id" ref="subject_english"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="exam_date">2024-11-17</field>
+            <field name="total_marks">100</field>
+            <field name="pass_marks">40</field>
+            <field name="state">published</field>
+        </record>
+
+        <record id="exam_g7a_sci_midterm" model="school.exam">
+            <field name="name">Science Mid-Term - Grade 7-A</field>
+            <field name="exam_type">midterm</field>
+            <field name="class_id" ref="class_grade7a"/>
+            <field name="subject_id" ref="subject_science"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="exam_date">2024-11-19</field>
+            <field name="total_marks">100</field>
+            <field name="pass_marks">40</field>
+            <field name="state">published</field>
+        </record>
+
+        <!-- Grade 8-A Exams -->
+        <record id="exam_g8a_math_midterm" model="school.exam">
+            <field name="name">Mathematics Mid-Term - Grade 8-A</field>
+            <field name="exam_type">midterm</field>
+            <field name="class_id" ref="class_grade8a"/>
+            <field name="subject_id" ref="subject_math"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="exam_date">2024-11-15</field>
+            <field name="total_marks">100</field>
+            <field name="pass_marks">40</field>
+            <field name="state">published</field>
+        </record>
+
+        <!-- Grade 9-A Final Exams -->
+        <record id="exam_g9a_physics_final" model="school.exam">
+            <field name="name">Physics Final Exam - Grade 9-A</field>
+            <field name="exam_type">final</field>
+            <field name="class_id" ref="class_grade9a"/>
+            <field name="subject_id" ref="subject_physics"/>
+            <field name="academic_year_id" ref="academic_year_2024_2025"/>
+            <field name="exam_date">2025-05-20</field>
+            <field name="total_marks">100</field>
+            <field name="pass_marks">40</field>
+            <field name="state">scheduled</field>
+        </record>
+
+        <!-- ============================================================
+             EXAM RESULTS - Grade 7-A Math Mid-Term
+        ============================================================ -->
+        <record id="result_ali_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_math_midterm"/>
+            <field name="student_id" ref="student_ali"/>
+            <field name="marks_obtained">88</field>
+            <field name="remarks">Excellent performance</field>
+        </record>
+
+        <record id="result_sara_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_math_midterm"/>
+            <field name="student_id" ref="student_sara"/>
+            <field name="marks_obtained">95</field>
+            <field name="remarks">Outstanding</field>
+        </record>
+
+        <record id="result_omar_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_math_midterm"/>
+            <field name="student_id" ref="student_omar"/>
+            <field name="marks_obtained">72</field>
+            <field name="remarks">Good effort</field>
+        </record>
+
+        <record id="result_lina_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_math_midterm"/>
+            <field name="student_id" ref="student_lina"/>
+            <field name="marks_obtained">61</field>
+            <field name="remarks">Satisfactory</field>
+        </record>
+
+        <record id="result_yusuf_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_math_midterm"/>
+            <field name="student_id" ref="student_yusuf"/>
+            <field name="marks_obtained">45</field>
+            <field name="remarks">Needs improvement</field>
+        </record>
+
+        <record id="result_mariam_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_math_midterm"/>
+            <field name="student_id" ref="student_mariam"/>
+            <field name="marks_obtained">78</field>
+            <field name="remarks">Well done</field>
+        </record>
+
+        <!-- Exam Results - Grade 7-A English Mid-Term -->
+        <record id="result_ali_eng" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_eng_midterm"/>
+            <field name="student_id" ref="student_ali"/>
+            <field name="marks_obtained">80</field>
+            <field name="remarks">Good</field>
+        </record>
+
+        <record id="result_sara_eng" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_eng_midterm"/>
+            <field name="student_id" ref="student_sara"/>
+            <field name="marks_obtained">91</field>
+            <field name="remarks">Excellent</field>
+        </record>
+
+        <record id="result_omar_eng" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_eng_midterm"/>
+            <field name="student_id" ref="student_omar"/>
+            <field name="marks_obtained">65</field>
+            <field name="remarks">Average</field>
+        </record>
+
+        <record id="result_lina_eng" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_eng_midterm"/>
+            <field name="student_id" ref="student_lina"/>
+            <field name="marks_obtained">84</field>
+            <field name="remarks">Very good</field>
+        </record>
+
+        <record id="result_yusuf_eng" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_eng_midterm"/>
+            <field name="student_id" ref="student_yusuf"/>
+            <field name="marks_obtained">38</field>
+            <field name="remarks">Did not pass, needs tutoring</field>
+        </record>
+
+        <record id="result_mariam_eng" model="school.exam.result">
+            <field name="exam_id" ref="exam_g7a_eng_midterm"/>
+            <field name="student_id" ref="student_mariam"/>
+            <field name="marks_obtained">70</field>
+            <field name="remarks">Good</field>
+        </record>
+
+        <!-- Exam Results - Grade 8-A Math Mid-Term -->
+        <record id="result_abdulrahman_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g8a_math_midterm"/>
+            <field name="student_id" ref="student_abdulrahman"/>
+            <field name="marks_obtained">92</field>
+            <field name="remarks">Excellent</field>
+        </record>
+
+        <record id="result_noura_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g8a_math_midterm"/>
+            <field name="student_id" ref="student_noura"/>
+            <field name="marks_obtained">85</field>
+            <field name="remarks">Very good</field>
+        </record>
+
+        <record id="result_bader_math" model="school.exam.result">
+            <field name="exam_id" ref="exam_g8a_math_midterm"/>
+            <field name="student_id" ref="student_bader"/>
+            <field name="marks_obtained">55</field>
+            <field name="remarks">Satisfactory</field>
+        </record>
+
+        <!-- ============================================================
+             FEE PAYMENTS
+        ============================================================ -->
+        <!-- Ali's fee payments -->
+        <record id="payment_ali_tuition" model="school.fee.payment">
+            <field name="student_id" ref="student_ali"/>
+            <field name="fee_structure_id" ref="fee_tuition_g7a"/>
+            <field name="amount">5000</field>
+            <field name="payment_date">2024-10-02</field>
+            <field name="payment_method">bank_transfer</field>
+            <field name="reference">TXN-20241002-001</field>
+            <field name="state">paid</field>
+        </record>
+
+        <record id="payment_ali_exam" model="school.fee.payment">
+            <field name="student_id" ref="student_ali"/>
+            <field name="fee_structure_id" ref="fee_exam_g7a"/>
+            <field name="amount">500</field>
+            <field name="payment_date">2024-11-03</field>
+            <field name="payment_method">cash</field>
+            <field name="state">paid</field>
+        </record>
+
+        <!-- Sara's fee payments -->
+        <record id="payment_sara_tuition" model="school.fee.payment">
+            <field name="student_id" ref="student_sara"/>
+            <field name="fee_structure_id" ref="fee_tuition_g7a"/>
+            <field name="amount">5000</field>
+            <field name="payment_date">2024-09-15</field>
+            <field name="payment_method">online</field>
+            <field name="reference">ONL-20240915-001</field>
+            <field name="state">paid</field>
+        </record>
+
+        <record id="payment_sara_exam" model="school.fee.payment">
+            <field name="student_id" ref="student_sara"/>
+            <field name="fee_structure_id" ref="fee_exam_g7a"/>
+            <field name="amount">500</field>
+            <field name="payment_date">2024-10-20</field>
+            <field name="payment_method">online</field>
+            <field name="state">paid</field>
+        </record>
+
+        <!-- Omar's fee payment - partial (tuition only) -->
+        <record id="payment_omar_tuition" model="school.fee.payment">
+            <field name="student_id" ref="student_omar"/>
+            <field name="fee_structure_id" ref="fee_tuition_g7a"/>
+            <field name="amount">5000</field>
+            <field name="payment_date">2024-10-10</field>
+            <field name="payment_method">cheque</field>
+            <field name="reference">CHQ-20241010-001</field>
+            <field name="state">paid</field>
+        </record>
+
+        <!-- Abdulrahman Grade 8 -->
+        <record id="payment_abdulrahman_tuition" model="school.fee.payment">
+            <field name="student_id" ref="student_abdulrahman"/>
+            <field name="fee_structure_id" ref="fee_tuition_g8a"/>
+            <field name="amount">5500</field>
+            <field name="payment_date">2024-09-20</field>
+            <field name="payment_method">bank_transfer</field>
+            <field name="reference">TXN-20240920-001</field>
+            <field name="state">paid</field>
+        </record>
+
+        <!-- Dalal Grade 9 -->
+        <record id="payment_dalal_tuition" model="school.fee.payment">
+            <field name="student_id" ref="student_dalal"/>
+            <field name="fee_structure_id" ref="fee_tuition_g9a"/>
+            <field name="amount">6000</field>
+            <field name="payment_date">2024-09-25</field>
+            <field name="payment_method">online</field>
+            <field name="reference">ONL-20240925-001</field>
+            <field name="state">paid</field>
+        </record>
+
+        <!-- Pending payment (draft) -->
+        <record id="payment_yusuf_tuition" model="school.fee.payment">
+            <field name="student_id" ref="student_yusuf"/>
+            <field name="fee_structure_id" ref="fee_tuition_g7a"/>
+            <field name="amount">5000</field>
+            <field name="payment_date">2024-10-15</field>
+            <field name="payment_method">cash</field>
+            <field name="state">draft</field>
+            <field name="note">Awaiting confirmation from parent</field>
+        </record>
+
+        <!-- ============================================================
+             ATTENDANCE RECORDS
+        ============================================================ -->
+        <!-- Ali attendance -->
+        <record id="att_ali_20241101" model="school.attendance">
+            <field name="student_id" ref="student_ali"/>
+            <field name="date">2024-11-01</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_ali_20241104" model="school.attendance">
+            <field name="student_id" ref="student_ali"/>
+            <field name="date">2024-11-04</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_ali_20241105" model="school.attendance">
+            <field name="student_id" ref="student_ali"/>
+            <field name="date">2024-11-05</field>
+            <field name="state">absent</field>
+            <field name="note">Sick leave</field>
+        </record>
+        <record id="att_ali_20241106" model="school.attendance">
+            <field name="student_id" ref="student_ali"/>
+            <field name="date">2024-11-06</field>
+            <field name="state">present</field>
+        </record>
+
+        <!-- Sara attendance -->
+        <record id="att_sara_20241101" model="school.attendance">
+            <field name="student_id" ref="student_sara"/>
+            <field name="date">2024-11-01</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_sara_20241104" model="school.attendance">
+            <field name="student_id" ref="student_sara"/>
+            <field name="date">2024-11-04</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_sara_20241105" model="school.attendance">
+            <field name="student_id" ref="student_sara"/>
+            <field name="date">2024-11-05</field>
+            <field name="state">present</field>
+        </record>
+
+        <!-- Omar attendance -->
+        <record id="att_omar_20241101" model="school.attendance">
+            <field name="student_id" ref="student_omar"/>
+            <field name="date">2024-11-01</field>
+            <field name="state">late</field>
+            <field name="note">Arrived 15 minutes late</field>
+        </record>
+        <record id="att_omar_20241104" model="school.attendance">
+            <field name="student_id" ref="student_omar"/>
+            <field name="date">2024-11-04</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_omar_20241105" model="school.attendance">
+            <field name="student_id" ref="student_omar"/>
+            <field name="date">2024-11-05</field>
+            <field name="state">excused</field>
+            <field name="note">Family emergency</field>
+        </record>
+
+        <!-- Abdulrahman attendance -->
+        <record id="att_abdulrahman_20241101" model="school.attendance">
+            <field name="student_id" ref="student_abdulrahman"/>
+            <field name="date">2024-11-01</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_abdulrahman_20241104" model="school.attendance">
+            <field name="student_id" ref="student_abdulrahman"/>
+            <field name="date">2024-11-04</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_abdulrahman_20241105" model="school.attendance">
+            <field name="student_id" ref="student_abdulrahman"/>
+            <field name="date">2024-11-05</field>
+            <field name="state">present</field>
+        </record>
+
+        <!-- Dalal attendance -->
+        <record id="att_dalal_20241101" model="school.attendance">
+            <field name="student_id" ref="student_dalal"/>
+            <field name="date">2024-11-01</field>
+            <field name="state">present</field>
+        </record>
+        <record id="att_dalal_20241104" model="school.attendance">
+            <field name="student_id" ref="student_dalal"/>
+            <field name="date">2024-11-04</field>
+            <field name="state">absent</field>
+            <field name="note">Medical appointment</field>
+        </record>
+        <record id="att_dalal_20241105" model="school.attendance">
+            <field name="student_id" ref="student_dalal"/>
+            <field name="date">2024-11-05</field>
+            <field name="state">present</field>
+        </record>
+
+    </data>
+</odoo>

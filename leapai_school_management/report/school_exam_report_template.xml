@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_school_exam_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <h2>Examination Result Card</h2>
+                                <hr/>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold" style="width:20%">Exam Name</td>
+                                            <td><t t-esc="o.name"/></td>
+                                            <td class="fw-bold" style="width:20%">Exam Type</td>
+                                            <td><t t-esc="dict(o._fields['exam_type'].selection).get(o.exam_type, '')"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Class</td>
+                                            <td><t t-esc="o.class_id.name if o.class_id else ''"/></td>
+                                            <td class="fw-bold">Subject</td>
+                                            <td><t t-esc="o.subject_id.name if o.subject_id else ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Exam Date</td>
+                                            <td><t t-esc="o.exam_date or ''"/></td>
+                                            <td class="fw-bold">Academic Year</td>
+                                            <td><t t-esc="o.academic_year_id.name if o.academic_year_id else ''"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Total Marks</td>
+                                            <td><t t-esc="o.total_marks"/></td>
+                                            <td class="fw-bold">Pass Marks</td>
+                                            <td><t t-esc="o.pass_marks"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h4>Results</h4>
+                                <table class="table table-bordered table-striped">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th style="width:5%">#</th>
+                                            <th>Student Name</th>
+                                            <th>Student ID</th>
+                                            <th class="text-center">Marks Obtained</th>
+                                            <th class="text-center">Total Marks</th>
+                                            <th class="text-center">Percentage</th>
+                                            <th class="text-center">Grade</th>
+                                            <th class="text-center">Result</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="o.result_ids" t-as="r">
+                                            <tr>
+                                                <td><t t-esc="r_index + 1"/></td>
+                                                <td><t t-esc="r.student_id.name"/></td>
+                                                <td><t t-esc="r.student_id.code or ''"/></td>
+                                                <td class="text-center"><t t-esc="r.marks_obtained"/></td>
+                                                <td class="text-center"><t t-esc="o.total_marks"/></td>
+                                                <td class="text-center"><t t-esc="'{:.1f}%'.format(r.percentage)"/></td>
+                                                <td class="text-center fw-bold"><t t-esc="r.grade or ''"/></td>
+                                                <td class="text-center">
+                                                    <t t-if="r.result_state == 'pass'">
+                                                        <span style="color:green; font-weight:bold;">PASS</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span style="color:red; font-weight:bold;">FAIL</span>
+                                                    </t>
+                                                </td>
+                                                <td><t t-esc="r.remarks or ''"/></td>
+                                            </tr>
+                                        </t>
+                                        <t t-if="not o.result_ids">
+                                            <tr>
+                                                <td colspan="9" class="text-center text-muted">No results recorded</td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <table class="table table-bordered">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th colspan="4">Summary</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold">Total Students</td>
+                                            <td><t t-esc="len(o.result_ids)"/></td>
+                                            <td class="fw-bold">Passed</td>
+                                            <td><t t-esc="len(o.result_ids.filtered(lambda r: r.result_state == 'pass'))"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">Failed</td>
+                                            <td><t t-esc="len(o.result_ids.filtered(lambda r: r.result_state == 'fail'))"/></td>
+                                            <td class="fw-bold">Pass Rate</td>
+                                            <td>
+                                                <t t-if="o.result_ids">
+                                                    <t t-esc="'{:.1f}%'.format(len(o.result_ids.filtered(lambda r: r.result_state == 'pass')) / len(o.result_ids) * 100)"/>
+                                                </t>
+                                                <t t-else="">N/A</t>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-4 text-center">
+                                <div style="border-top:1px solid #000; padding-top:5px;">Class Teacher</div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="border-top:1px solid #000; padding-top:5px;">Head of Department</div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="border-top:1px solid #000; padding-top:5px;">Principal</div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

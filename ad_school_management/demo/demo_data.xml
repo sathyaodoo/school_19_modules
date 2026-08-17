@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <record id="product_tuition_fee" model="product.product">
+            <field name="name">School Tuition Fee</field>
+            <field name="type">service</field>
+            <field name="lst_price">1500.00</field>
+            <field name="default_code">SCH-TUIT</field>
+        </record>
+
+        <record id="product_library_fee" model="product.product">
+            <field name="name">Library Membership Fee</field>
+            <field name="type">service</field>
+            <field name="lst_price">100.00</field>
+            <field name="default_code">SCH-LIB</field>
+        </record>
+
+        <record id="product_transport_fee" model="product.product">
+            <field name="name">Transport Monthly Fee</field>
+            <field name="type">service</field>
+            <field name="lst_price">200.00</field>
+            <field name="default_code">SCH-TRANS</field>
+        </record>
+
+        <record id="demo_academic_year" model="school.academic.year">
+            <field name="name">Academic Year 2026</field>
+            <field name="code">AY2026</field>
+            <field name="date_start">2026-01-01</field>
+            <field name="date_end">2026-12-31</field>
+            <field name="state">open</field>
+        </record>
+
+        <record id="demo_term_1" model="school.academic.term">
+            <field name="name">Term 1</field>
+            <field name="academic_year_id" ref="demo_academic_year"/>
+            <field name="start_date">2026-01-01</field>
+            <field name="end_date">2026-06-30</field>
+        </record>
+
+        <record id="demo_term_2" model="school.academic.term">
+            <field name="name">Term 2</field>
+            <field name="academic_year_id" ref="demo_academic_year"/>
+            <field name="start_date">2026-07-01</field>
+            <field name="end_date">2026-12-31</field>
+        </record>
+
+        <record id="demo_class_10" model="school.class">
+            <field name="name">Class 10</field>
+            <field name="code">C10</field>
+        </record>
+
+        <record id="demo_section_10a" model="school.section">
+            <field name="name">Section A</field>
+            <field name="class_id" ref="demo_class_10"/>
+            <field name="capacity">30</field>
+        </record>
+
+        <record id="demo_subject_math" model="school.subject">
+            <field name="name">Mathematics</field>
+            <field name="code">MATH10</field>
+            <field name="class_ids" eval="[(4, ref('demo_class_10'))]"/>
+        </record>
+
+        <record id="demo_subject_science" model="school.subject">
+            <field name="name">Science</field>
+            <field name="code">SCI10</field>
+            <field name="class_ids" eval="[(4, ref('demo_class_10'))]"/>
+        </record>
+
+        <record id="grade_ap" model="school.grade">
+            <field name="grade">A+</field>
+            <field name="min_mark">90.0</field>
+            <field name="max_mark">100.0</field>
+            <field name="grade_point">4.0</field>
+        </record>
+
+        <record id="grade_a" model="school.grade">
+            <field name="grade">A</field>
+            <field name="min_mark">80.0</field>
+            <field name="max_mark">89.99</field>
+            <field name="grade_point">3.7</field>
+        </record>
+
+        <record id="grade_b" model="school.grade">
+            <field name="grade">B</field>
+            <field name="min_mark">70.0</field>
+            <field name="max_mark">79.99</field>
+            <field name="grade_point">3.0</field>
+        </record>
+
+        <record id="grade_c" model="school.grade">
+            <field name="grade">C</field>
+            <field name="min_mark">50.0</field>
+            <field name="max_mark">69.99</field>
+            <field name="grade_point">2.0</field>
+        </record>
+
+        <record id="grade_f" model="school.grade">
+            <field name="grade">F</field>
+            <field name="min_mark">0.0</field>
+            <field name="max_mark">49.99</field>
+            <field name="grade_point">0.0</field>
+        </record>
+
+        <record id="demo_fee_structure" model="school.fee.structure">
+            <field name="name">Class 10 Fee Plan</field>
+            <field name="code">FS-G10</field>
+            <field name="academic_year_id" ref="demo_academic_year"/>
+        </record>
+
+        <record id="demo_fee_line_1" model="school.fee.structure.line">
+            <field name="fee_structure_id" ref="demo_fee_structure"/>
+            <field name="name">Tuition Fee</field>
+            <field name="product_id" ref="product_tuition_fee"/>
+            <field name="amount">1500.00</field>
+        </record>
+
+        <record id="demo_fee_line_2" model="school.fee.structure.line">
+            <field name="fee_structure_id" ref="demo_fee_structure"/>
+            <field name="name">Library Fee</field>
+            <field name="product_id" ref="product_library_fee"/>
+            <field name="amount">100.00</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_class_tree" model="ir.ui.view">
+        <field name="name">school.class.tree</field>
+        <field name="model">school.class</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="class_teacher_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_class_form" model="ir.ui.view">
+        <field name="name">school.class.form</field>
+        <field name="model">school.class</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Grade 10"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="e.g. G10"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="class_teacher_id"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Sections" name="sections">
+                            <field name="section_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="capacity"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Teachers" name="teachers">
+                            <field name="teacher_ids" widget="many2many_tags"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_class_search" model="ir.ui.view">
+        <field name="name">school.class.search</field>
+        <field name="model">school.class</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="class_teacher_id"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_class" model="ir.actions.act_window">
+        <field name="name">Classes</field>
+        <field name="res_model">school.class</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_class_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Class!
+            </p>
+        </field>
+    </record>
+</odoo>

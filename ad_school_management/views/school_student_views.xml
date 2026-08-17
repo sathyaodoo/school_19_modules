@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_student_tree" model="ir.ui.view">
+        <field name="name">school.student.tree</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="admission_no"/>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="roll_number"/>
+                <field name="student_status" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_student_kanban" model="ir.ui.view">
+        <field name="name">school.student.kanban</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="admission_no"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="roll_number"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click o_kanban_record_has_image_fill">
+                            <div class="o_kanban_image_fill_left d-none d-md-block"
+                                 t-attf-style="background-image:url('#{kanban_image('school.student', 'photo', record.id.raw_value)}')"/>
+                            <div class="oe_kanban_details">
+                                <strong class="o_kanban_record_title"><field name="name"/></strong>
+                                <div>Admission No: <field name="admission_no"/></div>
+                                <div>Class: <field name="class_id"/> - <field name="section_id"/></div>
+                                <div>Roll No: <field name="roll_number"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+ 
+    <record id="view_school_student_form" model="ir.ui.view">
+        <field name="name">school.student.form</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="student_status" widget="statusbar" statusbar_visible="draft,approved,enrolled,promoted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_partner"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-user"
+                                string="Contact Profile">
+                        </button>
+                    </div>
+                    <field name="photo" widget="image" class="oe_avatar" options="{'zoom': true, 'preview_image': 'photo'}"/>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="Student Name" required="1"/>
+                        </h1>
+                        <h3>
+                            <field name="admission_no" readonly="1" class="oe_inline"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="Academic Information">
+                            <field name="academic_year_id"/>
+                            <field name="class_id"/>
+                            <field name="section_id"/>
+                            <field name="roll_number"/>
+                            <field name="gpa" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Contact Information">
+                            <field name="email"/>
+                            <field name="phone"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Personal Info" name="personal_info">
+                            <group>
+                                <group>
+                                    <field name="date_of_birth"/>
+                                    <field name="gender"/>
+                                    <field name="blood_group"/>
+                                    <field name="nationality_id"/>
+                                </group>
+                                <group>
+                                    <field name="religion"/>
+                                    <field name="caste"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Parents &amp; Guardians" name="parents">
+                            <field name="parent_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="relation"/>
+                                    <field name="phone"/>
+                                    <field name="email"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Facilities" name="facilities">
+                            <group>
+                                <group string="Transport">
+                                    <field name="transport_route_id"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Medical &amp; Notes" name="medical_notes">
+                            <group>
+                                <field name="emergency_contact"/>
+                                <field name="medical_notes" placeholder="Any allergies, chronic illnesses, or general medical notes..."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_student_search" model="ir.ui.view">
+        <field name="name">school.student.search</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" filter_domain="['|', ('name', 'ilike', self), ('admission_no', 'ilike', self)]"/>
+                <field name="admission_no"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <filter string="Enrolled" name="enrolled" domain="[('student_status', '=', 'enrolled')]"/>
+                <filter string="Alumni" name="alumni" domain="[('student_status', '=', 'alumni')]"/>
+                <group>
+                    <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Section" name="group_by_section" context="{'group_by': 'section_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_student" model="ir.actions.act_window">
+        <field name="name">Students</field>
+        <field name="res_model">school.student</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="view_school_student_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register a new student!
+            </p>
+        </field>
+    </record>
+</odoo>

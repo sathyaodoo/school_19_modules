@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="ad_school_management.SchoolDashboard">
+        <div class="o_school_dashboard">
+            
+            <div class="dashboard_header d-flex justify-content-between align-items-center mb-4 p-3 bg-white shadow-sm rounded">
+                <div>
+                    <h1 class="h3 font-weight-bold text-dark mb-1">School Administration Dashboard</h1>
+                    <p class="text-muted mb-0">Overview of academics, personnel, operations, and financials.</p>
+                </div>
+                <button class="btn btn-primary d-flex align-items-center gap-2" t-on-click="loadStats">
+                    <i class="fa fa-refresh"/> Refresh Dashboard
+                </button>
+            </div>
+
+            <div t-if="state.loading" class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+
+            <div t-else="" class="dashboard_content">
+                
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card kpi_card border-0 shadow-sm rounded bg-gradient-primary text-white h-100" t-on-click="() => this.openStudents()">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-uppercase text-white-50 font-weight-bold mb-1">Total Students</h6>
+                                    <h2 class="font-weight-bold mb-0" t-out="state.stats.students.total"/>
+                                    <small class="text-white-50">Click to view all</small>
+                                </div>
+                                <div class="icon_box bg-white-20 rounded-circle p-3">
+                                    <i class="fa fa-graduation-cap fa-2x"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card kpi_card border-0 shadow-sm rounded bg-gradient-success text-white h-100" t-on-click="() => this.openTeachers()">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-uppercase text-white-50 font-weight-bold mb-1">Faculty Members</h6>
+                                    <h2 class="font-weight-bold mb-0" t-out="state.stats.faculty_parents.teachers"/>
+                                    <small class="text-white-50">Click to view all</small>
+                                </div>
+                                <div class="icon_box bg-white-20 rounded-circle p-3">
+                                    <i class="fa fa-users fa-2x"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card kpi_card border-0 shadow-sm rounded bg-gradient-warning text-white h-100" t-on-click="() => this.openAdmissions('submitted')">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-uppercase text-white-50 font-weight-bold mb-1">Pending Admissions</h6>
+                                    <h2 class="font-weight-bold mb-0" t-out="state.stats.admissions.pending"/>
+                                    <small class="text-white-50">Click to review</small>
+                                </div>
+                                <div class="icon_box bg-white-20 rounded-circle p-3">
+                                    <i class="fa fa-file-text-o fa-2x"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card kpi_card border-0 shadow-sm rounded bg-gradient-info text-white h-100" t-on-click="() => this.openView('school.attendance', 'list,form', [], 'Student Attendance')">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-uppercase text-white-50 font-weight-bold mb-1">Today's Attendance</h6>
+                                    <h2 class="font-weight-bold mb-0"><t t-out="state.stats.attendance.rate"/>%</h2>
+                                    <small class="text-white-50">Rate based on logs</small>
+                                </div>
+                                <div class="icon_box bg-white-20 rounded-circle p-3">
+                                    <i class="fa fa-check-square-o fa-2x"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm rounded bg-white h-100">
+                            <div class="card-header border-0 bg-transparent py-3">
+                                <h5 class="card-title font-weight-bold text-dark mb-0">Academic &amp; Student Insights</h5>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-circle bg-light-primary text-primary rounded-circle p-2">
+                                                <i class="fa fa-user"/>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 font-weight-semibold">Enrolled Students</h6>
+                                                <small class="text-muted">Currently pursuing courses</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-pill bg-light-primary text-primary px-3 py-2 font-weight-bold cursor-pointer" t-on-click="() => this.openStudents('enrolled')">
+                                            <t t-out="state.stats.students.enrolled"/>
+                                        </span>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-circle bg-light-success text-success rounded-circle p-2">
+                                                <i class="fa fa-arrow-circle-up"/>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 font-weight-semibold">Promoted Students</h6>
+                                                <small class="text-muted">Awaiting next term registration</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-pill bg-light-success text-success px-3 py-2 font-weight-bold cursor-pointer" t-on-click="() => this.openStudents('promoted')">
+                                            <t t-out="state.stats.students.promoted"/>
+                                        </span>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-circle bg-light-warning text-warning rounded-circle p-2">
+                                                <i class="fa fa-pencil"/>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 font-weight-semibold">New Applications (Draft)</h6>
+                                                <small class="text-muted">Draft admissions in registry</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-pill bg-light-warning text-warning px-3 py-2 font-weight-bold cursor-pointer" t-on-click="() => this.openAdmissions('draft')">
+                                            <t t-out="state.stats.students.draft"/>
+                                        </span>
+                                    </div>
+                                    <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-circle bg-light-info text-info rounded-circle p-2">
+                                                <i class="fa fa-child"/>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 font-weight-semibold">Parents / Guardians</h6>
+                                                <small class="text-muted">Registered parent profiles</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-pill bg-light-info text-info px-3 py-2 font-weight-bold cursor-pointer" t-on-click="() => this.openParents()">
+                                            <t t-out="state.stats.faculty_parents.parents"/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm rounded bg-white h-100" t-on-click="() => this.openFees()">
+                            <div class="card-header border-0 bg-transparent py-3">
+                                <h5 class="card-title font-weight-bold text-dark mb-0">Fee Collections &amp; Financials</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-muted font-weight-semibold">Collection Rate</span>
+                                        <span class="font-weight-bold text-success"><t t-out="state.stats.finance.collection_rate"/>%</span>
+                                    </div>
+                                    <div class="progress rounded-pill" style="height: 12px;">
+                                        <div class="progress-bar bg-success rounded-pill" role="progressbar" t-attf-style="width: #{state.stats.finance.collection_rate}%;" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"/>
+                                    </div>
+                                </div>
+
+                                <div class="row text-center mt-3">
+                                    <div class="col-6 border-right">
+                                        <h4 class="font-weight-bold text-success mb-1">$<t t-out="state.stats.finance.paid.toFixed(2)"/></h4>
+                                        <span class="text-uppercase text-muted font-weight-bold small">Total Fees Collected</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="font-weight-bold text-danger mb-1">$<t t-out="state.stats.finance.outstanding.toFixed(2)"/></h4>
+                                        <span class="text-uppercase text-muted font-weight-bold small">Outstanding Invoices</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    
+                    <t t-if="state.stats.has_hostel">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm rounded bg-white h-100" t-on-click="() => this.openHostel()">
+                                <div class="card-header border-0 bg-transparent py-3">
+                                    <h5 class="card-title font-weight-bold text-dark mb-0">Hostel Occupancy &amp; Beds</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted font-weight-semibold">Bed Occupancy Rate</span>
+                                            <span class="font-weight-bold text-primary"><t t-out="state.stats.hostel.occupancy_rate"/>%</span>
+                                        </div>
+                                        <div class="progress rounded-pill" style="height: 12px;">
+                                            <div class="progress-bar bg-primary rounded-pill" role="progressbar" t-attf-style="width: #{state.stats.hostel.occupancy_rate}%;"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-center mt-3">
+                                        <div class="col-4 border-right">
+                                            <h4 class="font-weight-bold text-dark mb-1"><t t-out="state.stats.hostel.total_beds"/></h4>
+                                            <span class="text-uppercase text-muted font-weight-bold small">Total Beds</span>
+                                        </div>
+                                        <div class="col-4 border-right">
+                                            <h4 class="font-weight-bold text-primary mb-1"><t t-out="state.stats.hostel.occupied_beds"/></h4>
+                                            <span class="text-uppercase text-muted font-weight-bold small">Allocated</span>
+                                        </div>
+                                        <div class="col-4">
+                                            <h4 class="font-weight-bold text-success mb-1"><t t-out="state.stats.hostel.available_beds"/></h4>
+                                            <span class="text-uppercase text-muted font-weight-bold small">Available</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm rounded bg-white h-100">
+                            <div class="card-header border-0 bg-transparent py-3">
+                                <h5 class="card-title font-weight-bold text-dark mb-0">Facilities Summary</h5>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="list-group list-group-flush">
+                                    
+                                    <t t-if="state.stats.has_library">
+                                        <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="icon-circle bg-light-primary text-primary rounded-circle p-2">
+                                                    <i class="fa fa-book"/>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 font-weight-semibold">Library books Catalog</h6>
+                                                    <small class="text-muted"><t t-out="state.stats.library.borrowed"/> currently borrowed / issued</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge badge-pill bg-light-primary text-primary px-3 py-2 font-weight-bold cursor-pointer" t-on-click="() => this.openLibrary()">
+                                                <t t-out="state.stats.library.books"/> Total
+                                            </span>
+                                        </div>
+                                    </t>
+
+                                    <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-circle bg-light-success text-success rounded-circle p-2">
+                                                <i class="fa fa-bus"/>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 font-weight-semibold">Active Transport Fleet</h6>
+                                                <small class="text-muted"><t t-out="state.stats.transport.routes"/> configured routes</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-pill bg-light-success text-success px-3 py-2 font-weight-bold cursor-pointer" t-on-click="() => this.openTransport()">
+                                            <t t-out="state.stats.transport.vehicles"/> Vehicles
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

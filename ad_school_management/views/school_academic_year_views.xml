@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_academic_year_tree" model="ir.ui.view">
+        <field name="name">school.academic.year.tree</field>
+        <field name="model">school.academic.year</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-success="state == 'open'" decoration-muted="state == 'closed'">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'open'" decoration-muted="state == 'closed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_academic_year_form" model="ir.ui.view">
+        <field name="name">school.academic.year.form</field>
+        <field name="model">school.academic.year</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open" type="object" string="Open Year" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_close" type="object" string="Close Year" class="oe_highlight" invisible="state != 'open'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft" invisible="state != 'closed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. 2026-2027"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="e.g. AY26-27"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_academic_year_search" model="ir.ui.view">
+        <field name="name">school.academic.year.search</field>
+        <field name="model">school.academic.year</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Open" name="open" domain="[('state', '=', 'open')]"/>
+                <filter string="Closed" name="closed" domain="[('state', '=', 'closed')]"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_academic_year" model="ir.actions.act_window">
+        <field name="name">Academic Years</field>
+        <field name="res_model">school.academic.year</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_academic_year_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Academic Year!
+            </p>
+        </field>
+    </record>
+</odoo>

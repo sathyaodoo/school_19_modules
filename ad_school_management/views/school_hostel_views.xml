@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="view_school_hostel_tree" model="ir.ui.view">
+        <field name="name">school.hostel.tree</field>
+        <field name="model">school.hostel</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="type"/>
+                <field name="capacity"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_form" model="ir.ui.view">
+        <field name="name">school.hostel.form</field>
+        <field name="model">school.hostel</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_rooms" icon="fa-home">
+                            <field string="Rooms" name="room_count" widget="statinfo"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_allocations" icon="fa-users">
+                            <field string="Occupied Beds" name="occupied_beds" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Boys Block A"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="type"/>
+                        </group>
+                        <group>
+                            <field name="capacity"/>
+                            <field name="address"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_hostel" model="ir.actions.act_window">
+        <field name="name">Hostels</field>
+        <field name="res_model">school.hostel</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a Hostel Block!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_room_tree" model="ir.ui.view">
+        <field name="name">school.hostel.room.tree</field>
+        <field name="model">school.hostel.room</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="hostel_id"/>
+                <field name="name"/>
+                <field name="capacity"/>
+                <field name="availability"/>
+                <field name="rent"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_room_form" model="ir.ui.view">
+        <field name="name">school.hostel.room.form</field>
+        <field name="model">school.hostel.room</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="hostel_id"/>
+                            <field name="name" placeholder="e.g. Room 101"/>
+                        </group>
+                        <group>
+                            <field name="capacity"/>
+                            <field name="availability"/>
+                            <field name="occupied_beds"/>
+                            <field name="rent"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_hostel_room" model="ir.actions.act_window">
+        <field name="name">Hostel Rooms</field>
+        <field name="res_model">school.hostel.room</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a Hostel Room!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_allocation_tree" model="ir.ui.view">
+        <field name="name">school.hostel.allocation.tree</field>
+        <field name="model">school.hostel.allocation</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-success="state == 'allocated'" decoration-muted="state == 'vacated'">
+                <field name="student_id"/>
+                <field name="hostel_id"/>
+                <field name="room_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'allocated'" decoration-muted="state == 'vacated'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_allocation_form" model="ir.ui.view">
+        <field name="name">school.hostel.allocation.form</field>
+        <field name="model">school.hostel.allocation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_allocate" type="object" string="Allocate Bed" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_vacate" type="object" string="Vacate Room" class="oe_highlight" invisible="state != 'allocated'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,allocated,vacated"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="room_id" domain="[('availability', '>', 0)]"/>
+                            <field name="hostel_id"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end" invisible="state != 'vacated'"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_allocation_graph" model="ir.ui.view">
+        <field name="name">school.hostel.allocation.graph</field>
+        <field name="model">school.hostel.allocation</field>
+        <field name="arch" type="xml">
+            <graph string="Hostel Occupancy Analysis" type="bar" sample="1">
+                <field name="hostel_id"/>
+                <field name="state" type="row"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_hostel_allocation_pivot" model="ir.ui.view">
+        <field name="name">school.hostel.allocation.pivot</field>
+        <field name="model">school.hostel.allocation</field>
+        <field name="arch" type="xml">
+            <pivot string="Hostel Occupancy Analysis" sample="1">
+                <field name="hostel_id" type="row"/>
+                <field name="room_id" type="row"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_hostel_allocation" model="ir.actions.act_window">
+        <field name="name">Room Allocations</field>
+        <field name="res_model">school.hostel.allocation</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Allocate a bed to a student!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_student_form_inherit_hostel" model="ir.ui.view">
+        <field name="name">school.student.form.inherit.hostel</field>
+        <field name="model">school.student</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_student_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button class="oe_stat_button" type="object" name="action_view_hostel_allocations" icon="fa-home">
+                    <field string="Hostel" name="hostel_allocation_count" widget="statinfo"/>
+                </button>
+            </div>
+            <xpath expr="//page[@name='facilities']/group" position="inside">
+                <group string="Hostel">
+                    <field name="hostel_room_id" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_school_hostel_sub" name="Hostel" parent="ad_school_management.menu_school_facilities" sequence="20"/>
+    <menuitem id="menu_school_hostel" name="Hostels" parent="menu_school_hostel_sub" action="action_school_hostel" sequence="10"/>
+    <menuitem id="menu_school_hostel_room" name="Rooms" parent="menu_school_hostel_sub" action="action_school_hostel_room" sequence="20"/>
+    <menuitem id="menu_school_hostel_allocation" name="Room Allocations" parent="menu_school_hostel_sub" action="action_school_hostel_allocation" sequence="30"/>
+</odoo>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_section_tree" model="ir.ui.view">
+        <field name="name">school.section.tree</field>
+        <field name="model">school.section</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="class_id"/>
+                <field name="name"/>
+                <field name="capacity"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_section_form" model="ir.ui.view">
+        <field name="name">school.section.form</field>
+        <field name="model">school.section</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="e.g. A"/>
+                            <field name="class_id"/>
+                        </group>
+                        <group>
+                            <field name="capacity"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_section_search" model="ir.ui.view">
+        <field name="name">school.section.search</field>
+        <field name="model">school.section</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <group>
+                    <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_section" model="ir.actions.act_window">
+        <field name="name">Sections</field>
+        <field name="res_model">school.section</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_section_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Section!
+            </p>
+        </field>
+    </record>
+</odoo>

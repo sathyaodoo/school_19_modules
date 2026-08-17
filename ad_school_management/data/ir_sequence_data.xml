@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <record id="seq_school_admission" model="ir.sequence">
+            <field name="name">School Admission Sequence</field>
+            <field name="code">school.admission.seq</field>
+            <field name="prefix">ADM/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="seq_school_student_fee" model="ir.sequence">
+            <field name="name">School Student Fee Sequence</field>
+            <field name="code">school.student.fee.seq</field>
+            <field name="prefix">FEE/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="seq_school_book_issue" model="ir.sequence">
+            <field name="name">School Book Issue Sequence</field>
+            <field name="code">school.book.issue.seq</field>
+            <field name="prefix">LIB-ISS/</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="seq_school_student_admission" model="ir.sequence">
+            <field name="name">School Student Admission Number Sequence</field>
+            <field name="code">school.student.admission</field>
+            <field name="prefix">ADM-NUM/</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

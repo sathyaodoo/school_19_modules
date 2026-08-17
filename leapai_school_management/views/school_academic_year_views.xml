@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Academic Year Form View -->
+    <record id="view_school_academic_year_form" model="ir.ui.view">
+        <field name="name">school.academic.year.form</field>
+        <field name="model">school.academic.year</field>
+        <field name="arch" type="xml">
+            <form string="Academic Year">
+                <header>
+                    <button name="action_activate" string="Activate" type="object"
+                            invisible="state != 'draft'"
+                            class="oe_highlight"/>
+                    <button name="action_close" string="Close" type="object"
+                            invisible="state != 'active'"/>
+                    <button name="action_reset_draft" string="Reset to Draft" type="object"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,closed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Academic Year List View -->
+    <record id="view_school_academic_year_list" model="ir.ui.view">
+        <field name="name">school.academic.year.list</field>
+        <field name="model">school.academic.year</field>
+        <field name="arch" type="xml">
+            <list string="Academic Years">
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-info="state == 'draft'"
+                       decoration-muted="state == 'closed'"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Academic Year Action -->
+    <record id="action_school_academic_year" model="ir.actions.act_window">
+        <field name="name">Academic Years</field>
+        <field name="res_model">school.academic.year</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first academic year!
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Student Form View -->
+    <record id="view_school_student_form" model="ir.ui.view">
+        <field name="name">school.student.form</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <form string="Student">
+                <header>
+                    <button name="action_enroll" string="Enroll" type="object"
+                            invisible="state != 'draft'"
+                            class="oe_highlight"/>
+                    <button name="action_activate" string="Activate" type="object"
+                            invisible="state != 'enrolled'"
+                            class="oe_highlight"/>
+                    <button name="action_graduate" string="Graduate" type="object"
+                            invisible="state not in ('enrolled', 'active')"/>
+                    <button name="action_expel" string="Expel" type="object"
+                            invisible="state in ('graduated', 'expelled')"/>
+                    <button name="action_reset" string="Reset to Draft" type="object"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,enrolled,active,graduated"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_exams" type="object"
+                                class="oe_stat_button" icon="fa-graduation-cap">
+                            <field name="exam_result_ids" widget="statinfo" string="Exams"/>
+                        </button>
+                        <button name="action_view_fees" type="object"
+                                class="oe_stat_button" icon="fa-money">
+                            <field name="fee_payment_ids" widget="statinfo" string="Payments"/>
+                        </button>
+                        <button name="action_view_attendance" type="object"
+                                class="oe_stat_button" icon="fa-calendar-check-o">
+                            <field name="attendance_ids" widget="statinfo" string="Attendance"/>
+                        </button>
+                    </div>
+                    <field name="image" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Student Name"/>
+                        </h1>
+                        <h2>
+                            <field name="code" readonly="1"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="class_id"/>
+                            <field name="academic_year_id" readonly="1"/>
+                            <field name="admission_date"/>
+                        </group>
+                        <group>
+                            <field name="partner_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Personal Info">
+                            <group>
+                                <group string="Personal Details">
+                                    <field name="date_of_birth"/>
+                                    <field name="age" readonly="1"/>
+                                    <field name="gender"/>
+                                    <field name="blood_group"/>
+                                    <field name="nationality"/>
+                                    <field name="religion"/>
+                                </group>
+                                <group string="Contact">
+                                    <field name="phone"/>
+                                    <field name="email"/>
+                                    <field name="address"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Parent / Guardian">
+                            <group>
+                                <group string="Father's Information">
+                                    <field name="father_name"/>
+                                    <field name="father_phone"/>
+                                    <field name="father_occupation"/>
+                                </group>
+                                <group string="Mother's Information">
+                                    <field name="mother_name"/>
+                                    <field name="mother_phone"/>
+                                </group>
+                            </group>
+                            <group string="Guardian Information">
+                                <group>
+                                    <field name="guardian_name"/>
+                                    <field name="guardian_phone"/>
+                                    <field name="guardian_relation"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Fees">
+                            <group>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="fee_paid" readonly="1"/>
+                                <field name="fee_due" readonly="1"/>
+                            </group>
+                            <field name="fee_payment_ids">
+                                <list editable="bottom">
+                                    <field name="name" readonly="1"/>
+                                    <field name="fee_structure_id"/>
+                                    <field name="amount"/>
+                                    <field name="payment_date"/>
+                                    <field name="payment_method"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'paid'"
+                                           decoration-info="state == 'draft'"
+                                           decoration-danger="state == 'cancelled'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Exam Results">
+                            <field name="exam_result_ids" readonly="1">
+                                <list>
+                                    <field name="exam_id"/>
+                                    <field name="marks_obtained"/>
+                                    <field name="percentage"/>
+                                    <field name="grade"/>
+                                    <field name="result_state" widget="badge"
+                                           decoration-success="result_state == 'pass'"
+                                           decoration-danger="result_state == 'fail'"/>
+                                    <field name="remarks"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Transport and Hostel">
+                            <group>
+                                <group string="Transport">
+                                    <field name="transport_route_id"/>
+                                </group>
+                                <group string="Hostel">
+                                    <field name="hostel_allocation_id"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Notes">
+                            <field name="note" placeholder="Additional notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Student List View -->
+    <record id="view_school_student_list" model="ir.ui.view">
+        <field name="name">school.student.list</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <list string="Students">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="gender"/>
+                <field name="phone"/>
+                <field name="admission_date"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-info="state in ('draft', 'enrolled')"
+                       decoration-warning="state == 'graduated'"
+                       decoration-danger="state == 'expelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Student Kanban View -->
+    <record id="view_school_student_kanban" model="ir.ui.view">
+        <field name="name">school.student.kanban</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" default_group_by="class_id">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="class_id"/>
+                <field name="gender"/>
+                <field name="state"/>
+                <field name="image"/>
+                <templates>
+                    <t t-name="card">
+                        <aside>
+                            <field name="image" widget="image" class="o_kanban_image"/>
+                        </aside>
+                        <main>
+                            <field name="name" class="fw-bold fs-5"/>
+                            <span class="text-muted"><field name="code"/></span>
+                            <div><field name="class_id"/></div>
+                            <field name="state" widget="badge"
+                                   decoration-success="state == 'active'"
+                                   decoration-info="state in ('draft', 'enrolled')"
+                                   decoration-warning="state == 'graduated'"
+                                   decoration-danger="state == 'expelled'"/>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Student Search View -->
+    <record id="view_school_student_search" model="ir.ui.view">
+        <field name="name">school.student.search</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <search string="Search Students">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="class_id"/>
+                <separator/>
+                <filter string="Active" name="active_students" domain="[('state', '=', 'active')]"/>
+                <filter string="Enrolled" name="enrolled" domain="[('state', '=', 'enrolled')]"/>
+                <filter string="Graduated" name="graduated" domain="[('state', '=', 'graduated')]"/>
+                <group>
+                    <filter string="Class" name="group_by_class" domain="[]" context="{'group_by': 'class_id'}"/>
+                    <filter string="Status" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
+                    <filter string="Gender" name="group_by_gender" domain="[]" context="{'group_by': 'gender'}"/>
+                    <filter string="Academic Year" name="group_by_year" domain="[]" context="{'group_by': 'academic_year_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Student Action - All Students -->
+    <record id="action_school_student" model="ir.actions.act_window">
+        <field name="name">All Students</field>
+        <field name="res_model">school.student</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="view_school_student_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Enroll your first student!
+            </p>
+        </field>
+    </record>
+</odoo>

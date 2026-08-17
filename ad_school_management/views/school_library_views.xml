@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="view_school_book_tree" model="ir.ui.view">
+        <field name="name">school.book.tree</field>
+        <field name="model">school.book</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="author"/>
+                <field name="isbn"/>
+                <field name="qty_total"/>
+                <field name="qty_available"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_book_form" model="ir.ui.view">
+        <field name="name">school.book.form</field>
+        <field name="model">school.book</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_issues" icon="fa-book">
+                            <field string="Issues" name="issue_count" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Introduction to Physics"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="e.g. BK001"/>
+                            <field name="isbn" placeholder="e.g. 978-3-16-148410-0"/>
+                            <field name="category"/>
+                        </group>
+                        <group>
+                            <field name="author"/>
+                            <field name="publisher"/>
+                            <field name="qty_total"/>
+                            <field name="qty_available"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_book" model="ir.actions.act_window">
+        <field name="name">Books Catalog</field>
+        <field name="res_model">school.book</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first book!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_school_book_issue_tree" model="ir.ui.view">
+        <field name="name">school.book.issue.tree</field>
+        <field name="model">school.book.issue</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-warning="state == 'issued'" decoration-danger="state == 'overdue'" decoration-success="state == 'returned'">
+                <field name="name"/>
+                <field name="book_id"/>
+                <field name="student_id"/>
+                <field name="issue_date"/>
+                <field name="due_date"/>
+                <field name="return_date"/>
+                <field name="fine_amount"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'issued'" decoration-danger="state == 'overdue'" decoration-success="state == 'returned'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_book_issue_form" model="ir.ui.view">
+        <field name="name">school.book.issue.form</field>
+        <field name="model">school.book.issue</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_issue" type="object" string="Issue Book" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_return" type="object" string="Return Book" class="oe_highlight" invisible="state not in ('issued', 'overdue')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,issued,returned"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="book_id" domain="[('qty_available', '>', 0)]"/>
+                            <field name="student_id"/>
+                        </group>
+                        <group>
+                            <field name="issue_date"/>
+                            <field name="due_date"/>
+                            <field name="return_date" invisible="state != 'returned'"/>
+                            <field name="fine_amount"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_book_issue_graph" model="ir.ui.view">
+        <field name="name">school.book.issue.graph</field>
+        <field name="model">school.book.issue</field>
+        <field name="arch" type="xml">
+            <graph string="Book Issues Analysis" type="bar" sample="1">
+                <field name="book_id"/>
+                <field name="fine_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_book_issue_pivot" model="ir.ui.view">
+        <field name="name">school.book.issue.pivot</field>
+        <field name="model">school.book.issue</field>
+        <field name="arch" type="xml">
+            <pivot string="Book Issues Analysis" sample="1">
+                <field name="book_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="fine_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_book_issue" model="ir.actions.act_window">
+        <field name="name">Book Issues</field>
+        <field name="res_model">school.book.issue</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Issue a book!
+            </p>
+        </field>
+    </record>
+
+    <record id="view_student_form_inherit_library" model="ir.ui.view">
+        <field name="name">school.student.form.inherit.library</field>
+        <field name="model">school.student</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_student_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button class="oe_stat_button" type="object" name="action_view_book_issues" icon="fa-book">
+                    <field string="Library" name="book_issue_count" widget="statinfo"/>
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <menuitem id="menu_school_library_sub" name="Library" parent="ad_school_management.menu_school_facilities" sequence="10"/>
+    <menuitem id="menu_school_book" name="Books Catalog" parent="menu_school_library_sub" action="action_school_book" sequence="10"/>
+    <menuitem id="menu_school_book_issue" name="Book Issues" parent="menu_school_library_sub" action="action_school_book_issue" sequence="20"/>
+</odoo>

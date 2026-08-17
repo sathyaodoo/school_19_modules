@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_school_root"
+              name="School"
+              sequence="50"
+              web_icon="leapai_school_management,static/description/icon.png"/>
+
+    <!-- Students Menu -->
+    <menuitem id="menu_school_students"
+              name="Students"
+              parent="menu_school_root"
+              sequence="10"/>
+
+    <menuitem id="menu_school_student_all"
+              name="All Students"
+              parent="menu_school_students"
+              action="action_school_student"
+              sequence="10"/>
+
+    <!-- Classes Menu -->
+    <menuitem id="menu_school_classes"
+              name="Classes"
+              parent="menu_school_root"
+              sequence="20"/>
+
+    <menuitem id="menu_school_class"
+              name="Classes"
+              parent="menu_school_classes"
+              action="action_school_class"
+              sequence="10"/>
+
+    <menuitem id="menu_school_classroom"
+              name="Classrooms"
+              parent="menu_school_classes"
+              action="action_school_class_room"
+              sequence="20"/>
+
+    <!-- Teachers Menu -->
+    <menuitem id="menu_school_teacher"
+              name="Teachers"
+              parent="menu_school_root"
+              action="action_school_teacher"
+              sequence="30"/>
+
+    <!-- Subjects Menu -->
+    <menuitem id="menu_school_subject"
+              name="Subjects"
+              parent="menu_school_root"
+              action="action_school_subject"
+              sequence="40"/>
+
+    <!-- Examinations Menu -->
+    <menuitem id="menu_school_exams"
+              name="Examinations"
+              parent="menu_school_root"
+              sequence="50"/>
+
+    <menuitem id="menu_school_exam"
+              name="Exams"
+              parent="menu_school_exams"
+              action="action_school_exam"
+              sequence="10"/>
+
+    <menuitem id="menu_school_exam_result"
+              name="Results"
+              parent="menu_school_exams"
+              action="action_school_exam_result"
+              sequence="20"/>
+
+    <!-- Fees Menu -->
+    <menuitem id="menu_school_fees"
+              name="Fees"
+              parent="menu_school_root"
+              sequence="60"/>
+
+    <menuitem id="menu_school_fee_structure"
+              name="Fee Structures"
+              parent="menu_school_fees"
+              action="action_school_fee_structure"
+              sequence="10"/>
+
+    <menuitem id="menu_school_fee_payment"
+              name="Fee Payments"
+              parent="menu_school_fees"
+              action="action_school_fee_payment"
+              sequence="20"/>
+
+    <!-- Attendance Menu -->
+    <menuitem id="menu_school_attendance"
+              name="Attendance"
+              parent="menu_school_root"
+              action="action_school_attendance"
+              sequence="70"/>
+
+    <!-- Transport Menu -->
+    <menuitem id="menu_school_transport"
+              name="Transport"
+              parent="menu_school_root"
+              sequence="80"/>
+
+    <menuitem id="menu_school_transport_vehicle"
+              name="Vehicles"
+              parent="menu_school_transport"
+              action="action_school_transport_vehicle"
+              sequence="10"/>
+
+    <menuitem id="menu_school_transport_route"
+              name="Routes"
+              parent="menu_school_transport"
+              action="action_school_transport_route"
+              sequence="20"/>
+
+    <!-- Hostel Menu -->
+    <menuitem id="menu_school_hostel"
+              name="Hostel"
+              parent="menu_school_root"
+              sequence="90"/>
+
+    <menuitem id="menu_school_hostel_list"
+              name="Hostels"
+              parent="menu_school_hostel"
+              action="action_school_hostel"
+              sequence="10"/>
+
+    <menuitem id="menu_school_hostel_room"
+              name="Rooms"
+              parent="menu_school_hostel"
+              action="action_school_hostel_room"
+              sequence="20"/>
+
+    <menuitem id="menu_school_hostel_allocation"
+              name="Allocations"
+              parent="menu_school_hostel"
+              action="action_school_hostel_allocation"
+              sequence="30"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_school_config"
+              name="Configuration"
+              parent="menu_school_root"
+              sequence="100"
+              groups="leapai_school_management.group_school_manager"/>
+
+    <menuitem id="menu_school_academic_year"
+              name="Academic Years"
+              parent="menu_school_config"
+              action="action_school_academic_year"
+              sequence="10"/>
+</odoo>
