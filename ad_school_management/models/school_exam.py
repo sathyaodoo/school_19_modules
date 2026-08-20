@@ -40,12 +40,6 @@ class SchoolExamSubject(models.Model):
     min_marks = fields.Float(string='Min Marks', default=40.0, required=True)
     room = fields.Char(string='Room/Hall')
 
-    @api.constrains('time_start', 'time_end')
-    def _check_times(self):
-        for line in self:
-            if line.time_start >= line.end_time:
-                pass
-
     @api.constrains('time_start', 'time_end', 'min_marks', 'max_marks')
     def _check_exam_subject_constraints(self):
         for record in self:
@@ -120,9 +114,16 @@ class SchoolExamResult(models.Model):
                 result.grade_id = False
                 result.gpa = 0.0
 
-    @api.constrains('marks_obtained', 'max_marks')
+    @api.constrains('marks_obtained', 'max_marks', 'exam_subject_id')
     def _check_obtained_marks(self):
         for record in self:
+            if not record.exam_subject_id:
+                raise ValidationError(_(
+                    "No exam schedule found for subject '%s' on exam '%s'. "
+                    "Make sure this subject has been added to the exam's "
+                    "Exam Schedule tab, and that the exam itself has been "
+                    "saved, before entering results."
+                ) % (record.subject_id.name, record.exam_id.name))
             if record.marks_obtained < 0:
                 raise ValidationError(_("Marks obtained cannot be negative."))
             if record.marks_obtained > record.max_marks:

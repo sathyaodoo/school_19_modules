@@ -63,8 +63,8 @@ class SchoolStudentFee(models.Model):
     student_id = fields.Many2one('school.student', string='Student', required=True, tracking=True)
     structure_id = fields.Many2one('school.fee.structure', string='Fee Structure', required=True, tracking=True)
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year', related='structure_id.academic_year_id', store=True)
-    company_id = fields.Many2one('res.company', string='Company', required=True, related='student_id.company_id', store=True)
-    
+    company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.company)
+
     amount = fields.Float(string='Structure Total', compute='_compute_amount', store=True)
     discount = fields.Float(string='Discount (Flat)', default=0.0, tracking=True)
     scholarship = fields.Float(string='Scholarship (%)', default=0.0, tracking=True)
@@ -90,12 +90,18 @@ class SchoolStudentFee(models.Model):
         for vals in vals_list:
             if vals.get('name', '/') == '/':
                 vals['name'] = self.env['ir.sequence'].next_by_code('school.student.fee.seq') or '/'
+            if not vals.get('company_id'):
+                student = self.env['school.student'].browse(vals.get('student_id'))
+                vals['company_id'] = student.company_id.id or self.env.company.id
         records = super(SchoolStudentFee, self).create(vals_list)
         for record in records:
             record._generate_installments()
         return records
 
     def write(self, vals):
+        if 'student_id' in vals and not vals.get('company_id'):
+            student = self.env['school.student'].browse(vals['student_id'])
+            vals['company_id'] = student.company_id.id or self.env.company.id
         res = super(SchoolStudentFee, self).write(vals)
         if 'structure_id' in vals:
             for record in self:

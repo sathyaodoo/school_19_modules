@@ -5,6 +5,7 @@ class SchoolGrade(models.Model):
     _name = 'school.grade'
     _description = 'Grading System'
     _order = 'grade_point desc'
+    _rec_name = 'grade'
 
     grade = fields.Char(string='Grade', required=True)
     min_mark = fields.Float(string='Min Percentage', required=True)

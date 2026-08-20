@@ -1,4 +1,5 @@
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 
 class SchoolExamResultEntry(models.TransientModel):
     _name = 'school.exam.result.entry'
@@ -33,22 +34,52 @@ class SchoolExamResultEntry(models.TransientModel):
             self.line_ids = lines
 
     def action_save_results(self):
+        errors = []
         for rec in self:
-            for line in rec.line_ids:
-                existing = self.env['school.exam.result'].search([
-                    ('exam_id', '=', rec.exam_id.id),
-                    ('student_id', '=', line.student_id.id),
-                    ('subject_id', '=', rec.subject_id.id)
-                ], limit=1)
-                if existing:
-                    existing.write({'marks_obtained': line.marks_obtained})
-                else:
-                    self.env['school.exam.result'].create({
-                        'exam_id': rec.exam_id.id,
-                        'student_id': line.student_id.id,
-                        'subject_id': rec.subject_id.id,
-                        'marks_obtained': line.marks_obtained,
-                    })
+            # Whatever marks the client actually captured, keyed by student.
+            sent_marks = {
+                line.student_id.id: line.marks_obtained
+                for line in rec.line_ids if line.student_id
+            }
+
+            # Re-derive the real class roster directly from the database.
+            students = self.env['school.student'].search([
+                ('class_id', '=', rec.class_id.id),
+                ('section_id', '=', rec.section_id.id),
+            ])
+
+            for student in students:
+                if student.id not in sent_marks:
+                    continue
+                marks = sent_marks[student.id]
+                try:
+                    # A savepoint isolates this one student's save: if it
+                    # fails (e.g. a bad Max Marks config), only this
+                    # student's attempt is rolled back - everyone else in
+                    # the batch still saves normally instead of the whole
+                    # transaction being aborted.
+                    with self.env.cr.savepoint():
+                        existing = self.env['school.exam.result'].search([
+                            ('exam_id', '=', rec.exam_id.id),
+                            ('student_id', '=', student.id),
+                            ('subject_id', '=', rec.subject_id.id)
+                        ], limit=1)
+                        if existing:
+                            existing.write({'marks_obtained': marks})
+                        else:
+                            self.env['school.exam.result'].create({
+                                'exam_id': rec.exam_id.id,
+                                'student_id': student.id,
+                                'subject_id': rec.subject_id.id,
+                                'marks_obtained': marks,
+                            })
+                except Exception as e:
+                    errors.append(_("%s: %s") % (student.name, str(e)))
+
+        if errors:
+            raise UserError(_(
+                "Some results were saved, but the following could not be:\n\n%s"
+            ) % "\n".join(errors))
         return {'type': 'ir.actions.act_window_close'}
 
 class SchoolExamResultEntryLine(models.TransientModel):
@@ -58,3 +89,10 @@ class SchoolExamResultEntryLine(models.TransientModel):
     wizard_id = fields.Many2one('school.exam.result.entry', string='Wizard')
     student_id = fields.Many2one('school.student', string='Student', required=True, readonly=True)
     marks_obtained = fields.Float(string='Marks Obtained', default=0.0)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        vals_list = [vals for vals in vals_list if vals.get('student_id')]
+        if not vals_list:
+            return self.browse()
+        return super().create(vals_list)
