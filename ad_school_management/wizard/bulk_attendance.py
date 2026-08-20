@@ -1,4 +1,5 @@
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 
 class SchoolBulkAttendance(models.TransientModel):
     _name = 'school.bulk.attendance'
@@ -31,22 +32,52 @@ class SchoolBulkAttendance(models.TransientModel):
             self.line_ids = lines
 
     def action_save_attendance(self):
+        errors = []
         for rec in self:
-            for line in rec.line_ids:
-                existing = self.env['school.attendance'].search([
-                    ('student_id', '=', line.student_id.id),
-                    ('date', '=', rec.date)
-                ], limit=1)
-                if existing:
-                    existing.write({'status': line.status})
-                else:
-                    self.env['school.attendance'].create({
-                        'student_id': line.student_id.id,
-                        'class_id': rec.class_id.id,
-                        'section_id': rec.section_id.id,
-                        'date': rec.date,
-                        'status': line.status,
-                    })
+            # Whatever status the client actually captured, keyed by student.
+            # A row that got dropped client-side simply won't appear here.
+            sent_status = {
+                line.student_id.id: line.status
+                for line in rec.line_ids if line.student_id
+            }
+
+            # Re-derive the real class roster directly from the database.
+            # This guarantees every enrolled student gets an attendance
+            # record today, even if the browser failed to send their row.
+            students = self.env['school.student'].search([
+                ('class_id', '=', rec.class_id.id),
+                ('section_id', '=', rec.section_id.id),
+            ])
+
+            for student in students:
+                status = sent_status.get(student.id, 'present')
+                try:
+                    # A savepoint isolates this one student's save: if it
+                    # fails for any reason, only this student's attempt is
+                    # rolled back - everyone else in the batch still saves
+                    # normally instead of the whole transaction aborting.
+                    with self.env.cr.savepoint():
+                        existing = self.env['school.attendance'].search([
+                            ('student_id', '=', student.id),
+                            ('date', '=', rec.date)
+                        ], limit=1)
+                        if existing:
+                            existing.write({'status': status})
+                        else:
+                            self.env['school.attendance'].create({
+                                'student_id': student.id,
+                                'class_id': rec.class_id.id,
+                                'section_id': rec.section_id.id,
+                                'date': rec.date,
+                                'status': status,
+                            })
+                except Exception as e:
+                    errors.append(_("%s: %s") % (student.name, str(e)))
+
+        if errors:
+            raise UserError(_(
+                "Some attendance records were saved, but the following could not be:\n\n%s"
+            ) % "\n".join(errors))
         return {'type': 'ir.actions.act_window_close'}
 
 class SchoolBulkAttendanceLine(models.TransientModel):
@@ -61,3 +92,10 @@ class SchoolBulkAttendanceLine(models.TransientModel):
         ('leave', 'Leave'),
         ('late', 'Late')
     ], string='Status', required=True, default='present')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        vals_list = [vals for vals in vals_list if vals.get('student_id')]
+        if not vals_list:
+            return self.browse()
+        return super().create(vals_list)

@@ -105,14 +105,14 @@
             <field name="name">School Principal</field>
             <field name="privilege_id" ref="res_groups_privilege_ad_school_management"/>
             <field name="sequence">20</field>
-            <field name="implied_ids" eval="[(4, ref('group_school_teacher')), (4, ref('group_school_accountant')), (4, ref('group_library_manager')), (4, ref('group_hostel_manager'))]"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user')), (4, ref('group_library_manager')), (4, ref('group_hostel_manager'))]"/>
         </record>
 
         <record id="group_school_admin" model="res.groups">
             <field name="name">School Administrator</field>
             <field name="privilege_id" ref="res_groups_privilege_ad_school_management"/>
             <field name="sequence">25</field>
-            <field name="implied_ids" eval="[(4, ref('group_school_principal'))]"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user')), (4, ref('group_library_manager')), (4, ref('group_hostel_manager'))]"/>
         </record>
 
         <record id="base.group_system" model="res.groups">
@@ -120,8 +120,8 @@
         </record>
     </data>
 
-    <data noupdate="1">
-        
+    <data>
+
         <record id="rule_student_own_profile" model="ir.rule">
             <field name="name">Student: Own Profile Only</field>
             <field name="model_id" ref="model_school_student"/>
@@ -169,6 +169,13 @@
             <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
         </record>
 
+        <record id="rule_all_attendance_admin" model="ir.rule">
+            <field name="name">Administrator: All Attendance</field>
+            <field name="model_id" ref="model_school_attendance"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+
         <record id="rule_parent_attendance" model="ir.rule">
             <field name="name">Parent: View Child Attendance</field>
             <field name="model_id" ref="model_school_attendance"/>
@@ -196,6 +203,17 @@
             <field name="model_id" ref="model_school_timetable"/>
             <field name="domain_force">['|', ('class_id.teacher_ids.user_id', '=', user.id), ('class_id.class_teacher_id.user_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <record id="rule_all_timetable_admin" model="ir.rule">
+            <field name="name">Administrator: All Timetables</field>
+            <field name="model_id" ref="model_school_timetable"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
         </record>
 
         <record id="rule_student_timetable" model="ir.rule">
