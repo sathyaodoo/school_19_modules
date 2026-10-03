@@ -5,11 +5,14 @@
         <field name="name">school.vehicle.tree</field>
         <field name="model">school.vehicle</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-danger="is_over_capacity">
                 <field name="name"/>
                 <field name="vehicle_number"/>
                 <field name="capacity"/>
+                <field name="student_count"/>
                 <field name="driver_id"/>
+                <field name="caretaker_id" optional="show"/>
+                <field name="is_over_capacity" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -26,15 +29,76 @@
                             <field name="name" placeholder="e.g. Bus 1"/>
                         </h1>
                     </div>
+                    <div class="alert alert-danger" role="alert" invisible="not is_over_capacity">
+                        Assigned students (<field name="student_count" class="oe_inline"/>) exceed the vehicle capacity.
+                    </div>
                     <group>
                         <group>
                             <field name="vehicle_number" placeholder="e.g. XY-123-AB"/>
                             <field name="capacity"/>
+                            <field name="student_count"/>
+                            <field name="is_over_capacity" invisible="1"/>
                         </group>
                         <group>
-                            <field name="driver_id"/>
+                            <field name="driver_id" context="{'default_is_school_driver': True}"/>
+                            <field name="caretaker_id" context="{'default_is_school_caretaker': True}"/>
+                            <field name="gps_tracking_url" widget="url" placeholder="https://..."/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Students" name="students">
+                            <field name="student_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="admission_no"/>
+                                    <field name="class_id"/>
+                                    <field name="section_id"/>
+                                    <field name="transport_route_id"/>
+                                    <field name="van_boarding_point_id"/>
+                                    <field name="parent_contact"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="GPS Tracking" name="gps">
+                            <group>
+                                <group string="Device">
+                                    <field name="gps_device_id"/>
+                                    <field name="gps_api_token" groups="ad_school_management.group_school_admin"/>
+                                    <button name="action_generate_gps_token" type="object" string="Generate / Reset Token"
+                                            class="btn-secondary" groups="ad_school_management.group_school_admin"
+                                            confirm="The old token will stop working. Continue?"/>
+                                </group>
+                                <group string="Last Known Position">
+                                    <field name="last_location_at"/>
+                                    <field name="last_latitude"/>
+                                    <field name="last_longitude"/>
+                                    <field name="last_speed"/>
+                                    <field name="location_map_url" widget="url" string="Open Map" invisible="not location_map_url"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small mb-2">
+                                Send locations to: <code>/school/transport/gps?token=TOKEN&amp;lat=..&amp;lon=..&amp;speed=..</code>
+                            </div>
+                            <field name="location_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="recorded_at"/>
+                                    <field name="latitude"/>
+                                    <field name="longitude"/>
+                                    <field name="speed"/>
+                                    <field name="source"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Routes" name="routes">
+                            <field name="route_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="effective_driver_id"/>
+                                    <field name="cost"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -58,13 +122,15 @@
             <list>
                 <field name="name"/>
                 <field name="vehicle_id"/>
-                <field name="driver_id"/>
+                <field name="effective_vehicle_id" optional="show"/>
+                <field name="effective_driver_id" optional="show"/>
+                <field name="is_vehicle_replaced" widget="boolean_toggle" readonly="1" optional="show"/>
                 <field name="cost"/>
             </list>
         </field>
     </record>
 
-    <record id="view_school_transport_route_form" model="ir.ui.view">
+        <record id="view_school_transport_route_form" model="ir.ui.view">
         <field name="name">school.transport.route.form</field>
         <field name="model">school.transport.route</field>
         <field name="arch" type="xml">
@@ -80,11 +146,49 @@
                         <group>
                             <field name="vehicle_id"/>
                             <field name="driver_id"/>
+                            <field name="caretaker_id"/>
+                            <field name="backup_driver_id"/>
+                            <field name="is_driver_on_leave" readonly="1"/>
+                            <field name="effective_driver_id" readonly="1"/>
                         </group>
                         <group>
                             <field name="cost"/>
+                            <field name="billing_month"/>
+                            <field name="product_id"/>
                         </group>
                     </group>
+                    <div class="alert alert-warning" role="alert" invisible="not is_vehicle_replaced">
+                        Vehicle temporarily replaced. Current vehicle:
+                        <field name="effective_vehicle_id" class="oe_inline" readonly="1"/>
+                    </div>
+                    <group string="Vehicle Replacement (Breakdown / Service)">
+                        <group>
+                            <field name="replacement_vehicle_id" readonly="is_vehicle_replaced"
+                                   domain="[('id', '!=', vehicle_id)]"/>
+                            <field name="replacement_driver_id" readonly="is_vehicle_replaced"/>
+                        </group>
+                        <group>
+                            <field name="replacement_reason" readonly="is_vehicle_replaced"/>
+                            <field name="replacement_note" readonly="is_vehicle_replaced"/>
+                            <field name="is_vehicle_replaced"/>
+                        </group>
+                    </group>
+                    <button name="action_generate_monthly_fees" type="object"
+                            string="Generate Bills" class="btn-primary"
+                            confirm="Generate bills for the selected Billing Month?"/>
+                    <button name="action_mark_driver_on_leave" type="object"
+                            string="Mark Driver On Leave" class="btn-secondary"
+                            invisible="is_driver_on_leave"/>
+                    <button name="action_driver_back_from_leave" type="object"
+                            string="Driver Back From Leave" class="btn-secondary"
+                            invisible="not is_driver_on_leave"/>
+                    <button name="action_replace_vehicle" type="object"
+                            string="Replace Vehicle &amp; Notify Parents" class="btn-warning"
+                            invisible="is_vehicle_replaced"
+                            confirm="Parents of all routes using this vehicle will be notified. Continue?"/>
+                    <button name="action_restore_vehicle" type="object"
+                            string="Restore Regular Vehicle" class="btn-secondary"
+                            invisible="not is_vehicle_replaced"/>
                     <notebook>
                         <page string="Stops" name="stops">
                             <field name="stop_ids">
@@ -95,8 +199,31 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Assigned Students" name="students">
+                            <field name="student_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="admission_no"/>
+                                    <field name="class_id"/>
+                                    <field name="section_id"/>
+                                    <field name="van_boarding_point_id"/>
+                                    <field name="parent_contact"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Billing History" name="billing">
+                            <field name="transport_fee_ids" readonly="1">
+                                <list>
+                                    <field name="student_id"/>
+                                    <field name="billing_month"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -109,6 +236,374 @@
             <p class="o_view_nocontent_smiling_face">
                 Configure a Transport Route!
             </p>
+        </field>
+    </record>
+    <record id="view_school_student_transport_fee_list" model="ir.ui.view">
+        <field name="name">school.student.transport.fee.list</field>
+        <field name="model">school.student.transport.fee</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'paid'" decoration-info="state == 'invoiced'">
+                <field name="student_id"/>
+                <field name="route_id"/>
+                <field name="billing_month"/>
+                <field name="amount"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_student_transport_fee_form" model="ir.ui.view">
+        <field name="name">school.student.transport.fee.form</field>
+        <field name="model">school.student.transport.fee</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_invoice" type="object" string="Create Invoice"
+                            class="oe_highlight" invisible="invoice_id"/>
+                    <button name="action_view_invoice" type="object" string="View Invoice"
+                            invisible="not invoice_id"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,invoiced,paid"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id" readonly="invoice_id"/>
+                            <field name="route_id" readonly="invoice_id"/>
+                        </group>
+                        <group>
+                            <field name="billing_month" readonly="invoice_id"/>
+                            <field name="amount" readonly="invoice_id"/>
+                            <field name="invoice_id" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_student_transport_fee" model="ir.actions.act_window">
+        <field name="name">Transport Fees</field>
+        <field name="res_model">school.student.transport.fee</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No transport bills generated yet. Go to a Route and click "Generate This Month's Bills".
+            </p>
+        </field>
+    </record>
+    <record id="view_school_route_change_request_list" model="ir.ui.view">
+        <field name="name">school.transport.route.change.request.list</field>
+        <field name="model">school.transport.route.change.request</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'approved'" decoration-danger="state == 'rejected'" decoration-info="state == 'submitted'">
+                <field name="student_id"/>
+                <field name="current_route_id"/>
+                <field name="requested_route_id"/>
+                <field name="request_date"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_route_change_request_form" model="ir.ui.view">
+        <field name="name">school.transport.route.change.request.form</field>
+        <field name="model">school.transport.route.change.request</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_approve" type="object" string="Approve" class="oe_highlight" invisible="state != 'submitted'"/>
+                    <button name="action_reject" type="object" string="Reject" class="btn-secondary" invisible="state != 'submitted'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,rejected"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="current_route_id" readonly="1"/>
+                            <field name="requested_route_id"/>
+                        </group>
+                        <group>
+                            <field name="request_date"/>
+                            <field name="approved_by" invisible="not approved_by"/>
+                            <field name="decision_date" invisible="not decision_date"/>
+                        </group>
+                    </group>
+                    <group string="Reason">
+                        <field name="reason" nolabel="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_route_change_request" model="ir.actions.act_window">
+        <field name="name">Route Change Requests</field>
+        <field name="res_model">school.transport.route.change.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No route change requests yet.
+            </p>
+        </field>
+    </record>
+        <record id="view_school_transport_attendance_list" model="ir.ui.view">
+        <field name="name">school.transport.attendance.list</field>
+        <field name="model">school.transport.attendance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date"/>
+                <field name="route_id"/>
+                <field name="trip_type"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="present_count"/>
+                <field name="absent_count"/>
+                <field name="marked_source" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_transport_attendance_form" model="ir.ui.view">
+        <field name="name">school.transport.attendance.form</field>
+        <field name="model">school.transport.attendance</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_fetch_students" type="object" string="Fetch Students" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="route_id"/>
+                            <field name="trip_type"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_id" readonly="1"/>
+                            <field name="driver_id" readonly="1"/>
+                            <field name="present_count" readonly="1"/>
+                            <field name="absent_count" readonly="1"/>
+                            <field name="marked_by_id" invisible="not marked_by_id"/>
+                            <field name="marked_source"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="student_id"/>
+                            <field name="boarding_point_id"/>
+                            <field name="status" decoration-success="status == 'boarded'" decoration-danger="status == 'absent'"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_transport_attendance" model="ir.actions.act_window">
+        <field name="name">Transport Attendance</field>
+        <field name="res_model">school.transport.attendance</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Mark today's transport attendance!
+            </p>
+        </field>
+    </record>
+
+
+    <record id="view_school_transport_staff_list" model="ir.ui.view">
+        <field name="name">school.transport.staff.list</field>
+        <field name="model">res.partner</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="is_school_driver" widget="boolean_toggle"/>
+                <field name="is_school_caretaker" widget="boolean_toggle"/>
+                <field name="driver_type" optional="show"/>
+                <field name="driving_license_no" optional="show"/>
+                <field name="driving_license_expiry" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_transport_staff_form" model="ir.ui.view">
+        <field name="name">school.transport.staff.form</field>
+        <field name="model">res.partner</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'avatar_128'}"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Anlin"/></h1>
+                    </div>
+                    <group>
+                        <group string="Role">
+                            <field name="is_school_driver"/>
+                            <field name="is_school_caretaker"/>
+                        </group>
+                        <group string="Contact">
+                            <field name="phone"/>
+                            <field name="email"/>
+                        </group>
+                    </group>
+                    <group string="Driver Details" invisible="not is_school_driver">
+                        <group>
+                            <field name="driver_type"/>
+                        </group>
+                        <group>
+                            <field name="driving_license_no"/>
+                            <field name="driving_license_expiry"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_transport_staff_search" model="ir.ui.view">
+        <field name="name">school.transport.staff.search</field>
+        <field name="model">res.partner</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="phone"/>
+                <filter string="Drivers" name="drivers" domain="[('is_school_driver', '=', True)]"/>
+                <filter string="Caretakers" name="caretakers" domain="[('is_school_caretaker', '=', True)]"/>
+                <separator/>
+                <filter string="Own Drivers" name="own" domain="[('is_school_driver', '=', True), ('driver_type', '=', 'own')]"/>
+                <filter string="Outside Drivers" name="outside" domain="[('is_school_driver', '=', True), ('driver_type', '=', 'outside')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_transport_staff" model="ir.actions.act_window">
+        <field name="name">Drivers &amp; Caretakers</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">['|', ('is_school_driver', '=', True), ('is_school_caretaker', '=', True)]</field>
+        <field name="context">{'default_is_school_driver': True, 'default_is_company': False}</field>
+        <field name="search_view_id" ref="view_school_transport_staff_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_school_transport_staff_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_school_transport_staff_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a driver or caretaker</p>
+            <p>Tick "Is Driver" or "Is Caretaker". Only ticked people appear in the vehicle's Driver / Caretaker fields.</p>
+        </field>
+    </record>
+
+    <!-- ================= WhatsApp ================= -->
+    <record id="view_school_whatsapp_account_list" model="ir.ui.view">
+        <field name="name">school.whatsapp.account.list</field>
+        <field name="model">school.whatsapp.account</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="phone_number_id"/>
+                <field name="transport_template"/>
+                <field name="test_mode" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_whatsapp_account_form" model="ir.ui.view">
+        <field name="name">school.whatsapp.account.form</field>
+        <field name="model">school.whatsapp.account</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_send_hello_world" type="object" string="Send 'hello_world' Test"
+                            class="btn-secondary" icon="fa-whatsapp"/>
+                    <button name="action_send_transport_test" type="object" string="Send Transport Template Test"
+                            class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="alert" invisible="not test_mode">
+                        Test Mode is ON: messages are only written to the WhatsApp Log, nothing is sent to parents.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Meta Credentials">
+                            <field name="phone_number_id"/>
+                            <field name="business_account_id"/>
+                            <field name="access_token" password="True"/>
+                            <field name="api_version"/>
+                        </group>
+                        <group string="Sending">
+                            <field name="test_mode" widget="boolean_toggle"/>
+                            <field name="country_code"/>
+                            <field name="template_language"/>
+                            <field name="transport_template"/>
+                            <field name="test_phone" placeholder="e.g. 9876543210"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <div class="text-muted small">
+                        Transport template must be an approved UTILITY template with 5 body variables:
+                        {{1}} update, {{2}} route, {{3}} vehicle, {{4}} driver (phone), {{5}} caretaker (phone).
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_whatsapp_account" model="ir.actions.act_window">
+        <field name="name">WhatsApp Settings</field>
+        <field name="res_model">school.whatsapp.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add your WhatsApp Cloud API account</p>
+        </field>
+    </record>
+
+    <record id="view_school_whatsapp_message_list" model="ir.ui.view">
+        <field name="name">school.whatsapp.message.list</field>
+        <field name="model">school.whatsapp.message</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-success="state == 'sent'" decoration-danger="state == 'failed'"
+                  decoration-muted="state == 'test'">
+                <field name="create_date" string="Date"/>
+                <field name="partner_id"/>
+                <field name="phone"/>
+                <field name="template_name"/>
+                <field name="parameters" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'sent'"
+                       decoration-danger="state == 'failed'"/>
+                <field name="error" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_whatsapp_message_search" model="ir.ui.view">
+        <field name="name">school.whatsapp.message.search</field>
+        <field name="model">school.whatsapp.message</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="phone"/>
+                <filter string="Sent" name="sent" domain="[('state', '=', 'sent')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <filter string="Test" name="test" domain="[('state', '=', 'test')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_whatsapp_message" model="ir.actions.act_window">
+        <field name="name">WhatsApp Log</field>
+        <field name="res_model">school.whatsapp.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No WhatsApp messages yet</p>
         </field>
     </record>
 </odoo>

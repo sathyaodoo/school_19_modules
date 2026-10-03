@@ -19,3 +19,5 @@ from . import school_promotion
 from . import school_dashboard
 from . import school_library
 from . import school_hostel
+from . import school_maintenance
+from . import school_purchase

@@ -99,6 +99,15 @@
                                     <field name="caste"/>
                                 </group>
                             </group>
+                            <group string="Additional Information">
+                                <group>
+                                    <field name="hobbies"/>
+                                </group>
+                                <group>
+                                    <field name="date_of_leaving"/>
+                                    <field name="reason_for_leaving" invisible="not date_of_leaving"/>
+                                </group>
+                            </group>
                         </page>
                         <page string="Parents &amp; Guardians" name="parents">
                             <field name="parent_ids">
@@ -107,6 +116,9 @@
                                     <field name="relation"/>
                                     <field name="phone"/>
                                     <field name="email"/>
+                                    <field name="occupation"/>
+                                    <field name="annual_income"/>
+                                    <field name="student_ids" widget="many2many_tags"/>
                                 </list>
                             </field>
                         </page>
@@ -114,7 +126,29 @@
                             <group>
                                 <group string="Transport">
                                     <field name="transport_route_id"/>
+                                    <field name="van_boarding_point_id"/>
+                                    <field name="vehicle_id" invisible="not transport_route_id"/>
                                 </group>
+                            </group>
+                            <group string="Transport Fee History" invisible="not transport_route_id">
+                                <field name="transport_fee_ids" nolabel="1" readonly="1" colspan="2">
+                                    <list>
+                                        <field name="billing_month"/>
+                                        <field name="amount"/>
+                                        <field name="state" widget="badge"/>
+                                    </list>
+                                </field>
+                            </group>
+                            <group string="Route Change Requests">
+                                <field name="route_change_request_ids" nolabel="1" readonly="1" colspan="2">
+                                    <list>
+                                        <field name="request_date"/>
+                                        <field name="current_route_id"/>
+                                        <field name="requested_route_id"/>
+                                        <field name="reason"/>
+                                        <field name="state" widget="badge"/>
+                                    </list>
+                                </field>
                             </group>
                         </page>
                         <page string="Medical &amp; Notes" name="medical_notes">
@@ -122,6 +156,86 @@
                                 <field name="emergency_contact"/>
                                 <field name="medical_notes" placeholder="Any allergies, chronic illnesses, or general medical notes..."/>
                             </group>
+                        </page>
+                         <page string="Sponsorship &amp; Scholarship" name="sponsorship">
+                            <group>
+                                <group string="Sponsor">
+                                    <field name="sponsor_name"/>
+                                    <field name="sponsor_type"/>
+                                    <field name="sponsor_contact"/>
+                                    <field name="sponsorship_status"/>
+                                    <field name="relationship_to_student"/>
+                                </group>
+                                <group string="Scholarship">
+                                    <field name="scholarship_amount"/>
+                                    <field name="scholarship_type"/>
+                                    <field name="scholarship_approved_date"/>
+                                    <field name="scholarship_expiry_date"/>
+                                    <field name="merit_tag"/>
+                                </group>
+                            </group>
+                            <group string="Scholarship / Discount Applied in Fees">
+                                <field name="fee_concession_total"/>
+                            </group>
+                            <field name="student_fee_ids" readonly="1" nolabel="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="structure_id"/>
+                                    <field name="academic_year_id"/>
+                                    <field name="amount"/>
+                                    <field name="discount"/>
+                                    <field name="scholarship"/>
+                                    <field name="scholarship_value"/>
+                                    <field name="concession_amount" sum="Total"/>
+                                    <field name="net_amount"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Fees" name="fees">
+                            <group>
+                                <group>
+                                    <field name="fee_total"/>
+                                    <field name="fee_concession_total"/>
+                                </group>
+                                <group>
+                                    <field name="fee_paid_total"/>
+                                    <field name="fee_due_total" decoration-danger="fee_due_total &gt; 0"/>
+                                </group>
+                            </group>
+                            <field name="student_fee_ids" readonly="1" nolabel="1">
+                                <list decoration-success="state == 'paid'" decoration-warning="state == 'invoiced'">
+                                    <field name="name"/>
+                                    <field name="structure_id"/>
+                                    <field name="academic_year_id"/>
+                                    <field name="net_amount" sum="Total"/>
+                                    <field name="paid_amount" sum="Total"/>
+                                    <field name="due_amount" sum="Total"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Store Purchases" name="store">
+                            <field name="store_order_ids" readonly="1" nolabel="1">
+                                <list>
+                                    <field name="name" string="Sale ID"/>
+                                    <field name="date_order" string="Date"/>
+                                    <field name="amount_total" string="Amount" sum="Total"/>
+                                    <field name="store_payment_mode"/>
+                                    <field name="store_payment_status" widget="badge"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                            <page string="Siblings" name="siblings">
+                            <field name="sibling_ids">
+                                <list editable="bottom">
+                                    <field name="sibling_student_id"/>
+                                    <field name="sibling_class_id"/>
+                                    <field name="sibling_section_id"/>
+                                    <field name="sibling_admission_no"/>
+                                    <field name="relation_type"/>
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

@@ -1,17 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <function model="school.admission" name="_ensure_default_stages"/>
+    <function model="school.admission" name="_sync_stage_from_state"/>
+
+    <record id="view_school_admission_stage_list" model="ir.ui.view">
+        <field name="name">school.admission.stage.list</field>
+        <field name="model">school.admission.stage</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="fold"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_admission_stage" model="ir.actions.act_window">
+        <field name="name">Admission Stages</field>
+        <field name="res_model">school.admission.stage</field>
+        <field name="view_mode">list</field>
+    </record>
+
     <record id="view_school_admission_tree" model="ir.ui.view">
         <field name="name">school.admission.tree</field>
         <field name="model">school.admission</field>
         <field name="arch" type="xml">
-            <list decoration-info="state == 'submitted'" decoration-success="state in ('approved', 'enrolled')" decoration-danger="state == 'rejected'">
+            <list decoration-info="state in ('submitted', 'documents', 'verification', 'approval')" decoration-success="state == 'admitted'" decoration-danger="state == 'rejected'">
                 <field name="name"/>
                 <field name="first_name"/>
                 <field name="last_name"/>
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="academic_year_id"/>
-                <field name="state" widget="badge" decoration-info="state == 'submitted'" decoration-success="state in ('approved', 'enrolled')" decoration-danger="state == 'rejected'"/>
+                <field name="admission_source" optional="show"/>
+                <field name="state" widget="badge" decoration-info="state in ('submitted', 'documents', 'verification', 'approval')" decoration-success="state == 'admitted'" decoration-danger="state == 'rejected'"/>
             </list>
         </field>
     </record>
@@ -22,11 +45,16 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_submit" type="object" string="Submit" class="oe_highlight" invisible="state != 'draft'"/>
-                    <button name="action_approve" type="object" string="Approve" class="oe_highlight" invisible="state != 'submitted'"/>
-                    <button name="action_enroll" type="object" string="Enroll" class="oe_highlight" invisible="state != 'approved'"/>
-                    <button name="action_reject" type="object" string="Reject" class="btn-secondary" invisible="state not in ('submitted', 'approved')"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,enrolled"/>
+                    <button name="action_submit" type="object" string="Submit Application" class="oe_highlight" invisible="state != 'enquiry'"/>
+                    <button name="action_review_documents" type="object" string="Start Document Review" class="oe_highlight" invisible="state != 'submitted'"/>
+                    <button name="action_background_verification" type="object" string="Documents OK - Background Check" class="oe_highlight" invisible="state != 'documents'"/>
+                    <button name="action_send_for_approval" type="object" string="Send for Approval" class="oe_highlight" invisible="state != 'verification'"/>
+                    <button name="action_admit" type="object" string="Admit Student" class="oe_highlight" invisible="state != 'approval'"
+                            confirm="This creates the student and parent records. Continue?"/>
+                    <button name="action_reject" type="object" string="Reject" class="btn-secondary" invisible="state in ('admitted', 'rejected')"/>
+                    <button name="action_reset_enquiry" type="object" string="Reopen as Enquiry" class="btn-secondary" invisible="state != 'rejected'"/>
+                    <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}"/>
+                    <field name="state" invisible="1"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -35,17 +63,41 @@
                             <field name="name"/>
                         </h1>
                     </div>
+                    <group string="Admission Source">
+                        <group>
+                            <field name="admission_source"/>
+                            <field name="referral_type" invisible="admission_source != 'referral'"/>
+                            <field name="referral_student_id" invisible="admission_source != 'referral' or referral_type != 'parent'"/>
+                            <field name="referral_name" invisible="admission_source != 'referral'"
+                                   required="admission_source == 'referral'"/>
+                            <field name="referral_phone" invisible="admission_source != 'referral'"/>
+                            <field name="anganwadi_name" invisible="admission_source != 'anganwadi'"/>
+                            <field name="anganwadi_visit_date" invisible="admission_source != 'anganwadi'"
+                                   required="admission_source == 'anganwadi'"/>
+                            <field name="anganwadi_staff_ids" widget="many2many_tags" invisible="admission_source != 'anganwadi'"/>
+                        </group>
+                        <group>
+                            <field name="source_note" invisible="admission_source not in ('website', 'social_media', 'other')"/>
+                        </group>
+                    </group>
                     <group string="Applicant Details">
                         <group>
                             <field name="first_name" placeholder="First Name"/>
                             <field name="last_name" placeholder="Last Name"/>
+                            <field name="admission_date"/>
                             <field name="date_of_birth"/>
+                            <field name="age" readonly="1"/>
                             <field name="gender"/>
                         </group>
                         <group>
+                            <field name="blood_group"/>
+                            <field name="nationality_id" options="{'no_open': True}"/>
+                            <field name="religion"/>
+                            <field name="caste"/>
+                            <field name="mother_tongue"/>
                             <field name="email" placeholder="email@example.com"/>
                             <field name="phone" placeholder="+1234567890"/>
-                            <field name="student_id" invisible="state not in ('approved', 'enrolled')"/>
+                            <field name="student_id" invisible="state != 'admitted'"/>
                         </group>
                     </group>
                     <group string="Address Details">
@@ -61,6 +113,7 @@
                     </group>
                     <group string="Academic Preferences">
                         <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
                             <field name="academic_year_id"/>
                             <field name="class_id"/>
                         </group>
@@ -78,9 +131,67 @@
                             <field name="parent_email"/>
                         </group>
                     </group>
+                     <group string="Transfer Details">
+                        <group>
+                            <field name="previous_school_name"/>
+                        </group>
+                        <group>
+                            <field name="reason_for_transfer"/>
+                        </group>
+                    </group>
+                    <group string="Sponsorship &amp; Scholarship">
+                        <group>
+                            <field name="sponsor_name"/>
+                            <field name="sponsor_type"/>
+                            <field name="sponsor_contact"/>
+                            <field name="sponsorship_status"/>
+                            <field name="relationship_to_student"/>
+                        </group>
+                        <group>
+                            <field name="scholarship_amount"/>
+                            <field name="scholarship_type"/>
+                            <field name="scholarship_approved_date"/>
+                            <field name="scholarship_expiry_date"/>
+                            <field name="merit_tag"/>
+                        </group>
+                    </group>
                 </sheet>
                 <chatter/>
             </form>
+        </field>
+    </record>
+
+
+    <record id="view_school_admission_kanban" model="ir.ui.view">
+        <field name="name">school.admission.kanban</field>
+        <field name="model">school.admission</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage_id" quick_create="false" group_create="false"
+                    group_delete="false">
+                <field name="state"/>
+                <field name="stage_id"/>
+                <field name="kanban_state_color"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold"/>
+                        <div>
+                            <field name="first_name"/> <field name="last_name"/>
+                        </div>
+                        <div class="text-muted small">
+                            <field name="class_id"/> <field name="section_id"/> | <field name="academic_year_id"/>
+                        </div>
+                        <div class="small">
+                            <field name="parent_name"/> <field name="parent_phone"/>
+                        </div>
+                        <div class="small text-muted">
+                            <field name="admission_source"/>
+                        </div>
+                        <footer class="pt-1">
+                            <field name="activity_ids" widget="kanban_activity"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
         </field>
     </record>
 
@@ -93,11 +204,20 @@
                 <field name="last_name"/>
                 <field name="class_id"/>
                 <field name="academic_year_id"/>
-                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
-                <filter string="Submitted" name="submitted" domain="[('state', '=', 'submitted')]"/>
-                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
-                <filter string="Enrolled" name="enrolled" domain="[('state', '=', 'enrolled')]"/>
+                <filter string="New Enquiry" name="enquiry" domain="[('state', '=', 'enquiry')]"/>
+                <filter string="In Progress" name="in_progress" domain="[('state', 'in', ('submitted', 'documents', 'verification', 'approval'))]"/>
+                <filter string="Approval Pending" name="approval" domain="[('state', '=', 'approval')]"/>
+                <filter string="Admitted" name="admitted" domain="[('state', '=', 'admitted')]"/>
                 <filter string="Rejected" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <separator/>
+                <filter string="Walk-in" name="src_walk_in" domain="[('admission_source', '=', 'walk_in')]"/>
+                <filter string="Referral" name="src_referral" domain="[('admission_source', '=', 'referral')]"/>
+                <filter string="Anganwadi" name="src_anganwadi" domain="[('admission_source', '=', 'anganwadi')]"/>
+                <group>
+                    <filter string="Stage" name="group_state" context="{'group_by': 'stage_id'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Admission Source" name="group_source" context="{'group_by': 'admission_source'}"/>
+                </group>
             </search>
         </field>
     </record>
@@ -105,7 +225,7 @@
     <record id="action_school_admission" model="ir.actions.act_window">
         <field name="name">Admissions</field>
         <field name="res_model">school.admission</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_school_admission_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

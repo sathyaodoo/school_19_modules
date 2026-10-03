@@ -8,17 +8,26 @@
                 <t t-set="url" t-value="'/my/school/students'"/>
                 <t t-set="placeholder_count" t-value="'student_count'"/>
             </t>
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">My Trips (Driver)</t>
+                <t t-set="url" t-value="'/my/driver'"/>
+                <t t-set="placeholder_count" t-value="'driver_route_count'"/>
+            </t>
         </xpath>
     </template>
 
     <template id="portal_breadcrumbs_school" inherit_id="portal.portal_breadcrumbs">
         <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
-            <li t-if="page_name == 'school_students' or page_name == 'school_student_profile'" class="breadcrumb-item active">
+            <li t-if="page_name in ('school_students', 'school_student_profile', 'school_student_bus')" class="breadcrumb-item active">
                 <a t-if="page_name == 'school_student_profile'" href="/my/school/students">School Profiles</a>
                 <t t-else="">School Profiles</t>
             </li>
             <li t-if="page_name == 'school_student_profile'" class="breadcrumb-item active">
                 <t t-out="student.name"/>
+            </li>
+            <li t-if="page_name in ('school_driver', 'school_driver_trip')" class="breadcrumb-item active">
+                <a t-if="page_name == 'school_driver_trip'" href="/my/driver">My Trips</a>
+                <t t-else="">My Trips</t>
             </li>
         </xpath>
     </template>
@@ -66,6 +75,10 @@
                             <h2 class="text-primary mb-1"><t t-out="student.name"/></h2>
                             <p class="mb-1"><strong>Admission No:</strong> <t t-out="student.admission_no"/> | <strong>Roll Number:</strong> <t t-out="student.roll_number"/></p>
                             <p class="mb-0"><strong>Class:</strong> <t t-out="student.class_id.name"/> - <t t-out="student.section_id.name"/> | <strong>Academic Year:</strong> <t t-out="student.academic_year_id.name"/></p>
+                            <a t-if="student.transport_route_id" t-attf-href="/my/school/student/#{student.id}/bus"
+                               class="btn btn-primary btn-sm mt-2">
+                                <i class="fa fa-bus me-1"/> Bus Live Location
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -255,6 +268,213 @@
                     </div>
                 </div>
             </div>
+        </t>
+    </template>
+    <template id="portal_student_bus" name="Student Bus Location">
+        <t t-call="portal.portal_layout">
+            <t t-set="head">
+                <meta http-equiv="refresh" content="30"/>
+            </t>
+            <div class="container mt-3">
+                <a t-attf-href="/my/school/student/#{student.id}" class="btn btn-link px-0 mb-2">
+                    <i class="fa fa-arrow-left me-1"/> Back to <t t-out="student.name"/>
+                </a>
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body">
+                        <h4 class="text-primary mb-3"><i class="fa fa-bus me-2"/>Bus Live Location</h4>
+                        <div t-if="not vehicle" class="alert alert-info mb-0">No vehicle is assigned to this student's route.</div>
+                        <t t-if="vehicle">
+                            <div t-if="route.is_vehicle_replaced" class="alert alert-warning">
+                                Regular vehicle temporarily replaced. Showing the replacement vehicle.
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Route:</strong> <t t-out="route.name"/></p>
+                                    <p class="mb-1"><strong>Boarding Point:</strong> <t t-out="student.van_boarding_point_id.name or '-'"/></p>
+                                    <p class="mb-1"><strong>Vehicle:</strong> <t t-out="vehicle.name"/> (<t t-out="vehicle.vehicle_number"/>)</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Driver:</strong> <t t-out="driver.name or '-'"/></p>
+                                    <p class="mb-1"><strong>Driver Contact:</strong>
+                                        <a t-if="driver.phone" t-attf-href="tel:#{driver.phone}"><t t-out="driver.phone"/></a>
+                                        <t t-else="">-</t>
+                                    </p>
+                                    <p class="mb-1" t-if="vehicle.caretaker_id"><strong>Caretaker:</strong>
+                                        <t t-out="vehicle.caretaker_id.name"/>
+                                        <t t-if="vehicle.caretaker_id.phone">
+                                            (<a t-attf-href="tel:#{vehicle.caretaker_id.phone}"><t t-out="vehicle.caretaker_id.phone"/></a>)
+                                        </t>
+                                    </p>
+                                    <p class="mb-1"><strong>Last Updated:</strong>
+                                        <t t-if="minutes_ago is not None">
+                                            <t t-out="vehicle.last_location_at" t-options="{'widget': 'datetime'}"/>
+                                            (<t t-out="minutes_ago"/> min ago)
+                                        </t>
+                                        <t t-else="">No location received yet</t>
+                                    </p>
+                                </div>
+                            </div>
+                            <div t-if="minutes_ago is not None and minutes_ago &gt; 15" class="alert alert-secondary mt-2 mb-0">
+                                Location is more than 15 minutes old. The vehicle may not be on a trip right now.
+                            </div>
+                        </t>
+                    </div>
+                </div>
+                <div t-if="embed_url" class="card shadow-sm border-0 mb-3">
+                    <div class="ratio ratio-16x9">
+                        <iframe t-att-src="embed_url" style="border:0;" loading="lazy" title="Bus location map"/>
+                    </div>
+                    <div class="card-body py-2 small text-muted">
+                        Page refreshes every 30 seconds.
+                        <a t-att-href="vehicle.location_map_url" target="_blank" class="ms-2">Open in full map</a>
+                    </div>
+                </div>
+                <a t-if="vehicle and vehicle.gps_tracking_url" t-att-href="vehicle.gps_tracking_url" target="_blank"
+                   class="btn btn-outline-primary mb-4">Open provider tracking page</a>
+            </div>
+        </t>
+    </template>
+    <template id="portal_driver_home" name="Driver Trips">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3">
+                <h3 class="mb-1"><i class="fa fa-bus me-2"/>My Trips</h3>
+                <p class="text-muted">Today: <t t-out="today" t-options="{'widget': 'date'}"/></p>
+                <div t-if="not routes" class="alert alert-info">No routes are assigned to you today.</div>
+                <t t-foreach="routes" t-as="route">
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body">
+                            <h5 class="text-primary mb-1"><t t-out="route.name"/></h5>
+                            <p class="mb-2 small">
+                                Vehicle: <strong><t t-out="route.effective_vehicle_id.name or '-'"/></strong>
+                                (<t t-out="route.effective_vehicle_id.vehicle_number or '-'"/>)
+                                | Students: <strong><t t-out="len(route.student_ids)"/></strong>
+                            </p>
+                            <div t-if="route.is_vehicle_replaced" class="alert alert-warning py-1 small mb-2">
+                                Regular vehicle replaced today. Use <t t-out="route.effective_vehicle_id.name"/>.
+                            </div>
+                            <div class="d-grid gap-2 d-sm-flex">
+                                <t t-foreach="[('morning', 'Morning Pickup'), ('evening', 'Evening Drop')]" t-as="trip">
+                                    <t t-set="att" t-value="done.get((route.id, trip[0]))"/>
+                                    <a t-attf-href="/my/driver/trip/#{route.id}/#{trip[0]}"
+                                       t-attf-class="btn btn-lg #{'btn-success' if att and att.marked_by_id else 'btn-outline-primary'}">
+                                        <t t-out="trip[1]"/>
+                                        <t t-if="att and att.marked_by_id">
+                                            <i class="fa fa-check ms-1"/> <t t-out="att.present_count"/>/<t t-out="len(att.line_ids)"/>
+                                        </t>
+                                    </a>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_driver_trip" name="Driver Trip Attendance">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5">
+                <h4 class="mb-1 text-primary"><t t-out="route.name"/></h4>
+                <p class="mb-2">
+                    <strong><t t-out="dict(attendance._fields['trip_type'].selection).get(attendance.trip_type)"/></strong>
+                    | <t t-out="attendance.date" t-options="{'widget': 'date'}"/>
+                    | <t t-out="vehicle.name or '-'"/> (<t t-out="vehicle.vehicle_number or '-'"/>)
+                </p>
+                <div t-if="saved" class="alert alert-success py-2">
+                    Attendance saved. Boarded <t t-out="attendance.present_count"/>, Absent <t t-out="attendance.absent_count"/>.
+                </div>
+
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body">
+                        <h6 class="mb-2"><i class="fa fa-map-marker me-1"/>Live Location</h6>
+                        <button type="button" id="o_driver_gps_btn" class="btn btn-warning w-100"
+                                t-att-data-route-id="route.id" t-att-data-csrf="request.csrf_token()">
+                            Start Sharing Location
+                        </button>
+                        <div id="o_driver_gps_status" class="small text-muted mt-2">Location sharing is off. Keep this page open during the trip.</div>
+                    </div>
+                </div>
+
+                <form t-attf-action="/my/driver/attendance/#{attendance.id}/save" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div t-if="not attendance.line_ids" class="alert alert-info">No students are assigned to this route.</div>
+                    <t t-foreach="attendance.line_ids" t-as="line">
+                        <div class="card border-0 shadow-sm mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong><t t-out="line.student_id.name"/></strong>
+                                        <div class="small text-muted">
+                                            <t t-out="line.student_id.class_id.name"/> - <t t-out="line.student_id.section_id.name"/>
+                                            | Stop: <t t-out="line.boarding_point_id.name or '-'"/>
+                                        </div>
+                                        <div class="small" t-if="line.student_id.parent_contact">
+                                            <i class="fa fa-phone me-1"/><t t-out="line.student_id.parent_contact"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="btn-group w-100 mt-2" role="group">
+                                    <input type="radio" class="btn-check" t-attf-name="status_#{line.id}" value="boarded"
+                                           t-attf-id="b_#{line.id}" t-att-checked="line.status == 'boarded'"/>
+                                    <label class="btn btn-outline-success" t-attf-for="b_#{line.id}">Boarded</label>
+                                    <input type="radio" class="btn-check" t-attf-name="status_#{line.id}" value="absent"
+                                           t-attf-id="a_#{line.id}" t-att-checked="line.status == 'absent'"/>
+                                    <label class="btn btn-outline-danger" t-attf-for="a_#{line.id}">Absent</label>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <div t-if="attendance.line_ids" class="position-sticky bottom-0 bg-white py-2">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Save Attendance</button>
+                    </div>
+                </form>
+                <a href="/my/driver" class="btn btn-link px-0 mt-2"><i class="fa fa-arrow-left me-1"/>Back to My Trips</a>
+            </div>
+            <script>
+                (function () {
+                    var btn = document.getElementById('o_driver_gps_btn');
+                    var statusEl = document.getElementById('o_driver_gps_status');
+                    if (!btn) { return; }
+                    var watchId = null;
+                    var waiting = false;
+                    function setStatus(text) { statusEl.textContent = text; }
+                    function send(pos) {
+                        // send at most one location every 30 seconds
+                        if (waiting) { return; }
+                        waiting = true;
+                        setTimeout(function () { waiting = false; }, 30000);
+                        var fd = new FormData();
+                        fd.append('csrf_token', btn.dataset.csrf);
+                        fd.append('route_id', btn.dataset.routeId);
+                        fd.append('lat', pos.coords.latitude);
+                        fd.append('lon', pos.coords.longitude);
+                        fd.append('speed', (pos.coords.speed || 0) * 3.6);
+                        fetch('/my/driver/location', {method: 'POST', body: fd, credentials: 'same-origin'})
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                setStatus(d.ok ? 'Location sent at ' + new Date().toLocaleTimeString() : 'Error: ' + d.error);
+                            })
+                            .catch(function () { setStatus('Network error. Will retry.'); waiting = false; });
+                    }
+                    btn.addEventListener('click', function () {
+                        if (!navigator.geolocation) { setStatus('GPS is not supported on this device.'); return; }
+                        if (watchId !== null) {
+                            navigator.geolocation.clearWatch(watchId);
+                            watchId = null;
+                            btn.textContent = 'Start Sharing Location';
+                            btn.classList.replace('btn-danger', 'btn-warning');
+                            setStatus('Location sharing stopped.');
+                            return;
+                        }
+                        watchId = navigator.geolocation.watchPosition(send, function (err) {
+                            setStatus('GPS error: ' + err.message);
+                        }, {enableHighAccuracy: true, maximumAge: 10000, timeout: 20000});
+                        btn.textContent = 'Stop Sharing Location';
+                        btn.classList.replace('btn-warning', 'btn-danger');
+                        setStatus('Waiting for GPS...');
+                    });
+                })();
+            </script>
         </t>
     </template>
 </odoo>

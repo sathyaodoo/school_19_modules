@@ -164,4 +164,377 @@
     <menuitem id="menu_school_library_sub" name="Library" parent="ad_school_management.menu_school_facilities" sequence="10"/>
     <menuitem id="menu_school_book" name="Books Catalog" parent="menu_school_library_sub" action="action_school_book" sequence="10"/>
     <menuitem id="menu_school_book_issue" name="Book Issues" parent="menu_school_library_sub" action="action_school_book_issue" sequence="20"/>
+
+    <!-- ============ STUDENT STORE ============ -->
+
+    <!-- Walk-in customer used for counter sales without a student -->
+    <record id="partner_store_counter_customer" model="res.partner">
+        <field name="name">Store Counter Customer</field>
+    </record>
+
+    <!-- ================= 28. Item Master ================= -->
+    <record id="view_product_template_form_school_store" model="ir.ui.view">
+        <field name="name">product.template.form.school.store</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_id']" position="before">
+                <field name="is_school_store_item"/>
+                <field name="store_category" invisible="not is_school_store_item"
+                       required="is_school_store_item"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_school_store_item_list" model="ir.ui.view">
+        <field name="name">school.store.item.list</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="default_code" string="Item Code"/>
+                <field name="name" string="Item Name"/>
+                <field name="store_category"/>
+                <field name="uom_id" string="Unit of Measure"/>
+                <field name="list_price" string="Selling Price"/>
+                <field name="standard_price" string="Cost Price"/>
+                <field name="qty_available" string="On Hand"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_store_item_search" model="ir.ui.view">
+        <field name="name">school.store.item.search</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Item"/>
+                <field name="default_code" string="Item Code"/>
+                <filter string="Textbook" name="textbook" domain="[('store_category', '=', 'textbook')]"/>
+                <filter string="Notebook" name="notebook" domain="[('store_category', '=', 'notebook')]"/>
+                <filter string="Stationery" name="stationery" domain="[('store_category', '=', 'stationery')]"/>
+                <filter string="Uniform" name="uniform" domain="[('store_category', '=', 'uniform')]"/>
+                <filter string="Accessories" name="accessories" domain="[('store_category', '=', 'accessories')]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Category" name="group_category" context="{'group_by': 'store_category'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+
+    <record id="view_school_store_item_form" model="ir.ui.view">
+        <field name="name">school.store.item.form</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_store_update_stock" type="object" string="Update Stock"
+                            class="btn-secondary" invisible="not id"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+                    <div class="oe_title">
+                        <label for="name" string="Item Name"/>
+                        <h1><field name="name" placeholder="e.g. Maths Textbook Class 5"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="default_code" string="Item Code" readonly="1" placeholder="Auto: ITEM/2026/001"/>
+                            <field name="store_category" required="1"/>
+                            <field name="uom_id" string="Unit of Measure"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="list_price" string="Selling Price" widget="monetary"/>
+                            <field name="standard_price" string="Cost Price" widget="monetary"/>
+                            <field name="taxes_id" string="Sales Taxes" widget="many2many_tags"
+                                   placeholder="No tax"/>
+                            <field name="qty_available" string="On Hand" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook invisible="store_category != 'uniform'">
+                        <page string="Size Variants" name="sizes">
+                            <field name="attribute_line_ids">
+                                <list editable="bottom">
+                                    <field name="attribute_id" string="Attribute (e.g. Size)"/>
+                                    <field name="value_ids" widget="many2many_tags" string="Values (e.g. S, M, L, XL)"
+                                           context="{'default_attribute_id': attribute_id}"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <field name="is_school_store_item" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="cost_currency_id" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_store_item" model="ir.actions.act_window">
+        <field name="name">Store Items</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_school_store_item', '=', True)]</field>
+        <field name="context">{'default_is_school_store_item': True, 'default_is_storable': True, 'default_type': 'consu', 'default_sale_ok': True}</field>
+        <field name="search_view_id" ref="view_school_store_item_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_school_store_item_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_school_store_item_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a store item</p>
+            <p>Textbooks, notebooks, stationery, uniforms (use Variants for sizes) and accessories.</p>
+        </field>
+    </record>
+
+    <!-- ================= 29. Class-wise Book List ================= -->
+    <record id="view_school_book_list_list" model="ir.ui.view">
+        <field name="name">school.book.list.list</field>
+        <field name="model">school.book.list</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'published'">
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="academic_year_id"/>
+                <field name="board"/>
+                <field name="total_estimated_cost"/>
+                <field name="published_date"/>
+                <field name="state" widget="badge" decoration-success="state == 'published'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_book_list_form" model="ir.ui.view">
+        <field name="name">school.book.list.form</field>
+        <field name="model">school.book.list</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" type="object" string="Publish" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_reset_draft" type="object" string="Reset to Draft"
+                            invisible="state != 'published'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="class_id" readonly="state == 'published'"/>
+                            <field name="section_id" placeholder="All sections" readonly="state == 'published'"/>
+                            <field name="academic_year_id" readonly="state == 'published'"/>
+                        </group>
+                        <group>
+                            <field name="board" readonly="state == 'published'"/>
+                            <field name="total_estimated_cost"/>
+                            <field name="published_date"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state == 'published'">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="product_id" context="{'default_is_school_store_item': True}"/>
+                            <field name="store_category"/>
+                            <field name="quantity"/>
+                            <field name="price_unit"/>
+                            <field name="subtotal" sum="Total"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_book_list_search" model="ir.ui.view">
+        <field name="name">school.book.list.search</field>
+        <field name="model">school.book.list</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="academic_year_id"/>
+                <filter string="Published" name="published" domain="[('state', '=', 'published')]"/>
+                <filter string="CBSE" name="cbse" domain="[('board', '=', 'cbse')]"/>
+                <filter string="State Board" name="state_board" domain="[('board', '=', 'state')]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Board" name="group_board" context="{'group_by': 'board'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_book_list" model="ir.actions.act_window">
+        <field name="name">Class-wise Book Lists</field>
+        <field name="res_model">school.book.list</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a book list for a class</p>
+        </field>
+    </record>
+
+    <!-- ================= 30. Counter Sale & Student-wise Sales ================= -->
+    <record id="view_sale_order_form_school_store" model="ir.ui.view">
+        <field name="name">sale.order.form.school.store</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="before">
+                <field name="is_store_sale" invisible="1"/>
+                <field name="student_id" invisible="not is_store_sale" readonly="state not in ('draft', 'sent')"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <label for="book_list_id" invisible="not is_store_sale"/>
+                <div class="o_row" invisible="not is_store_sale">
+                    <field name="book_list_id" readonly="state not in ('draft', 'sent')"/>
+                    <button name="action_load_book_list" type="object" string="Load Book List"
+                            class="btn-secondary" icon="fa-book"
+                            invisible="not book_list_id or state not in ('draft', 'sent')"/>
+                </div>
+                <field name="store_payment_mode" invisible="not is_store_sale"/>
+                <field name="store_payment_status" widget="badge" invisible="not is_store_sale"
+                       decoration-success="store_payment_status == 'paid'"
+                       decoration-warning="store_payment_status == 'partial'"
+                       decoration-danger="store_payment_status == 'pending'"/>
+                <field name="store_receipt_number" invisible="not is_store_sale or not store_receipt_number"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_school_store_sale_list" model="ir.ui.view">
+        <field name="name">school.store.sale.list</field>
+        <field name="model">sale.order</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" string="Sale ID"/>
+                <field name="date_order" string="Sale Date"/>
+                <field name="student_id"/>
+                <field name="partner_id"/>
+                <field name="amount_total" string="Net Amount" sum="Total"/>
+                <field name="store_payment_mode"/>
+                <field name="store_payment_status" widget="badge"
+                       decoration-success="store_payment_status == 'paid'"
+                       decoration-warning="store_payment_status == 'partial'"
+                       decoration-danger="store_payment_status == 'pending'"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+
+    <record id="view_school_store_sale_form" model="ir.ui.view">
+        <field name="name">school.store.sale.form</field>
+        <field name="model">sale.order</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm Sale" class="oe_highlight"
+                            invisible="state not in ('draft', 'sent')"/>
+                    <button name="action_store_invoice" type="object" string="Create Invoice" class="oe_highlight"
+                            invisible="state != 'sale' or invoice_status != 'to invoice'"/>
+                    <button name="action_view_invoice" type="object" string="Invoice / Pay"
+                            invisible="not invoice_ids"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state not in ('draft', 'sent')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sale"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Sale ID"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_id" readonly="state not in ('draft', 'sent')"
+                                   placeholder="Leave empty for counter sale"/>
+                            <field name="partner_id" string="Customer" readonly="state not in ('draft', 'sent')"/>
+                            <label for="book_list_id"/>
+                            <div class="o_row">
+                                <field name="book_list_id" readonly="state not in ('draft', 'sent')"/>
+                                <button name="action_load_book_list" type="object" string="Load Book List"
+                                        class="btn-secondary" icon="fa-book"
+                                        invisible="not book_list_id or state not in ('draft', 'sent')"/>
+                            </div>
+                        </group>
+                        <group>
+                            <field name="date_order" string="Sale Date" readonly="state not in ('draft', 'sent')"/>
+                            <field name="store_payment_mode"/>
+                            <field name="store_payment_status" widget="badge"
+                                   decoration-success="store_payment_status == 'paid'"
+                                   decoration-warning="store_payment_status == 'partial'"
+                                   decoration-danger="store_payment_status == 'pending'"/>
+                            <field name="store_receipt_number" invisible="not store_receipt_number"/>
+                        </group>
+                    </group>
+                    <field name="order_line" readonly="state not in ('draft', 'sent')">
+                        <list editable="bottom">
+                            <field name="product_id" string="Item" domain="[('is_school_store_item', '=', True)]"
+                                   context="{'default_is_school_store_item': True}"/>
+                            <field name="name" optional="hide"/>
+                            <field name="product_uom_qty" string="Qty"/>
+                            <field name="price_unit" string="Price"/>
+                            <field name="discount" string="Disc %"/>
+                            <field name="price_subtotal" string="Amount"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer">
+                        <field name="store_gross_amount"/>
+                        <field name="store_discount_amount"/>
+                        <field name="amount_untaxed" string="Amount (before tax)"/>
+                        <field name="amount_tax" string="Tax"/>
+                        <field name="amount_total" string="Net Amount" class="oe_subtotal_footer_separator"/>
+                    </group>
+                    <field name="is_store_sale" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="pricelist_id" invisible="1"/>
+                    <field name="invoice_status" invisible="1"/>
+                    <field name="invoice_ids" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_store_sale" model="ir.actions.act_window">
+        <field name="name">Store Sales</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_store_sale', '=', True)]</field>
+        <field name="context">{'default_is_store_sale': True}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_school_store_sale_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_school_store_sale_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a store sale</p>
+            <p>Pick a student to load their class book list, or leave Student empty for a counter sale.</p>
+        </field>
+    </record>
+
+    <!-- Student Store menus -->
+    <menuitem id="menu_school_store" name="Student Store" parent="ad_school_management.menu_school_root" sequence="45"/>
+    <menuitem id="menu_school_store_item" name="Items" parent="menu_school_store" action="action_school_store_item" sequence="10"/>
+    <menuitem id="menu_school_book_list" name="Class-wise Book Lists" parent="menu_school_store" action="action_school_book_list" sequence="20"/>
+    <menuitem id="menu_school_store_sale" name="Counter / Student Sales" parent="menu_school_store" action="action_school_store_sale" sequence="30"/>
+
 </odoo>

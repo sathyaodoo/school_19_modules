@@ -28,8 +28,9 @@ class SchoolDashboard(models.TransientModel):
         total_parents = self.env['school.parent'].search_count([])
         
         total_admissions = self.env['school.admission'].search_count([])
-        pending_admissions = self.env['school.admission'].search_count([('state', '=', 'submitted')])
-        approved_admissions = self.env['school.admission'].search_count([('state', '=', 'approved')])
+        pending_admissions = self.env['school.admission'].search_count(
+            [('state', 'in', ('submitted', 'documents', 'verification', 'approval'))])
+        approved_admissions = self.env['school.admission'].search_count([('state', '=', 'admitted')])
         
         has_library = 'school.book' in self.env
         total_books = self.env['school.book'].search_count([]) if has_library else 0

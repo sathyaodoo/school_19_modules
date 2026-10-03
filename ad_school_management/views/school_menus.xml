@@ -24,10 +24,15 @@
 
     <menuitem id="menu_school_fee_structure" name="Fee Structures" parent="menu_school_financials" action="action_school_fee_structure" sequence="10"/>
     <menuitem id="menu_school_student_fee" name="Student Fees" parent="menu_school_financials" action="action_school_student_fee" sequence="20"/>
+    <menuitem id="menu_school_fee_generate" name="Generate Class Fees" parent="menu_school_financials" action="action_school_fee_generate" sequence="25"/>
+    <menuitem id="menu_school_student_transport_fee" name="Transport Fees" parent="menu_school_financials" action="action_school_student_transport_fee" sequence="30"/>
 
     <menuitem id="menu_school_transport_sub" name="Transport" parent="menu_school_facilities" sequence="20"/>
+    <menuitem id="menu_school_transport_staff" name="Drivers &amp; Caretakers" parent="menu_school_transport_sub" action="action_school_transport_staff" sequence="5"/>
     <menuitem id="menu_school_vehicle" name="Vehicles" parent="menu_school_transport_sub" action="action_school_vehicle" sequence="10"/>
     <menuitem id="menu_school_transport_route" name="Routes &amp; Stops" parent="menu_school_transport_sub" action="action_school_transport_route" sequence="20"/>
+    <menuitem id="menu_school_route_change_request" name="Route Change Requests" parent="menu_school_transport_sub" action="action_school_route_change_request" sequence="30"/>
+     <menuitem id="menu_school_transport_attendance" name="Transport Attendance" parent="menu_school_transport_sub" action="action_school_transport_attendance" sequence="40"/>
 
     <menuitem id="menu_school_bulk_admission" name="Bulk Admissions" parent="menu_school_wizards" action="action_school_bulk_admission" sequence="10"/>
     <menuitem id="menu_school_bulk_student_import" name="Bulk Student Import" parent="menu_school_wizards" action="action_school_bulk_student_import" sequence="20"/>
@@ -42,4 +47,6 @@
     <menuitem id="menu_school_section" name="Sections" parent="menu_school_configuration" action="action_school_section" sequence="50"/>
     <menuitem id="menu_school_subject" name="Subjects" parent="menu_school_configuration" action="action_school_subject" sequence="60"/>
     <menuitem id="menu_school_grade" name="Grading Rules" parent="menu_school_configuration" action="action_school_grade" sequence="70"/>
+    <menuitem id="menu_school_whatsapp_account" name="WhatsApp Settings" parent="menu_school_configuration" action="action_school_whatsapp_account" sequence="80"/>
+    <menuitem id="menu_school_whatsapp_message" name="WhatsApp Log" parent="menu_school_configuration" action="action_school_whatsapp_message" sequence="90"/>
 </odoo>

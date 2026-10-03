@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- School Location master -->
+    <record id="view_school_maintenance_location_list" model="ir.ui.view">
+        <field name="name">school.maintenance.location.list</field>
+        <field name="model">school.maintenance.location</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="complete_name"/>
+                <field name="code"/>
+                <field name="location_type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_maintenance_location_form" model="ir.ui.view">
+        <field name="name">school.maintenance.location.form</field>
+        <field name="model">school.maintenance.location</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="location_type"/>
+                        </group>
+                        <group>
+                            <field name="parent_id"/>
+                            <field name="complete_name"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Sub Locations" name="children">
+                            <field name="child_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="location_type"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_maintenance_location_search" model="ir.ui.view">
+        <field name="name">school.maintenance.location.search</field>
+        <field name="model">school.maintenance.location</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="complete_name"/>
+                <field name="code"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Type" name="group_type" context="{'group_by': 'location_type'}"/>
+                    <filter string="Parent" name="group_parent" context="{'group_by': 'parent_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_maintenance_location" model="ir.actions.act_window">
+        <field name="name">School Locations</field>
+        <field name="res_model">school.maintenance.location</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_school_maintenance_location" name="Maintenance Locations"
+              parent="menu_school_configuration" action="action_school_maintenance_location" sequence="100"/>
+
+    <!-- Maintenance request form: location, vendor, inspection, spares -->
+    <record id="view_maintenance_request_form_school" model="ir.ui.view">
+        <field name="name">maintenance.request.form.school</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='equipment_id']" position="after">
+                <field name="school_location_id"/>
+                <field name="repair_vendor_id"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Inspection" name="school_inspection">
+                    <group>
+                        <group>
+                            <field name="inspection_date"/>
+                            <field name="inspected_by_id"/>
+                            <field name="estimated_cost"/>
+                        </group>
+                        <group>
+                            <field name="fault_description"/>
+                            <field name="inspection_findings"/>
+                            <field name="action_required"/>
+                            <field name="material_estimate"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Repair &amp; Spares" name="school_repair">
+                    <group>
+                        <field name="work_done"/>
+                    </group>
+                    <field name="spare_line_ids">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="name"/>
+                            <field name="quantity"/>
+                            <field name="unit_cost"/>
+                            <field name="subtotal" sum="Total"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer">
+                        <field name="spares_total"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Equipment form: school location -->
+    <record id="view_maintenance_equipment_form_school" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.school</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="school_location_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Phase 2: approval limits master -->
+    <record id="view_school_maintenance_approval_rule_list" model="ir.ui.view">
+        <field name="name">school.maintenance.approval.rule.list</field>
+        <field name="model">school.maintenance.approval.rule</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="amount_from"/>
+                <field name="approver_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_maintenance_approval_rule" model="ir.actions.act_window">
+        <field name="name">Maintenance Approval Limits</field>
+        <field name="res_model">school.maintenance.approval.rule</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_school_maintenance_approval_rule" name="Maintenance Approval Limits"
+              parent="menu_school_configuration" action="action_school_maintenance_approval_rule" sequence="110"/>
+
+    <!-- Phase 2: buttons and Approval / Expense / Closure page on the ticket -->
+    <record id="view_maintenance_request_form_school_phase2" model="ir.ui.view">
+        <field name="name">maintenance.request.form.school.phase2</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_request_approval" type="object" string="Request Approval" class="btn-primary"
+                        invisible="not approval_required or approval_state not in ('none', 'rejected')"/>
+                <button name="action_approve" type="object" string="Approve" class="btn-success"
+                        invisible="approval_state != 'to_approve'"/>
+                <button name="action_reject_approval" type="object" string="Reject"
+                        invisible="approval_state != 'to_approve'"/>
+                <button name="action_verify" type="object" string="Verify &amp; Close" class="btn-primary"
+                        invisible="verification_state != 'pending' or not stage_done"/>
+                <button name="action_not_satisfied" type="object" string="Not Satisfied"
+                        invisible="verification_state != 'pending' or not stage_done"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Approval &amp; Closure" name="school_approval_closure">
+                    <group>
+                        <group string="Approval">
+                            <field name="approval_required"/>
+                            <field name="approval_rule_id"/>
+                            <field name="approver_id"/>
+                            <field name="approval_state" widget="badge"/>
+                            <field name="approved_by_id"/>
+                            <field name="approved_date"/>
+                        </group>
+                        <group string="Expense">
+                            <field name="vendor_bill_id"/>
+                            <field name="bill_amount"/>
+                            <field name="estimated_cost" readonly="1"/>
+                            <field name="cost_variance"/>
+                        </group>
+                    </group>
+                    <group string="Verification &amp; Closure">
+                        <group>
+                            <field name="verification_state" widget="badge"/>
+                            <field name="verified_by_id"/>
+                            <field name="verified_date"/>
+                            <field name="closure_date"/>
+                        </group>
+                        <group>
+                            <field name="closure_remarks"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="SLA &amp; History" name="school_sla">
+                    <field name="stage_done" invisible="1"/>
+                    <group>
+                        <group string="SLA &amp; Ageing">
+                            <field name="sla_deadline"/>
+                            <field name="is_overdue"/>
+                            <field name="escalated_date"/>
+                            <field name="first_response_date"/>
+                            <field name="response_hours"/>
+                            <field name="age_days"/>
+                            <field name="closure_days"/>
+                        </group>
+                        <group string="Repeated Fault">
+                            <field name="repeat_fault"/>
+                            <field name="repeat_count"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Phase 3: SLA rules master -->
+    <record id="view_school_maintenance_sla_list" model="ir.ui.view">
+        <field name="name">school.maintenance.sla.list</field>
+        <field name="model">school.maintenance.sla</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="priority"/>
+                <field name="target_hours"/>
+                <field name="escalation_user_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_maintenance_sla" model="ir.actions.act_window">
+        <field name="name">Maintenance SLA Rules</field>
+        <field name="res_model">school.maintenance.sla</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_school_maintenance_sla" name="Maintenance SLA Rules"
+              parent="menu_school_configuration" action="action_school_maintenance_sla" sequence="120"/>
+
+    <!-- Phase 3: scheduled action -->
+    <record id="ir_cron_school_maintenance_overdue" model="ir.cron">
+        <field name="name">School Maintenance: Escalate overdue tickets</field>
+        <field name="model_id" ref="maintenance.model_maintenance_request"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_escalate_overdue()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- Phase 3: report views -->
+    <record id="view_school_maintenance_request_pivot" model="ir.ui.view">
+        <field name="name">school.maintenance.request.pivot</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <pivot string="Maintenance Cost Analysis">
+                <field name="school_location_id" type="row"/>
+                <field name="repair_vendor_id" type="col"/>
+                <field name="estimated_cost" type="measure"/>
+                <field name="spares_total" type="measure"/>
+                <field name="response_hours" type="measure"/>
+                <field name="closure_days" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_maintenance_request_graph" model="ir.ui.view">
+        <field name="name">school.maintenance.request.graph</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <graph string="Estimated Cost by Vendor" type="bar">
+                <field name="repair_vendor_id"/>
+                <field name="estimated_cost" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_school_maintenance_cost_report" model="ir.actions.act_window">
+        <field name="name">Maintenance Cost Analysis</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_school_maintenance_request_pivot')}),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('view_school_maintenance_request_graph')})]"/>
+    </record>
+
+    <record id="action_school_maintenance_overdue" model="ir.actions.act_window">
+        <field name="name">Overdue Tickets</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_overdue', '=', True)]</field>
+    </record>
+
+    <record id="action_school_maintenance_repeat" model="ir.actions.act_window">
+        <field name="name">Repeated Faults</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('repeat_fault', '=', True)]</field>
+    </record>
+
+    <menuitem id="menu_school_maintenance_root" name="Maintenance"
+              parent="menu_school_facilities" sequence="30"/>
+    <menuitem id="menu_school_maintenance_overdue" name="Overdue Tickets"
+              parent="menu_school_maintenance_root" action="action_school_maintenance_overdue" sequence="10"/>
+    <menuitem id="menu_school_maintenance_repeat" name="Repeated Faults"
+              parent="menu_school_maintenance_root" action="action_school_maintenance_repeat" sequence="20"/>
+    <menuitem id="menu_school_maintenance_cost_report" name="Cost Analysis"
+              parent="menu_school_maintenance_root" action="action_school_maintenance_cost_report" sequence="30"/>
+</odoo>

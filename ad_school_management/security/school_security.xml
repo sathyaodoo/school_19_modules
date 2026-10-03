@@ -230,12 +230,151 @@
         <record id="rule_parent_timetable" model="ir.rule">
             <field name="name">Parent: View Child Class Timetable</field>
             <field name="model_id" ref="model_school_timetable"/>
-            <field name="domain_force">[('class_id', 'in', user.partner_id.parent_ids.student_ids.mapped('class_id').ids)]</field>
+			<field name="domain_force">[('class_id', 'in', user.partner_id.school_parent_ids.student_ids.mapped('class_id').ids)]</field>
             <field name="groups" eval="[(4, ref('group_school_parent'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>
+        </record>
+    </data>
+
+    <!-- ===== Multi-branch (CBSE / State Board) record rules ===== -->
+    <data>
+        <record id="rule_branch_school_academic_year" model="ir.rule">
+            <field name="name">school.academic.year: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_academic_year"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_academic_term" model="ir.rule">
+            <field name="name">school.academic.term: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_academic_term"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_class" model="ir.rule">
+            <field name="name">school.class: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_class"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_section" model="ir.rule">
+            <field name="name">school.section: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_section"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_subject" model="ir.rule">
+            <field name="name">school.subject: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_subject"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_attendance" model="ir.rule">
+            <field name="name">school.attendance: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_attendance"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_exam" model="ir.rule">
+            <field name="name">school.exam: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_exam"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_exam_result" model="ir.rule">
+            <field name="name">school.exam.result: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_exam_result"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_timetable" model="ir.rule">
+            <field name="name">school.timetable: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_timetable"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_promotion" model="ir.rule">
+            <field name="name">school.promotion: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_promotion"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_hostel" model="ir.rule">
+            <field name="name">school.hostel: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_hostel"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_hostel_room" model="ir.rule">
+            <field name="name">school.hostel.room: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_hostel_room"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_hostel_allocation" model="ir.rule">
+            <field name="name">school.hostel.allocation: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_hostel_allocation"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_book" model="ir.rule">
+            <field name="name">school.book: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_book"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_book_issue" model="ir.rule">
+            <field name="name">school.book.issue: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_book_issue"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_book_list" model="ir.rule">
+            <field name="name">school.book.list: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_book_list"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_vehicle" model="ir.rule">
+            <field name="name">school.vehicle: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_vehicle"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_transport_route" model="ir.rule">
+            <field name="name">school.transport.route: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_transport_route"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_student_transport_fee" model="ir.rule">
+            <field name="name">school.student.transport.fee: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_student_transport_fee"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_transport_route_change_request" model="ir.rule">
+            <field name="name">school.transport.route.change.request: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_transport_route_change_request"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_transport_attendance" model="ir.rule">
+            <field name="name">school.transport.attendance: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_transport_attendance"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_admission" model="ir.rule">
+            <field name="name">school.admission: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_admission"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_student" model="ir.rule">
+            <field name="name">school.student: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_student"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_parent" model="ir.rule">
+            <field name="name">school.parent: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_parent"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_teacher" model="ir.rule">
+            <field name="name">school.teacher: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_teacher"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_fee_structure" model="ir.rule">
+            <field name="name">school.fee.structure: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_fee_structure"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+        </record>
+        <record id="rule_branch_school_student_fee" model="ir.rule">
+            <field name="name">school.student.fee: own branch + shared main school</field>
+            <field name="model_id" ref="model_school_student_fee"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
         </record>
     </data>
 </odoo>

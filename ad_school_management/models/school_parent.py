@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 
 class SchoolParent(models.Model):
     _name = 'school.parent'
