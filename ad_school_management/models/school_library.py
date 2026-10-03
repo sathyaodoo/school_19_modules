@@ -71,6 +71,11 @@ class SchoolBookIssue(models.Model):
     issue_date = fields.Date(string='Issue Date', required=True, default=fields.Date.context_today, tracking=True)
     due_date = fields.Date(string='Due Date', required=True, tracking=True)
     return_date = fields.Date(string='Return Date', tracking=True)
+    fine_per_day = fields.Float(
+        string='Fine per Day', readonly=True, copy=False,
+        default=lambda self: self._default_fine_per_day(),
+        help='Rate taken from Settings > School Management when the issue is created. '
+             'Changing the setting later does not affect existing issues.')
     fine_amount = fields.Float(string='Fine Amount', compute='_compute_fine', store=True)
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -78,6 +83,14 @@ class SchoolBookIssue(models.Model):
         ('returned', 'Returned'),
         ('overdue', 'Overdue')
     ], string='Status', default='draft', required=True, tracking=True)
+
+    @api.model
+    def _default_fine_per_day(self):
+        """Fine rate from Settings; falls back to 5.0 if the company field is not loaded yet."""
+        company = self.env.company
+        if 'library_fine_per_day' not in company._fields:
+            return 5.0
+        return company.library_fine_per_day
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -92,22 +105,20 @@ class SchoolBookIssue(models.Model):
             if record.issue_date and record.due_date and record.issue_date > record.due_date:
                 raise ValidationError(_("Due date must be after the issue date!"))
 
-    @api.depends('due_date', 'return_date', 'state')
+    @api.depends('due_date', 'return_date', 'state', 'fine_per_day')
     def _compute_fine(self):
         for rec in self:
-            if rec.state in ('issued', 'overdue'):
-                end_date = rec.return_date or fields.Date.context_today(rec)
-                if end_date > rec.due_date:
-                    rec.fine_amount = (end_date - rec.due_date).days * 5.0
+            fine = 0.0
+            if rec.due_date:
+                if rec.state in ('issued', 'overdue'):
+                    end_date = rec.return_date or fields.Date.context_today(rec)
+                elif rec.state == 'returned' and rec.return_date:
+                    end_date = rec.return_date
                 else:
-                    rec.fine_amount = 0.0
-            elif rec.state == 'returned' and rec.return_date:
-                if rec.return_date > rec.due_date:
-                    rec.fine_amount = (rec.return_date - rec.due_date).days * 5.0
-                else:
-                    rec.fine_amount = 0.0
-            else:
-                rec.fine_amount = 0.0
+                    end_date = False
+                if end_date and end_date > rec.due_date:
+                    fine = (end_date - rec.due_date).days * rec.fine_per_day
+            rec.fine_amount = fine
 
     def action_issue(self):
         for rec in self:

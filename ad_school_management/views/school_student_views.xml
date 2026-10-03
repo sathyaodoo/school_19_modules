@@ -15,6 +15,19 @@
         </field>
     </record>
 
+    <record id="view_school_student_birthday_tree" model="ir.ui.view">
+        <field name="name">school.student.birthday.tree</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <field name="name" string="Student Name"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="date_of_birth" string="Date of Birth"/>
+            </list>
+        </field>
+    </record>
+
     <record id="view_school_student_kanban" model="ir.ui.view">
         <field name="name">school.student.kanban</field>
         <field name="model">school.student</field>
@@ -75,7 +88,7 @@
                         <group string="Academic Information">
                             <field name="academic_year_id"/>
                             <field name="class_id"/>
-                            <field name="section_id"/>
+                            <field name="section_id" domain="[('class_id', '=', class_id)]"/>
                             <field name="roll_number"/>
                             <field name="gpa" readonly="1"/>
                             <field name="company_id" groups="base.group_multi_company"/>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_school_mark_list_wizard_form" model="ir.ui.view">
+        <field name="name">school.mark.list.wizard.form</field>
+        <field name="model">school.mark.list.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Print Mark List">
+                <group>
+                    <group string="Filters">
+                        <field name="academic_year_id"/>
+                        <field name="exam_id" domain="[('academic_year_id', '=', academic_year_id)] if academic_year_id else []"/>
+                        <field name="class_id"/>
+                        <field name="section_id" domain="[('class_id', '=', class_id)] if class_id else []"/>
+                        <field name="result_status" widget="radio" options="{'horizontal': true}"/>
+                    </group>
+                    <group string="Subjects">
+                        <field name="subject_ids" widget="many2many_tags" nolabel="1" colspan="2"
+                               placeholder="All subjects"/>
+                    </group>
+                </group>
+                <separator string="Students (leave empty for all matching students)"/>
+                <field name="student_ids"
+                       domain="[('class_id', '=', class_id)] + ([('section_id', '=', section_id)] if section_id else []) if class_id else []">
+                    <list>
+                        <field name="name"/>
+                        <field name="admission_no"/>
+                        <field name="class_id"/>
+                        <field name="section_id"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_print" type="object" string="Print Mark List" class="btn-primary" data-hotkey="q"/>
+                    <button name="action_view_results" type="object" string="View on Screen" data-hotkey="w"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Menu: Operations & Exams > Mark List Report -->
+    <record id="action_school_mark_list_wizard" model="ir.actions.act_window">
+        <field name="name">Print Mark List</field>
+        <field name="res_model">school.mark.list.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Students list > select students > Actions > Print Mark List -->
+    <record id="action_school_mark_list_wizard_students" model="ir.actions.act_window">
+        <field name="name">Print Mark List</field>
+        <field name="res_model">school.mark.list.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="ad_school_management.model_school_student"/>
+        <field name="binding_view_types">list,form</field>
+    </record>
+
+    <menuitem id="menu_school_mark_list_report" name="Mark List Report"
+              parent="menu_school_operations" action="action_school_mark_list_wizard" sequence="35"/>
+
+</odoo>

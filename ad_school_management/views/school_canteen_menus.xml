@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_school_canteen_sub" name="Canteen" parent="ad_school_management.menu_school_facilities" sequence="30"/>
+
+    <menuitem id="menu_school_canteen_meal" name="Meal Master"
+              parent="menu_school_canteen_sub" action="action_school_canteen_meal" sequence="10"/>
+    <menuitem id="menu_school_canteen_category" name="Categories"
+              parent="menu_school_canteen_sub" action="action_school_canteen_category" sequence="20"/>
+    <menuitem id="menu_school_canteen_food_item" name="Food Item Master"
+              parent="menu_school_canteen_sub" action="action_school_canteen_food_item" sequence="30"/>
+    <menuitem id="menu_school_canteen_food_category" name="Food Categories"
+              parent="menu_school_canteen_sub" action="action_school_canteen_food_category" sequence="40"/>
+    <menuitem id="menu_school_canteen_menu" name="Weekly/Monthly Menu"
+              parent="menu_school_canteen_sub" action="action_school_canteen_menu" sequence="50"/>
+    <menuitem id="menu_school_canteen_daily_planning" name="Daily Meal Planning"
+              parent="menu_school_canteen_sub" action="action_school_canteen_daily_planning" sequence="60"/>
+    <menuitem id="menu_school_canteen_meal_booking" name="Meal Bookings"
+              parent="menu_school_canteen_sub" action="action_school_canteen_meal_booking" sequence="70"/>
+
+</odoo>

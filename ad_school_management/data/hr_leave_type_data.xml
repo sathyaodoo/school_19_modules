@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Created once (noupdate): settings can be changed later from
+         Time Off > Configuration > Time Off Types without being overwritten. -->
+    <data noupdate="1">
+        <record id="leave_type_school_casual" model="hr.leave.type">
+            <field name="name">Casual Leave</field>
+            <field name="sequence">1</field>
+            <field name="request_unit">day</field>
+            <field name="time_type">leave</field>
+            <field name="requires_allocation" eval="False"/>
+            <field name="leave_validation_type">both</field>
+            <field name="school_approval_workflow" eval="True"/>
+            <field name="school_is_medical" eval="False"/>
+        </record>
+
+        <record id="leave_type_school_medical" model="hr.leave.type">
+            <field name="name">Medical Leave</field>
+            <field name="sequence">2</field>
+            <field name="request_unit">day</field>
+            <field name="time_type">leave</field>
+            <field name="requires_allocation" eval="False"/>
+            <field name="leave_validation_type">both</field>
+            <field name="support_document" eval="True"/>
+            <field name="school_approval_workflow" eval="True"/>
+            <field name="school_is_medical" eval="True"/>
+        </record>
+    </data>
+
+    <!-- Renames the types already created on your database as
+         "Casual Leave (Staff)" / "Medical Leave (Staff)". Records created
+         with noupdate="1" are never changed by a module upgrade, so the
+         new names are written explicitly here. -->
+    <function model="hr.leave.type" name="write"
+              eval="[[ref('leave_type_school_casual')], {'name': 'Casual Leave'}]"/>
+    <function model="hr.leave.type" name="write"
+              eval="[[ref('leave_type_school_medical')], {'name': 'Medical Leave'}]"/>
+</odoo>

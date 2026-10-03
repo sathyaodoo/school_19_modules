@@ -8,18 +8,31 @@
                 <group>
                     <group>
                         <field name="exam_id"/>
-                        <field name="class_id"/>
+                        <field name="exam_class_ids" invisible="1"/>
+                        <field name="class_id" domain="[('id', 'in', exam_class_ids)] if exam_id else []"
+                               options="{'no_create': True}"/>
                     </group>
                     <group>
                         <field name="section_id" domain="[('class_id', '=', class_id)]"/>
-                        <field name="subject_id" domain="[('class_ids', 'in', class_id)]"/>
+                        <field name="available_subject_ids" invisible="1"/>
+                        <field name="subject_id" domain="[('id', 'in', available_subject_ids)]"
+                               placeholder="Subjects scheduled for this class" options="{'no_create': True}"/>
+                        <field name="exam_subject_id" invisible="1"/>
+                        <field name="paper_date" invisible="not exam_subject_id"/>
+                        <field name="paper_max_marks" invisible="not exam_subject_id"/>
+                        <field name="paper_min_marks" invisible="not exam_subject_id"/>
                     </group>
                 </group>
                 <notebook>
                     <page string="Result Entries" name="results">
                         <field name="line_ids" force_save="1">
                             <list editable="bottom" create="false" delete="false">
-                                <field name="student_id"/>
+                                <!-- force_save: the column is read-only, and the web
+                                     client does not send read-only values unless
+                                     force_save is set. Without it every line
+                                     reached the server without a student and was
+                                     dropped, so no marks were saved. -->
+                                <field name="student_id" force_save="1"/>
                                 <field name="marks_obtained"/>
                             </list>
                         </field>

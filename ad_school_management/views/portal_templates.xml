@@ -112,26 +112,32 @@
 
                     <div class="tab-pane fade" id="attendance" role="tabpanel" aria-labelledby="attendance-tab">
                         <div class="card shadow-sm border-0 p-4">
-                            <h5 class="text-secondary mb-3">Recent Attendance Logs (Max 15)</h5>
-                            <div class="table-responsive" t-if="attendances">
+                            <h5 class="text-secondary mb-3">Recent Attendance (last 15 days)</h5>
+                            <t t-set="att_labels" t-value="{'present': 'Present', 'absent': 'Absent', 'late': 'Late', 'leave': 'Leave'}"/>
+                            <t t-set="att_colors" t-value="{'present': 'success', 'absent': 'danger', 'late': 'warning', 'leave': 'info'}"/>
+                            <div class="table-responsive" t-if="attendance_days">
                                 <table class="table table-hover">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Date</th>
                                             <th>Class / Section</th>
-                                            <th>Status</th>
+                                            <th>Morning</th>
+                                            <th>Afternoon</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <t t-foreach="attendances" t-as="att">
+                                        <t t-foreach="attendance_days" t-as="day">
                                             <tr>
-                                                <td><t t-out="att.date"/></td>
-                                                <td><t t-out="att.class_id.name"/> - <t t-out="att.section_id.name"/></td>
-                                                <td>
-                                                    <span t-attf-class="badge bg-#{'success' if att.status == 'present' else 'danger' if att.status == 'absent' else 'warning' if att.status == 'late' else 'info'}">
-                                                        <t t-out="att.status.capitalize()"/>
-                                                    </span>
-                                                </td>
+                                                <td><t t-out="day['date']"/></td>
+                                                <td><t t-out="day['class_id'].name"/> - <t t-out="day['section_id'].name"/></td>
+                                                <t t-foreach="('morning', 'afternoon')" t-as="sess">
+                                                    <td>
+                                                        <span t-if="day[sess]" t-attf-class="badge bg-#{att_colors.get(day[sess], 'secondary')}">
+                                                            <t t-out="att_labels.get(day[sess], day[sess])"/>
+                                                        </span>
+                                                        <span t-else="" class="text-muted">Not marked</span>
+                                                    </td>
+                                                </t>
                                             </tr>
                                         </t>
                                     </tbody>

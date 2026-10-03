@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- CBSE groups -->
+        <record id="house_cbse_venus" model="school.house">
+            <field name="name">Venus</field><field name="board">cbse</field><field name="sequence">1</field><field name="color">1</field>
+        </record>
+        <record id="house_cbse_jupiter" model="school.house">
+            <field name="name">Jupiter</field><field name="board">cbse</field><field name="sequence">2</field><field name="color">2</field>
+        </record>
+        <record id="house_cbse_mercury" model="school.house">
+            <field name="name">Mercury</field><field name="board">cbse</field><field name="sequence">3</field><field name="color">3</field>
+        </record>
+        <record id="house_cbse_uranus" model="school.house">
+            <field name="name">Uranus</field><field name="board">cbse</field><field name="sequence">4</field><field name="color">4</field>
+        </record>
+        <!-- State Board groups -->
+        <record id="house_state_ruby" model="school.house">
+            <field name="name">Ruby</field><field name="board">state</field><field name="sequence">1</field><field name="color">9</field>
+        </record>
+        <record id="house_state_diamond" model="school.house">
+            <field name="name">Diamond</field><field name="board">state</field><field name="sequence">2</field><field name="color">6</field>
+        </record>
+        <record id="house_state_emerald" model="school.house">
+            <field name="name">Emerald</field><field name="board">state</field><field name="sequence">3</field><field name="color">10</field>
+        </record>
+        <record id="house_state_sapphire" model="school.house">
+            <field name="name">Sapphire</field><field name="board">state</field><field name="sequence">4</field><field name="color">8</field>
+        </record>
+    </data>
+</odoo>

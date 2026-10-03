@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_school_exit_interview_form" model="ir.ui.view">
+        <field name="name">school.exit.interview.form</field>
+        <field name="model">school.exit.interview</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="resignation_id" readonly="1"/>
+                            <field name="employee_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="interview_date"/>
+                            <field name="conducted_by"/>
+                        </group>
+                    </group>
+
+                    <group string="Interview Details">
+                        <field name="reasons_for_leaving" placeholder="Why is the employee leaving?"/>
+                    </group>
+                    <group>
+                        <field name="overall_experience"/>
+                    </group>
+
+                    <group string="Feedback">
+                        <field name="management_feedback" placeholder="Feedback on management..."/>
+                        <field name="facility_feedback" placeholder="Feedback on facilities..."/>
+                        <field name="improvement_suggestions" placeholder="Suggestions for the school..."/>
+                    </group>
+
+                    <!-- HR-only: hidden from the view entirely for anyone
+                         outside Admin/HR Manager, on top of the model-level
+                         access restriction already in ir.model.access.csv -->
+                    <group string="Confidential (HR Only)"
+                           groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager">
+                        <field name="confidential_notes" nolabel="1" placeholder="HR-only notes..."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_exit_interview_list" model="ir.ui.view">
+        <field name="name">school.exit.interview.list</field>
+        <field name="model">school.exit.interview</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="interview_date"/>
+                <field name="conducted_by"/>
+                <field name="overall_experience" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_exit_interview_search" model="ir.ui.view">
+        <field name="name">school.exit.interview.search</field>
+        <field name="model">school.exit.interview</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="conducted_by"/>
+                <filter string="Excellent" name="filter_excellent" domain="[('overall_experience', '=', 'excellent')]"/>
+                <filter string="Poor" name="filter_poor" domain="[('overall_experience', '=', 'poor')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_exit_interview" model="ir.actions.act_window">
+        <field name="name">Exit Interviews</field>
+        <field name="res_model">school.exit.interview</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_exit_interview_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No exit interviews recorded yet.
+            </p>
+        </field>
+    </record>
+
+</odoo>

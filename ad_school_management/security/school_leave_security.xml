@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The three school approval levels need Time Off Officer rights so the
+         standard hr.leave access rules let them read/approve all requests.
+         Which level may approve WHAT is enforced in models/hr_leave.py. -->
+    <record id="group_school_admin" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
+    </record>
+    <record id="group_school_hr_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
+    </record>
+    <record id="group_school_principal" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
+    </record>
+</odoo>

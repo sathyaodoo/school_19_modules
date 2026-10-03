@@ -17,6 +17,18 @@
     <menuitem id="menu_school_teacher" name="Teachers" parent="menu_school_personnel" action="action_school_teacher" sequence="40"/>
     <menuitem id="menu_school_promotion" name="Student Promotions" parent="menu_school_personnel" action="action_school_promotion" sequence="50"/>
 
+    <menuitem id="menu_school_exit_interview" name="Exit Interviews" parent="menu_school_personnel"
+              action="action_school_exit_interview" sequence="56"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager"/>
+
+    <record id="action_school_student_birthdays_this_month" model="ir.actions.server">
+        <field name="name">Student Birthdays This Month</field>
+        <field name="model_id" ref="model_school_student"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_current_month_birthdays()</field>
+    </record>
+    <menuitem id="menu_school_student_birthdays_this_month" name="This Month's Birthdays" parent="menu_school_personnel" action="action_school_student_birthdays_this_month" sequence="60" groups="group_school_teacher,group_school_admin"/>
+
     <menuitem id="menu_school_timetable" name="Timetables" parent="menu_school_operations" action="action_school_timetable" sequence="5"/>
     <menuitem id="menu_school_attendance" name="Student Attendance" parent="menu_school_operations" action="action_school_attendance" sequence="10"/>
     <menuitem id="menu_school_exam" name="Exams Schedule" parent="menu_school_operations" action="action_school_exam" sequence="20"/>
@@ -42,4 +54,11 @@
     <menuitem id="menu_school_section" name="Sections" parent="menu_school_configuration" action="action_school_section" sequence="50"/>
     <menuitem id="menu_school_subject" name="Subjects" parent="menu_school_configuration" action="action_school_subject" sequence="60"/>
     <menuitem id="menu_school_grade" name="Grading Rules" parent="menu_school_configuration" action="action_school_grade" sequence="70"/>
+
+    <!-- Confirmed from the actual hr module source: hr.menu_hr_root is the
+         Employees app itself; its direct children (hr.menu_hr_employee_payroll
+         "Employees", hr.menu_hr_employee "Directory", etc.) are the top
+         navbar items. This adds "Letter" as a sibling of those. -->
+    <menuitem id="menu_school_staff_resignation_hr_app" name="Resignation" parent="hr.menu_hr_root"
+              action="action_school_staff_resignation" sequence="5"/>
 </odoo>

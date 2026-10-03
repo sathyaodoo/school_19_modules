@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Activities list > select activities > Print -->
+    <record id="action_report_school_activity_list" model="ir.actions.report">
+        <field name="name">Activity List</field>
+        <field name="model">event.event</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_school_activity_list</field>
+        <field name="report_file">ad_school_management.report_school_activity_list</field>
+        <field name="print_report_name">'Activity List'</field>
+        <field name="binding_model_id" ref="event.model_event_event"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_school_activity_participants" model="ir.actions.report">
+        <field name="name">Participants List</field>
+        <field name="model">event.event</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_school_activity_participants</field>
+        <field name="report_file">ad_school_management.report_school_activity_participants</field>
+        <field name="print_report_name">'Participants - %s' % object.name</field>
+        <field name="binding_model_id" ref="event.model_event_event"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_school_activity_winners" model="ir.actions.report">
+        <field name="name">Winners Report</field>
+        <field name="model">event.event</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_school_activity_winners</field>
+        <field name="report_file">ad_school_management.report_school_activity_winners</field>
+        <field name="print_report_name">'Winners Report'</field>
+        <field name="binding_model_id" ref="event.model_event_event"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_school_activity_th">
+        <th t-att-class="cls or ''" style="background-color: #dbe4f0;"><t t-out="label"/></th>
+    </template>
+
+    <!-- ============ 1. Activity List ============ -->
+    <template id="report_school_activity_list">
+        <t t-call="web.html_container">
+            <t t-set="o" t-value="docs[:1]"/>
+            <t t-set="type_labels" t-value="dict(docs._fields['school_activity_type'].selection)"/>
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h3 class="text-center">ACTIVITY LIST</h3>
+                    <table class="table table-sm table-bordered" style="font-size: 12px;">
+                        <thead><tr>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Activity Name</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Type</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Date</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Start – End Time</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Venue</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Participants</t><t t-set="cls" t-value="'text-end'"/></t>
+                        </tr></thead>
+                        <tbody>
+                            <tr t-foreach="docs.sorted('date_begin')" t-as="event">
+                                <t t-set="tz_event" t-value="event.with_context(tz=event.date_tz or 'UTC')"/>
+                                <td><strong t-out="event.name"/></td>
+                                <td><t t-out="type_labels.get(event.school_activity_type, '')"/></td>
+                                <td><span t-field="tz_event.date_begin" t-options="{'widget': 'date'}"/></td>
+                                <td>
+                                    <span t-field="tz_event.date_begin" t-options="{'widget': 'datetime', 'time_only': True, 'format': 'short'}"/> –
+                                    <span t-field="tz_event.date_end" t-options="{'widget': 'datetime', 'time_only': True, 'format': 'short'}"/>
+                                </td>
+                                <td><t t-out="event.school_venue or ''"/></td>
+                                <td class="text-end"><t t-out="event.school_participant_count"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- ============ 2. Participants List (one page per activity) ============ -->
+    <template id="report_school_activity_participants">
+        <t t-call="web.html_container">
+            <t t-set="type_labels" t-value="dict(docs._fields['school_activity_type'].selection)"/>
+            <t t-set="pos_labels" t-value="dict(docs.env['event.registration']._fields['school_position'].selection)"/>
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-set="tz_event" t-value="o.with_context(tz=o.date_tz or 'UTC')"/>
+                    <div class="page">
+                        <h3 class="text-center mb-1">PARTICIPANTS LIST</h3>
+                        <h4 class="text-center mb-1" t-out="o.name"/>
+                        <p class="text-center text-muted">
+                            <t t-out="type_labels.get(o.school_activity_type, '')"/> |
+                            <span t-field="tz_event.date_begin" t-options="{'widget': 'datetime', 'format': 'short'}"/> –
+                            <span t-field="tz_event.date_end" t-options="{'widget': 'datetime', 'time_only': True, 'format': 'short'}"/>
+                            <t t-if="o.school_venue"> | <t t-out="o.school_venue"/></t>
+                        </p>
+                        <t t-set="regs" t-value="o.registration_ids.filtered(lambda r: r.state != 'cancel' and r.student_id).sorted(lambda r: (r.school_class_id.name or '', r.school_house_id.name or '', r.student_id.name or ''))"/>
+                        <table class="table table-sm table-bordered" style="font-size: 12px;">
+                            <thead><tr>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">#</t></t>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Student Name</t></t>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Admission No</t></t>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Class</t></t>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Section</t></t>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Group</t></t>
+                                <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Position</t></t>
+                            </tr></thead>
+                            <tbody>
+                                <tr t-foreach="regs" t-as="reg">
+                                    <td><t t-out="reg_index + 1"/></td>
+                                    <td><t t-out="reg.student_id.name"/></td>
+                                    <td><t t-out="reg.admission_no or ''"/></td>
+                                    <td><t t-out="reg.school_class_id.name or ''"/></td>
+                                    <td><t t-out="reg.school_section_id.name or ''"/></td>
+                                    <td><t t-out="reg.school_house_id.name or ''"/></td>
+                                    <td><strong t-out="pos_labels.get(reg.school_position, '')"/></td>
+                                </tr>
+                                <tr t-if="not regs"><td colspan="7" class="text-center text-muted">No participants.</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="small text-muted">Total participants: <t t-out="len(regs)"/></p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ============ 3. Winners Report ============ -->
+    <template id="report_school_activity_winners">
+        <t t-call="web.html_container">
+            <t t-set="o" t-value="docs[:1]"/>
+            <t t-set="type_labels" t-value="dict(docs._fields['school_activity_type'].selection)"/>
+            <t t-set="pos_labels" t-value="dict(docs.env['event.registration']._fields['school_position'].selection)"/>
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h3 class="text-center">WINNERS REPORT</h3>
+                    <table class="table table-sm table-bordered" style="font-size: 12px;">
+                        <thead><tr>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Activity</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Type</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Position</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Winner</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Admission No</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Class</t></t>
+                            <t t-call="ad_school_management.report_school_activity_th"><t t-set="label">Group</t></t>
+                        </tr></thead>
+                        <tbody>
+                            <t t-foreach="docs.sorted('date_begin')" t-as="event">
+                                <t t-set="houses" t-value="[(k, h) for k, h in (('first', event.school_first_house_id), ('second', event.school_second_house_id), ('third', event.school_third_house_id)) if h]"/>
+                                <t t-set="winners" t-value="event.school_winner_registration_ids"/>
+                                <tr t-foreach="houses" t-as="hp">
+                                    <td><strong t-out="event.name"/></td>
+                                    <td><t t-out="type_labels.get(event.school_activity_type, '')"/></td>
+                                    <td><strong t-out="pos_labels[hp[0]]"/></td>
+                                    <td colspan="3">Group: <strong t-out="hp[1].name"/></td>
+                                    <td><t t-out="hp[1].name"/></td>
+                                </tr>
+                                <tr t-foreach="winners" t-as="reg">
+                                    <td><strong t-out="event.name"/></td>
+                                    <td><t t-out="type_labels.get(event.school_activity_type, '')"/></td>
+                                    <td><strong t-out="pos_labels.get(reg.school_position, '')"/></td>
+                                    <td><t t-out="reg.student_id.name"/></td>
+                                    <td><t t-out="reg.admission_no or ''"/></td>
+                                    <td><t t-out="reg.school_class_id.name or ''"/></td>
+                                    <td><t t-out="reg.school_house_id.name or ''"/></td>
+                                </tr>
+                                <tr t-if="not houses and not winners">
+                                    <td><strong t-out="event.name"/></td>
+                                    <td><t t-out="type_labels.get(event.school_activity_type, '')"/></td>
+                                    <td colspan="5" class="text-muted">No winners recorded yet.</td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

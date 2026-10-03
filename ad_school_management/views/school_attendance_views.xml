@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list decoration-success="status == 'present'" decoration-danger="status == 'absent'" decoration-warning="status == 'late'" decoration-info="status == 'leave'">
                 <field name="date"/>
+                <field name="session"/>
                 <field name="student_id"/>
                 <field name="class_id"/>
                 <field name="section_id"/>
@@ -28,6 +29,7 @@
                         </group>
                         <group>
                             <field name="date"/>
+                            <field name="session" widget="radio" options="{'horizontal': true}"/>
                             <field name="status"/>
                         </group>
                     </group>
@@ -43,6 +45,7 @@
         <field name="arch" type="xml">
             <calendar string="Attendance Calendar" date_start="date" color="status">
                 <field name="student_id"/>
+                <field name="session"/>
                 <field name="class_id"/>
             </calendar>
         </field>
@@ -54,6 +57,7 @@
         <field name="arch" type="xml">
             <graph string="Attendance Analysis" type="bar">
                 <field name="class_id"/>
+                <field name="session"/>
                 <field name="status"/>
             </graph>
         </field>
@@ -65,6 +69,7 @@
         <field name="arch" type="xml">
             <pivot string="Attendance Analysis">
                 <field name="class_id" type="row"/>
+                <field name="session" type="col"/>
                 <field name="status" type="col"/>
             </pivot>
         </field>
@@ -79,12 +84,18 @@
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="date"/>
+                <filter string="Morning" name="morning" domain="[('session', '=', 'morning')]"/>
+                <filter string="Afternoon" name="afternoon" domain="[('session', '=', 'afternoon')]"/>
+                <separator/>
+                <filter string="Today" name="today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <separator/>
                 <filter string="Present" name="present" domain="[('status', '=', 'present')]"/>
                 <filter string="Absent" name="absent" domain="[('status', '=', 'absent')]"/>
                 <filter string="Leave" name="leave" domain="[('status', '=', 'leave')]"/>
                 <filter string="Late" name="late" domain="[('status', '=', 'late')]"/>
                 <group>
                     <filter string="Date" name="group_by_date" context="{'group_by': 'date:day'}"/>
+                    <filter string="Session" name="group_by_session" context="{'group_by': 'session'}"/>
                     <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
                     <filter string="Status" name="group_by_status" context="{'group_by': 'status'}"/>
                 </group>

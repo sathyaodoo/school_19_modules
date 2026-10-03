@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================= Subject Groups ================= -->
+    <record id="view_school_subject_group_list" model="ir.ui.view">
+        <field name="name">school.subject.group.list</field>
+        <field name="model">school.subject.group</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="subject_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_subject_group_form" model="ir.ui.view">
+        <field name="name">school.subject.group.form</field>
+        <field name="model">school.subject.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name" placeholder="e.g. Science"/>
+                    </group>
+                    <separator string="Subjects in this group (teachers of these can substitute for each other)"/>
+                    <field name="subject_ids">
+                        <list create="false">
+                            <field name="name"/>
+                            <field name="code"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_subject_group" model="ir.actions.act_window">
+        <field name="name">Subject Groups</field>
+        <field name="res_model">school.subject.group</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a subject group</p>
+            <p>e.g. Science = Physics, Chemistry, Biology. Set the group on each subject.</p>
+        </field>
+    </record>
+
+    <!-- Subject form / list: Subject Group -->
+    <record id="view_school_subject_form_group" model="ir.ui.view">
+        <field name="name">school.subject.form.group</field>
+        <field name="model">school.subject</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_subject_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <field name="subject_group_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_school_subject_list_group" model="ir.ui.view">
+        <field name="name">school.subject.list.group</field>
+        <field name="model">school.subject</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_subject_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <field name="subject_group_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================= Substitutions ================= -->
+    <record id="view_school_substitution_list" model="ir.ui.view">
+        <field name="name">school.substitution.list</field>
+        <field name="model">school.substitution</field>
+        <field name="arch" type="xml">
+            <list decoration-warning="state == 'draft'" decoration-success="state == 'assigned'"
+                  decoration-muted="state == 'cancel'" create="false">
+                <field name="date"/>
+                <field name="period_label"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="subject_id"/>
+                <field name="classroom" optional="show"/>
+                <field name="absent_teacher_id"/>
+                <field name="substitute_teacher_id"/>
+                <field name="substitute_match" optional="show"/>
+                <field name="available_count" optional="hide"/>
+                <field name="state" widget="badge" decoration-warning="state == 'draft'"
+                       decoration-success="state == 'assigned'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_substitution_form" model="ir.ui.view">
+        <field name="name">school.substitution.form</field>
+        <field name="model">school.substitution</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <header>
+                    <button name="action_assign" type="object" string="Assign &amp; Email Substitute"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_reset" type="object" string="Change Substitute"
+                            invisible="state != 'assigned'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state == 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,assigned"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h2><field name="name" readonly="1"/></h2></div>
+                    <group>
+                        <group string="Period">
+                            <field name="date" readonly="1"/>
+                            <field name="period_label"/>
+                            <field name="class_id"/>
+                            <field name="section_id"/>
+                            <field name="subject_id"/>
+                            <field name="subject_group_id"/>
+                            <field name="classroom"/>
+                        </group>
+                        <group string="Substitution">
+                            <field name="absent_teacher_id" readonly="1"/>
+                            <field name="leave_id" readonly="1"/>
+                            <field name="substitute_teacher_id" options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="substitute_match" invisible="not substitute_teacher_id"/>
+                            <field name="notified_date" invisible="not notified_date"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <separator string="Available Substitutes (free at this time, not on leave, same subject first)"/>
+                    <field name="available_teacher_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="subject_ids" widget="many2many_tags"/>
+                            <field name="work_email"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_substitution_calendar" model="ir.ui.view">
+        <field name="name">school.substitution.calendar</field>
+        <field name="model">school.substitution</field>
+        <field name="arch" type="xml">
+            <calendar date_start="date" color="state" mode="week" create="false" quick_create="false">
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="substitute_teacher_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_school_substitution_search" model="ir.ui.view">
+        <field name="name">school.substitution.search</field>
+        <field name="model">school.substitution</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="absent_teacher_id"/>
+                <field name="substitute_teacher_id"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <filter string="To Assign" name="to_assign" domain="[('state', '=', 'draft')]"/>
+                <filter string="Assigned" name="assigned" domain="[('state', '=', 'assigned')]"/>
+                <separator/>
+                <filter string="Today" name="today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Upcoming" name="upcoming" domain="[('date', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter string="Date" name="group_date" context="{'group_by': 'date:day'}"/>
+                    <filter string="Teacher on Leave" name="group_absent" context="{'group_by': 'absent_teacher_id'}"/>
+                    <filter string="Substitute" name="group_substitute" context="{'group_by': 'substitute_teacher_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_substitution" model="ir.actions.act_window">
+        <field name="name">Teacher Substitutions</field>
+        <field name="res_model">school.substitution</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="context">{'search_default_upcoming': 1, 'search_default_group_date': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No substitutions needed</p>
+            <p>When a teacher's leave is approved, every timetable period they miss appears here.</p>
+        </field>
+    </record>
+
+    <!-- Leave form: Substitutions smart button -->
+    <record id="view_hr_leave_form_substitution" model="ir.ui.view">
+        <field name="name">hr.leave.form.substitution</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="school_substitution_count" invisible="1"/>
+            </xpath>
+            <xpath expr="//div[hasclass('o_hr_leave_content')]" position="before">
+                <div class="alert alert-info d-flex align-items-center justify-content-between"
+                     role="status" invisible="not school_substitution_count">
+                    <span><field name="school_substitution_count" class="fw-bold"/> timetable period(s) need a substitute.</span>
+                    <button name="action_view_school_substitutions" type="object" class="btn btn-link p-0"
+                            string="Open Substitutions"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================= Menus ================= -->
+    <menuitem id="menu_school_substitution" name="Teacher Substitutions" parent="menu_school_operations"
+              action="action_school_substitution" sequence="7"
+              groups="group_school_admin,group_school_principal,group_school_hr_manager,group_school_teacher"/>
+    <menuitem id="menu_school_subject_group" name="Subject Groups" parent="menu_school_configuration"
+              action="action_school_subject_group" sequence="85"
+              groups="group_school_admin,group_school_principal"/>
+
+</odoo>

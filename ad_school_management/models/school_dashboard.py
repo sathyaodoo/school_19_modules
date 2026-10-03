@@ -18,44 +18,61 @@ class SchoolDashboard(models.TransientModel):
     @api.model
     def get_dashboard_stats(self):
         today = fields.Date.context_today(self)
-        
-        total_students = self.env['school.student'].search_count([])
-        enrolled_students = self.env['school.student'].search_count([('student_status', '=', 'enrolled')])
-        draft_students = self.env['school.student'].search_count([('student_status', '=', 'draft')])
-        promoted_students = self.env['school.student'].search_count([('student_status', '=', 'promoted')])
-        
-        total_teachers = self.env['school.teacher'].search_count([])
-        total_parents = self.env['school.parent'].search_count([])
-        
-        total_admissions = self.env['school.admission'].search_count([])
-        pending_admissions = self.env['school.admission'].search_count([('state', '=', 'submitted')])
-        approved_admissions = self.env['school.admission'].search_count([('state', '=', 'approved')])
-        
+
+        # These are aggregate, school-wide KPI totals (headcounts, sums),
+        # not individual sensitive records, and the dashboard itself is
+        # already gated by menu/action security. So we compute the counts
+        # with sudo() rather than requiring every role (teacher, parent,
+        # accountant, ...) to also have its own explicit access row on
+        # every single model the dashboard touches (library, hostel, etc).
+        # Without this, any model missing an access row for the current
+        # user's group raises an AccessError that crashes this whole call.
+        Student = self.env['school.student'].sudo()
+        Teacher = self.env['school.teacher'].sudo()
+        Parent = self.env['school.parent'].sudo()
+        Admission = self.env['school.admission'].sudo()
+        Vehicle = self.env['school.vehicle'].sudo()
+        Route = self.env['school.transport.route'].sudo()
+        Fee = self.env['school.student.fee'].sudo()
+        Attendance = self.env['school.attendance'].sudo()
+
+        total_students = Student.search_count([])
+        enrolled_students = Student.search_count([('student_status', '=', 'enrolled')])
+        draft_students = Student.search_count([('student_status', '=', 'draft')])
+        promoted_students = Student.search_count([('student_status', '=', 'promoted')])
+
+        total_teachers = Teacher.search_count([])
+        total_parents = Parent.search_count([])
+
+        total_admissions = Admission.search_count([])
+        pending_admissions = Admission.search_count([('state', '=', 'submitted')])
+        approved_admissions = Admission.search_count([('state', '=', 'approved')])
+
         has_library = 'school.book' in self.env
-        total_books = self.env['school.book'].search_count([]) if has_library else 0
-        total_borrowed = self.env['school.book.issue'].search_count([('state', '=', 'issued')]) if has_library else 0
-        
-        total_vehicles = self.env['school.vehicle'].search_count([])
-        total_routes = self.env['school.transport.route'].search_count([])
-        
+        total_books = self.env['school.book'].sudo().search_count([]) if has_library else 0
+        total_borrowed = self.env['school.book.issue'].sudo().search_count([('state', '=', 'issued')]) if has_library else 0
+
+        total_vehicles = Vehicle.search_count([])
+        total_routes = Route.search_count([])
+
         has_hostel = 'school.hostel.room' in self.env
         if has_hostel:
-            rooms = self.env['school.hostel.room'].search([])
+            rooms = self.env['school.hostel.room'].sudo().search([])
             total_beds = sum(rooms.mapped('capacity'))
-            occupied_beds = self.env['school.hostel.allocation'].search_count([('state', '=', 'allocated')])
+            occupied_beds = self.env['school.hostel.allocation'].sudo().search_count([('state', '=', 'allocated')])
             available_beds = max(total_beds - occupied_beds, 0)
         else:
             total_beds = 0
             occupied_beds = 0
             available_beds = 0
-        
-        fees = self.env['school.student.fee'].search([])
+
+        fees = Fee.search([])
         invoiced_fees = sum(fees.filtered(lambda f: f.state == 'invoiced').mapped('net_amount'))
         paid_fees = sum(fees.filtered(lambda f: f.state == 'paid').mapped('net_amount'))
         total_outstanding = invoiced_fees
-        
-        total_marked_today = self.env['school.attendance'].search_count([('date', '=', today)])
-        present_today = self.env['school.attendance'].search_count([
+
+        total_marked_today = Attendance.search_count([('date', '=', today)])
+        present_today = Attendance.search_count([
             ('date', '=', today),
             ('status', 'in', ('present', 'late'))
         ])

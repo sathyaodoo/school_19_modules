@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_school_canteen_daily_planning_form" model="ir.ui.view">
+        <field name="name">school.canteen.daily.planning.form</field>
+        <field name="model">school.canteen.daily.planning</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_recalculate" type="object" string="Recalculate"
+                            class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="planning_date"/>
+                            <field name="generated_at" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Headcount">
+                        <group>
+                            <field name="hosteller_count" readonly="1"/>
+                            <field name="staff_count" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="booked_day_scholar_count" readonly="1"/>
+                            <field name="event_participant_count"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <field name="total_expected_qty" readonly="1"/>
+                    </group>
+
+                    <field name="planning_line_ids">
+                        <list editable="bottom">
+                            <field name="meal_id"/>
+                            <field name="expected_qty"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_canteen_daily_planning_list" model="ir.ui.view">
+        <field name="name">school.canteen.daily.planning.list</field>
+        <field name="model">school.canteen.daily.planning</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="planning_date"/>
+                <field name="hosteller_count"/>
+                <field name="staff_count"/>
+                <field name="booked_day_scholar_count"/>
+                <field name="event_participant_count"/>
+                <field name="total_expected_qty" sum="Total"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_canteen_daily_planning" model="ir.actions.act_window">
+        <field name="name">Daily Meal Planning</field>
+        <field name="res_model">school.canteen.daily.planning</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_school_canteen_meal_booking" model="ir.actions.act_window">
+        <field name="name">Meal Bookings</field>
+        <field name="res_model">school.canteen.meal.booking</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>
