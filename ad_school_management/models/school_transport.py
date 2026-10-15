@@ -427,7 +427,9 @@ class SchoolStudentTransportFee(models.Model):
 
     student_id = fields.Many2one('school.student', string='Student', required=True, ondelete='cascade')
     route_id = fields.Many2one('school.transport.route', string='Route', required=True)
-    billing_month = fields.Date(string='Billing Month', required=True)
+    billing_month = fields.Date(
+        string='Billing Month', required=True,
+        default=lambda self: fields.Date.context_today(self).replace(day=1))
     amount = fields.Float(string='Amount', required=True)
     invoice_id = fields.Many2one('account.move', string='Invoice', readonly=True, copy=False)
     state = fields.Selection([
@@ -440,6 +442,21 @@ class SchoolStudentTransportFee(models.Model):
         'unique(student_id, billing_month)',
         'Transport fee already generated for this student for this month!'
     )
+
+    @api.onchange('route_id')
+    def _onchange_route_id(self):
+        if self.route_id and self.route_id.cost:
+            self.amount = self.route_id.cost
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('billing_month'):
+                # a bill is always dated the 1st of its month (same as the route's Generate Bills)
+                vals['billing_month'] = fields.Date.to_date(vals['billing_month']).replace(day=1)
+            if not vals.get('amount') and vals.get('route_id'):
+                vals['amount'] = self.env['school.transport.route'].browse(vals['route_id']).cost
+        return super().create(vals_list)
 
     @api.depends('invoice_id', 'invoice_id.payment_state')
     def _compute_state(self):
@@ -510,7 +527,7 @@ class SchoolTransportRouteChangeRequest(models.Model):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ], string='Status', default='draft', required=True, tracking=True)
-    approved_by = fields.Many2one('res.users', string='Decided By', readonly=True, copy=False)
+    approved_by = fields.Many2one('res.users', string='Approved By', readonly=True, copy=False)
     decision_date = fields.Datetime(string='Decision Date', readonly=True, copy=False)
 
     @api.model_create_multi

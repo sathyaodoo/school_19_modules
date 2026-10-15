@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="ir_cron_canteen_daily_planning" model="ir.cron">
+            <field name="name">Canteen: Generate Daily Meal Planning</field>
+            <field name="model_id" ref="model_school_canteen_daily_planning"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_generate_daily_planning()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active">True</field>
+            <field
+                name="nextcall"
+                eval="(datetime.now().replace(hour=6, minute=0, second=0))"
+            />
+        </record>
+    </data>
+</odoo>

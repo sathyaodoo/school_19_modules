@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_school_staff_resignation_form" model="ir.ui.view">
+        <field name="name">school.staff.resignation.form</field>
+        <field name="model">school.staff.resignation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <!-- Step 1: Letter -->
+                    <button name="action_submit" type="object" string="Submit"
+                            class="oe_highlight" invisible="state != 'draft'"/>
+
+                    <!-- Step 2: Principal approval — Admin or Principal only -->
+                    <button name="action_principal_approve" type="object" string="Principal Approve"
+                            class="oe_highlight" invisible="state != 'submitted' or principal_approved"
+                            groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+
+                    <!-- Step 3: HR Manager approval — Admin or HR Manager only.
+                         Only appears AFTER the Principal has approved: enforces
+                         strict order (Principal first, then HR Manager). -->
+                    <button name="action_hr_approve" type="object" string="HR Manager Approve"
+                            class="oe_highlight" invisible="state != 'submitted' or hr_approved or not principal_approved"
+                            groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager"/>
+
+                    <!-- Step 4: Notice period -->
+                    <button name="action_start_notice_period" type="object" string="Start Notice Period"
+                            class="oe_highlight" invisible="state != 'approved'"/>
+
+                    <!-- Step 5: Handover -->
+                    <button name="action_start_handover" type="object" string="Start Handover"
+                            class="oe_highlight" invisible="state != 'notice_period'"/>
+
+                    <!-- Step 6: Manager verification -->
+                    <button name="action_verify_handover" type="object" string="Verify Handover"
+                            class="oe_highlight" invisible="state != 'handover' or handover_verified"
+                            groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager"/>
+
+                    <!-- Step 7: Settlement -->
+                    <button name="action_process_settlement" type="object" string="Process Settlement"
+                            class="oe_highlight" invisible="state != 'handover' or not handover_verified or settlement_processed"
+                            groups="ad_school_management.group_school_admin,ad_school_management.group_school_accountant"/>
+
+                    <!-- Step 8: Exit (standard archiving) -->
+                    <button name="action_mark_exit" type="object" string="Exit / Mark as Left"
+                            class="oe_highlight" invisible="state != 'settled' or exit_done"
+                            groups="ad_school_management.group_school_admin"
+                            confirm="This will archive the employee's record. Continue?"/>
+
+                    <!-- Exit Interview — available once Exit has been processed -->
+                    <button name="action_conduct_exit_interview" type="object" string="Conduct Exit Interview"
+                            class="oe_highlight" invisible="state != 'settled' or not exit_done or exit_interview_count &gt; 0"
+                            groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager"/>
+
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,submitted,approved,notice_period,handover,settled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_exit_interviews" type="object"
+                                class="oe_stat_button" icon="fa-comments-o"
+                                invisible="exit_interview_count == 0"
+                                groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager">
+                            <field name="exit_interview_count" widget="statinfo" string="Exit Interview"/>
+                        </button>
+                    </div>
+
+                    <div class="alert alert-info" role="alert"
+                         invisible="state != 'submitted' or principal_approved"
+                         groups="ad_school_management.group_school_hr_manager">
+                        Waiting for Principal approval. HR Manager approval becomes available once the Principal has approved this resignation.
+                    </div>
+
+                    <div class="oe_title">
+                        <h1>
+                            <field name="employee_id" placeholder="Employee" required="1" readonly="state != 'draft'"/>
+                        </h1>
+                    </div>
+
+                    <group string="Employee Details">
+                        <group>
+                            <!--field name="employee_code"/-->
+                            <field name="department_id"/>
+                        </group>
+                        <group>
+                            <field name="job_id"/>
+                        </group>
+                    </group>
+
+                    <group string="Resignation Letter">
+                        <field name="submitted_date" readonly="1"/>
+                        <field name="reason_for_resignation" readonly="state != 'draft'"/>
+                        <field name="letter_content" placeholder="Employee writes their resignation letter here..."
+                               readonly="state != 'draft'"/>
+                        <field name="reason_details" readonly="state != 'draft'"
+                               placeholder="Additional comments or explanation..."/>
+                        <field name="last_working_day" readonly="state != 'draft'"/>
+                        <field name="minimum_notice_date" readonly="1"/>
+                        <field name="notice_period_met" readonly="1"/>
+                        <field name="letter_attachment" string="Scanned Letter (optional)"
+                               filename="letter_attachment_filename"
+                               readonly="state != 'draft'"/>
+                        <field name="letter_attachment_filename" invisible="1"/>
+                    </group>
+
+                    <group string="Approvals (Two-Level)">
+                        <group>
+                            <field name="principal_approved" readonly="1"/>
+                            <field name="principal_approved_by" readonly="1"/>
+                            <field name="principal_approved_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="hr_approved" readonly="1"/>
+                            <field name="hr_approved_by" readonly="1"/>
+                            <field name="hr_approved_date" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Notice Period (Minimum 3 Months — Mandatory)"
+                           invisible="state in ('draft', 'submitted')">
+                        <group>
+                            <field name="notice_period_start" readonly="1"/>
+                            <field name="notice_period_end" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Handover Checklist" invisible="state not in ('handover', 'settled')">
+                        <group>
+                            <field name="handover_student_register" readonly="state != 'handover' or handover_verified"/>
+                            <field name="handover_study_materials" readonly="state != 'handover' or handover_verified"/>
+                            <field name="handover_reports" readonly="state != 'handover' or handover_verified"/>
+                            <field name="handover_id_card" readonly="state != 'handover' or handover_verified"/>
+                        </group>
+                        <group>
+                            <field name="handover_verified" readonly="1"/>
+                            <field name="handover_verified_by" readonly="1"/>
+                            <field name="handover_verified_date" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Final Settlement" invisible="state not in ('handover', 'settled')">
+                        <group>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="settlement_amount" readonly="settlement_processed"/>
+                            <field name="settlement_processed" readonly="1"/>
+                            <field name="settlement_processed_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="exit_done" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_staff_resignation_list" model="ir.ui.view">
+        <field name="name">school.staff.resignation.list</field>
+        <field name="model">school.staff.resignation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <field name="submitted_date"/>
+                <field name="last_working_day"/>
+                <field name="notice_period_met" widget="boolean_toggle" readonly="1"/>
+                <field name="notice_period_end"/>
+                <field name="state" widget="badge"
+                       decoration-info="state in ('draft', 'submitted')"
+                       decoration-warning="state in ('approved', 'notice_period', 'handover')"
+                       decoration-success="state == 'settled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_staff_resignation_search" model="ir.ui.view">
+        <field name="name">school.staff.resignation.search</field>
+        <field name="model">school.staff.resignation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <filter string="Draft" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Submitted" name="filter_submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="In Progress" name="filter_in_progress"
+                        domain="[('state', 'in', ('approved', 'notice_period', 'handover'))]"/>
+                <filter string="Settled" name="filter_settled" domain="[('state', '=', 'settled')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_staff_resignation" model="ir.actions.act_window">
+        <field name="name">Staff Resignation</field>
+        <field name="res_model">school.staff.resignation</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_staff_resignation_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No resignation letters yet.
+            </p>
+        </field>
+    </record>
+
+</odoo>

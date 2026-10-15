@@ -9,6 +9,7 @@ class SchoolSection(models.Model):
     class_id = fields.Many2one('school.class', string='Class', required=True, ondelete='cascade')
     name = fields.Char(string='Section Name', required=True)
     capacity = fields.Integer(string='Capacity', default=30, required=True)
+    class_teacher_id = fields.Many2one('school.teacher', string='Class Teacher')
 
     @api.constrains('capacity')
     def _check_capacity(self):

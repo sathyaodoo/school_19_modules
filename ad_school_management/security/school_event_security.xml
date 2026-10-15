@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Staff who organise school activities need the standard Events rights. -->
+    <record id="group_school_admin" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('event.group_event_manager'))]"/>
+    </record>
+    <record id="group_school_principal" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('event.group_event_user'))]"/>
+    </record>
+    <record id="group_school_teacher" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('event.group_event_user'))]"/>
+    </record>
+</odoo>

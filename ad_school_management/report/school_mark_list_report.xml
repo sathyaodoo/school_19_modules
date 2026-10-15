@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_exam_mark_list" model="ir.actions.report">
+        <field name="name">Mark List</field>
+        <field name="model">school.exam.result</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_exam_mark_list</field>
+        <field name="report_file">ad_school_management.report_exam_mark_list</field>
+        <field name="print_report_name">'Mark List - %s' % object.student_id.name</field>
+        <field name="binding_model_id" ref="ad_school_management.model_school_exam_result"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Mark List: ONE PAGE PER STUDENT.
+         A single document with a page break before every student (the school
+         letterhead and footer repeat on each page). One document per student
+         would need the "patched Qt" build of wkhtmltopdf; this works with any
+         build. BRS columns: Student Name, Admission No (student block), Exam,
+         Subject, Marks, Grade, Percentage. -->
+    <template id="report_exam_mark_list">
+        <t t-call="web.html_container">
+            <t t-set="grades" t-value="docs.env['school.grade']"/>
+            <t t-set="students" t-value="docs.student_id.sorted(lambda s: (s.class_id.name or '', s.section_id.name or '', s.name or ''))"/>
+            <t t-set="o" t-value="docs[:1]"/>
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <t t-foreach="students" t-as="student">
+                        <t t-set="lines" t-value="docs.filtered(lambda r: r.student_id == student).sorted(lambda r: (r.exam_id.name or '', r.subject_id.name or ''))"/>
+                        <div t-att-style="'page-break-before: always;' if not student_first else ''">
+                        <h3 class="text-center mb-3">MARK LIST</h3>
+
+                        <!-- Student details -->
+                        <table class="table table-sm table-borderless mb-3" style="font-size: 13px;">
+                            <tr>
+                                <td style="width: 18%;"><strong>Student Name</strong></td>
+                                <td style="width: 32%;">: <span t-out="student.name"/></td>
+                                <td style="width: 18%;"><strong>Admission No</strong></td>
+                                <td style="width: 32%;">: <span t-out="student.admission_no or '-'"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Class &amp; Section</strong></td>
+                                <td>: <span t-out="student.class_id.name or '-'"/>
+                                    <t t-if="student.section_id"> - <span t-out="student.section_id.name"/></t></td>
+                                <td><strong>Academic Year</strong></td>
+                                <td>: <span t-out="', '.join(lines.academic_year_id.mapped('name')) or '-'"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Exam</strong></td>
+                                <td>: <span t-out="', '.join(lines.exam_id.mapped('name'))"/></td>
+                                <td><strong>Term</strong></td>
+                                <td>: <span t-out="', '.join(lines.term_id.mapped('name')) or '-'"/></td>
+                            </tr>
+                        </table>
+
+                        <!-- Marks -->
+                        <table class="table table-sm table-bordered" style="font-size: 13px;">
+                            <thead>
+                                <tr>
+                                    <th style="background-color: #dbe4f0;">Exam</th>
+                                    <th style="background-color: #dbe4f0;">Subject</th>
+                                    <th class="text-end" style="background-color: #dbe4f0;">Marks</th>
+                                    <th class="text-center" style="background-color: #dbe4f0;">Grade</th>
+                                    <th class="text-end" style="background-color: #dbe4f0;">Percentage</th>
+                                    <th class="text-center" style="background-color: #dbe4f0;">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="lines" t-as="line">
+                                    <t t-set="fail_style" t-value="'color: #dc3545;' if line.result_status == 'fail' else ''"/>
+                                    <td t-att-style="fail_style"><span t-out="line.exam_id.name"/></td>
+                                    <td t-att-style="fail_style"><span t-out="line.subject_id.name"/></td>
+                                    <td class="text-end" t-att-style="fail_style">
+                                        <span t-out="'%g' % line.marks_obtained"/> / <span t-out="'%g' % line.max_marks"/>
+                                    </td>
+                                    <td class="text-center" t-att-style="fail_style"><span t-out="line.grade_id.grade or '-'"/></td>
+                                    <td class="text-end" t-att-style="fail_style"><span t-out="'%.2f' % line.percentage"/> %</td>
+                                    <td class="text-center" t-att-style="fail_style">
+                                        <span t-out="'Pass' if line.result_status == 'pass' else 'Fail'"/>
+                                    </td>
+                                </tr>
+                                <t t-set="obtained" t-value="sum(lines.mapped('marks_obtained'))"/>
+                                <t t-set="maximum" t-value="sum(lines.mapped('max_marks'))"/>
+                                <t t-set="total_pct" t-value="(obtained / maximum * 100.0) if maximum else 0.0"/>
+                                <t t-set="total_grade" t-value="grades.search([('min_mark', '&lt;=', total_pct), ('max_mark', '&gt;=', total_pct)], limit=1)"/>
+                                <tr class="fw-bold">
+                                    <td colspan="2" class="text-end" style="background-color: #f2f2f2;">Total</td>
+                                    <td class="text-end" style="background-color: #f2f2f2;"><span t-out="'%g' % obtained"/> / <span t-out="'%g' % maximum"/></td>
+                                    <td class="text-center" style="background-color: #f2f2f2;"><span t-out="total_grade.grade or '-'"/></td>
+                                    <td class="text-end" style="background-color: #f2f2f2;"><span t-out="'%.2f' % total_pct"/> %</td>
+                                    <td style="background-color: #f2f2f2;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Overall result -->
+                        <t t-set="failed" t-value="lines.filtered(lambda r: r.result_status == 'fail')"/>
+                        <p style="font-size: 14px;">
+                            <strong>Overall Result: </strong>
+                            <strong t-if="not failed" style="color: #198754;">PASS</strong>
+                            <strong t-else="" style="color: #dc3545;">FAIL</strong>
+                            <span t-if="failed" class="text-muted">
+                                (<span t-out="len(failed)"/> subject(s) below the pass mark:
+                                <span t-out="', '.join(failed.subject_id.mapped('name'))"/>)</span>
+                        </p>
+
+                        <!-- Signatures -->
+                        <table class="table table-borderless mt-5" style="font-size: 13px;">
+                            <tr>
+                                <td class="text-center" style="width: 33%;">____________________<br/>Class Teacher</td>
+                                <td class="text-center" style="width: 33%;">____________________<br/>Principal</td>
+                                <td class="text-center" style="width: 33%;">____________________<br/>Parent / Guardian</td>
+                            </tr>
+                        </table>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

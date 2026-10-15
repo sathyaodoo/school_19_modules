@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Food Item Master (BRS 27.2) = Odoo's Default Product Master
+         (product.template), used completely as-is. No custom form,
+         list, or inherited view here at all — the action below only
+         filters WHICH products show (is_canteen_item = True). The two
+         extra fields this BRS section needs (Reorder Level, Maximum
+         Stock) are injected at render time by get_view() in
+         models/school_canteen_food_item.py, not by any view record
+         here, so this stays genuinely zero-customization on the UI
+         side beyond that filter. -->
+
+    <record id="action_school_canteen_food_item" model="ir.actions.act_window">
+        <field name="name">Food Item Master</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_canteen_item', '=', True)]</field>
+        <field name="context">{'default_is_canteen_item': True, 'default_detailed_type': 'consu'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a canteen food item!
+            </p>
+        </field>
+    </record>
+
+    <record id="action_school_canteen_food_category" model="ir.actions.act_window">
+        <field name="name">Food Categories</field>
+        <field name="res_model">product.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

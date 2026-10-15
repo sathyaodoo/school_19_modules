@@ -12,13 +12,19 @@
                     </group>
                     <group>
                         <field name="date"/>
+                        <field name="session" widget="radio"/>
                     </group>
                 </group>
                 <notebook>
                     <page string="Students Attendance sheet" name="sheet">
                         <field name="line_ids" force_save="1">
                             <list editable="bottom" create="false" delete="false">
-                                <field name="student_id"/>
+                                <!-- force_save: the column is read-only, and the web
+                                     client does not send read-only values unless
+                                     force_save is set. Without it every line
+                                     reached the server without a student, was
+                                     dropped, and everyone was saved as Present. -->
+                                <field name="student_id" force_save="1"/>
                                 <field name="status"/>
                             </list>
                         </field>

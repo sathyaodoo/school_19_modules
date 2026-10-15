@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- one "Start" form (size + button) -->
+    <template id="portal_oe_practice_start_form" name="Self Practice - start form">
+        <form method="POST" action="/my/online-practice/start" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="subject_id" t-att-value="subject.id"/>
+            <input type="hidden" name="chapter_id" t-att-value="chapter_id or 0"/>
+            <input type="hidden" name="topic_id" t-att-value="topic_id or 0"/>
+            <select name="n" class="form-select form-select-sm" style="width: auto;">
+                <t t-foreach="sizes" t-as="sz">
+                    <option t-att-value="sz"><t t-out="sz"/> questions</option>
+                </t>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-play"/> Start</button>
+        </form>
+    </template>
+
+    <template id="portal_oe_practice" name="Online Exam - Self Practice">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h3 class="mb-0">Self Practice</h3>
+                        <div class="text-muted small">
+                            Pick a subject, chapter or topic and how many questions. Practice only - the score is
+                            not counted in your marks and correct answers are shown at the end.
+                        </div>
+                        <span t-if="is_parent" class="badge rounded-pill bg-warning text-dark mt-1">
+                            <i class="fa fa-eye"/> Parent View (read only)
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form t-if="len(students) &gt; 1" method="GET" action="/my/online-practice">
+                            <select name="student_id" class="form-select" onchange="this.form.submit()">
+                                <t t-foreach="students" t-as="s">
+                                    <option t-att-value="s.id" t-att-selected="'selected' if s.id == student.id else None" t-out="s.name"/>
+                                </t>
+                            </select>
+                        </form>
+                        <a t-attf-href="/my/online-exams?student_id=#{student.id}" class="btn btn-outline-secondary">
+                            <i class="fa fa-list-alt"/> Online Exams
+                        </a>
+                    </div>
+                </div>
+
+                <div t-if="error" class="alert alert-danger"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
+
+                <div t-if="not is_parent and not catalog" class="alert alert-info">
+                    <i class="fa fa-info-circle"/> No practice questions are open for your class yet.
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <t t-foreach="catalog" t-as="entry">
+                        <t t-set="subject" t-value="entry['subject']"/>
+                        <div class="col-lg-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="mb-0 text-primary"><i class="fa fa-book"/> <t t-out="subject.name"/></h5>
+                                        <span class="badge bg-light text-dark border"><t t-out="entry['total']"/> questions</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                        <span class="fw-bold">Whole subject</span>
+                                        <t t-call="school_online_exam.portal_oe_practice_start_form">
+                                            <t t-set="sizes" t-value="entry['sizes']"/>
+                                            <t t-set="chapter_id" t-value="0"/>
+                                            <t t-set="topic_id" t-value="0"/>
+                                        </t>
+                                    </div>
+                                    <t t-foreach="entry['chapters']" t-as="ch">
+                                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                            <span><i class="fa fa-bookmark-o text-muted"/> <t t-out="ch['chapter'].name"/>
+                                                <span class="text-muted small">(<t t-out="ch['total']"/>)</span></span>
+                                            <t t-call="school_online_exam.portal_oe_practice_start_form">
+                                                <t t-set="sizes" t-value="ch['sizes']"/>
+                                                <t t-set="chapter_id" t-value="ch['chapter'].id"/>
+                                                <t t-set="topic_id" t-value="0"/>
+                                            </t>
+                                        </div>
+                                        <t t-foreach="ch['topics']" t-as="tp">
+                                            <div class="d-flex justify-content-between align-items-center py-1 ps-4 border-bottom small">
+                                                <span class="text-muted"><i class="fa fa-angle-right"/> <t t-out="tp['topic'].name"/>
+                                                    (<t t-out="tp['count']"/>)</span>
+                                                <t t-call="school_online_exam.portal_oe_practice_start_form">
+                                                    <t t-set="sizes" t-value="tp['sizes']"/>
+                                                    <t t-set="chapter_id" t-value="ch['chapter'].id"/>
+                                                    <t t-set="topic_id" t-value="tp['topic'].id"/>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+
+                <h5 class="mb-2">My practice history</h5>
+                <div t-if="not history" class="text-muted">No practice sessions yet.</div>
+                <div t-else="" class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr><th>Practice</th><th class="text-end">Attempts</th><th class="text-end">Best score</th><th/></tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="history" t-as="h">
+                                <td t-out="h['exam'].name"/>
+                                <td class="text-end" t-out="h['used']"/>
+                                <td class="text-end">
+                                    <t t-if="h['final']"><t t-out="'%g' % h['final'].score"/> / <t t-out="'%g' % h['final'].total_marks"/>
+                                        (<t t-out="'%.0f' % h['final'].percentage"/>%)</t>
+                                </td>
+                                <td class="text-end">
+                                    <a t-attf-href="/my/online-exams/#{h['exam'].id}/history?student_id=#{student.id}"
+                                       class="btn btn-sm btn-outline-secondary"><i class="fa fa-history"/> History</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

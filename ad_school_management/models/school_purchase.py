@@ -189,7 +189,7 @@ class ResPartnerVendor(models.Model):
 # ---------------------------------------------------------------------------
 from odoo import api as _mb_api, fields as _mb_fields, models as _mb_models
 
-_BRANCH_MODELS = ['school.academic.year', 'school.academic.term', 'school.class', 'school.section', 'school.subject', 'school.attendance', 'school.exam', 'school.exam.result', 'school.timetable', 'school.promotion', 'school.hostel', 'school.hostel.room', 'school.hostel.allocation', 'school.book', 'school.book.issue', 'school.book.list', 'school.vehicle', 'school.transport.route', 'school.student.transport.fee', 'school.transport.route.change.request', 'school.transport.attendance']
+_BRANCH_MODELS = ['school.academic.year', 'school.academic.term', 'school.class', 'school.section', 'school.subject', 'school.attendance', 'school.exam', 'school.exam.result', 'school.timetable', 'school.promotion', 'school.hostel', 'school.hostel.room', 'school.hostel.allocation', 'school.book', 'school.book.issue', 'school.vehicle', 'school.transport.route', 'school.student.transport.fee', 'school.transport.route.change.request', 'school.transport.attendance']
 
 for _model_name in _BRANCH_MODELS:
     type('SchoolBranch_' + _model_name.replace('.', '_'), (_mb_models.Model,), {

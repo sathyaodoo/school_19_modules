@@ -104,6 +104,10 @@ class SchoolStudentFee(models.Model):
             if not vals.get('company_id'):
                 student = self.env['school.student'].browse(vals.get('student_id'))
                 vals['company_id'] = student.company_id.id or self.env.company.id
+            # NEW: take the student's scholarship unless a discount/scholarship was given
+            if vals.get('student_id') and 'discount' not in vals and 'scholarship' not in vals:
+                student = self.env['school.student'].browse(vals['student_id'])
+                vals['discount'] = student._get_scholarship_discount()
         records = super(SchoolStudentFee, self).create(vals_list)
         for record in records:
             record._generate_installments()
@@ -141,6 +145,12 @@ class SchoolStudentFee(models.Model):
                     'due_date': fields.Date.context_today(rec),
                     'amount_percentage': 100.0,
                 })
+
+    # NEW: when a student is selected on the fee form, fill the scholarship discount
+    @api.onchange('student_id')
+    def _onchange_student_id_scholarship(self):
+        if self.student_id:
+            self.discount = self.student_id._get_scholarship_discount()
 
     @api.constrains('discount', 'scholarship')
     def _check_discount_scholarship(self):

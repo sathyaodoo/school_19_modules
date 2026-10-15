@@ -4,6 +4,21 @@ import { registry } from "@web/core/registry";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
+function emptyStats() {
+    return {
+        has_library: false,
+        has_hostel: false,
+        students: { total: 0, enrolled: 0, draft: 0, promoted: 0 },
+        faculty_parents: { teachers: 0, parents: 0 },
+        admissions: { total: 0, pending: 0, approved: 0 },
+        library: { books: 0, borrowed: 0 },
+        transport: { vehicles: 0, routes: 0 },
+        hostel: { total_beds: 0, occupied_beds: 0, available_beds: 0, occupancy_rate: 0 },
+        finance: { paid: 0, outstanding: 0, total: 0, collection_rate: 0 },
+        attendance: { marked: 0, present: 0, rate: 0 },
+    };
+}
+
 export class SchoolDashboard extends Component {
     static template = "ad_school_management.SchoolDashboard";
 
@@ -11,7 +26,7 @@ export class SchoolDashboard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.state = useState({
-            stats: {},
+            stats: emptyStats(),
             loading: true
         });
 
@@ -24,7 +39,7 @@ export class SchoolDashboard extends Component {
         this.state.loading = true;
         try {
             const result = await this.orm.call("school.dashboard", "get_dashboard_stats", []);
-            this.state.stats = result;
+            this.state.stats = Object.assign(emptyStats(), result);
         } catch (error) {
             console.error("Failed to load school dashboard statistics:", error);
         } finally {

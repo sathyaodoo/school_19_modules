@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_ac_message" name="Academics - Message">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading" t-out="title"/>
+                    <p class="mb-0" t-out="message"/>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

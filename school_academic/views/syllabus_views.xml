@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_syllabus_list" model="ir.ui.view">
+        <field name="name">school.syllabus.list</field>
+        <field name="model">school.syllabus</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'published'" decoration-muted="state == 'archived'"
+                  decoration-danger="over_planned">
+                <field name="academic_year_id"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="subject_id"/>
+                <field name="teacher_id"/>
+                <field name="unit_count"/>
+                <field name="planned_periods"/>
+                <field name="allotted_periods"/>
+                <field name="progress" widget="progressbar"/>
+                <field name="over_planned" column_invisible="1"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'published'"
+                       decoration-info="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_syllabus_form" model="ir.ui.view">
+        <field name="name">school.syllabus.form</field>
+        <field name="model">school.syllabus</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" string="Publish" type="object" class="btn-primary"
+                            invisible="state != 'draft'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_set_draft" string="Back to Draft" type="object" invisible="state == 'draft'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_archive_syllabus" string="Archive" type="object" invisible="state != 'published'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_open_copy_wizard" string="Copy to Another Year" type="object" invisible="not id"/>
+                    <button name="action_relink_curriculum" string="Refresh Curriculum Link" type="object"
+                            invisible="not id or state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="alert" invisible="not over_planned">
+                        The planned periods in the units are <b>more</b> than the periods given to this subject in the curriculum.
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="state != 'draft'">
+                        Draft: the subject teacher fills the units. The principal / admin publishes it.
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Maths - Class 1 - 2026-27 Syllabus"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="can_edit_structure" invisible="1"/>
+                            <field name="allowed_class_ids" invisible="1"/>
+                            <field name="allowed_section_ids" invisible="1"/>
+                            <field name="allowed_subject_ids" invisible="1"/>
+                            <field name="academic_year_id" readonly="id"/>
+                            <field name="class_id" readonly="id" options="{'no_create': True}"
+                                   domain="[('id', 'in', allowed_class_ids)]"/>
+                            <field name="section_id" readonly="id" options="{'no_create': True}" placeholder="Whole class"
+                                   domain="[('id', 'in', allowed_section_ids)]"/>
+                            <field name="subject_id" readonly="id" options="{'no_create': True}"
+                                   domain="[('id', 'in', allowed_subject_ids)]"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="id"/>
+                        </group>
+                        <group>
+                            <field name="teacher_id"/>
+                            <field name="curriculum_line_id"/>
+                            <field name="unit_count"/>
+                            <field name="topic_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Units" name="units">
+                            <div class="text-muted mb-2">
+                                One row for every chapter: its unit, term, chapter number and name, learning objectives,
+                                teaching materials and remarks. Press the <i class="fa fa-list-ul"/> button of a row to add its
+                                <b>topics</b> and periods. After publishing, the subject teacher can still write remarks and
+                                tick topics as taught (Academics &gt; Topic Tracker).
+                            </div>
+                            <field name="unit_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name" readonly="not parent.can_edit_structure"/>
+                                    <field name="term_id" readonly="not parent.can_edit_structure" options="{'no_create': True}"/>
+                                    <field name="chapter_number" readonly="not parent.can_edit_structure"/>
+                                    <field name="chapter_name" readonly="not parent.can_edit_structure"/>
+                                    <field name="learning_objectives" readonly="not parent.can_edit_structure"/>
+                                    <field name="teaching_materials" readonly="not parent.can_edit_structure"/>
+                                    <field name="remarks"/>
+                                    <field name="planned_periods" optional="hide" readonly="not parent.can_edit_structure" sum="Total"/>
+                                    <field name="progress" optional="hide" widget="progressbar"/>
+                                    <button name="action_open_unit_form" type="object" icon="fa-list-ul"
+                                            string="Topics" title="Topics, periods and progress of this chapter"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Objectives &amp; References" name="content">
+                            <group>
+                                <field name="objectives"/>
+                                <field name="reference_books"/>
+                                <field name="assessment_scheme"/>
+                            </group>
+                        </page>
+                        <page string="Documents" name="documents">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Approval" name="approval" invisible="state == 'draft'">
+                            <group>
+                                <field name="approved_by"/>
+                                <field name="approved_datetime"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_syllabus_unit_form" model="ir.ui.view">
+        <field name="name">school.syllabus.unit.form</field>
+        <field name="model">school.syllabus.unit</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="name"/>
+                        <field name="term_id" options="{'no_create': True}"/>
+                        <field name="chapter_number"/>
+                        <field name="chapter_name"/>
+                        <field name="planned_periods"/>
+                    </group>
+                    <group>
+                        <field name="topic_periods"/>
+                        <field name="status" readonly="topic_count &gt; 0"/>
+                        <field name="progress" widget="progressbar"/>
+                        <field name="topic_count" invisible="1"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="learning_objectives"/>
+                    <field name="teaching_materials"/>
+                    <field name="description" string="What is covered"/>
+                    <field name="remarks"/>
+                </group>
+                <separator string="Topics"/>
+                <field name="topic_ids">
+                    <list editable="bottom">
+                        <field name="sequence" widget="handle"/>
+                        <field name="name"/>
+                        <field name="planned_periods" sum="Total"/>
+                        <field name="status" widget="badge" decoration-success="status == 'completed'"
+                               decoration-warning="status == 'in_progress'"/>
+                        <field name="completed_date"/>
+                        <field name="remarks"/>
+                    </list>
+                </field>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_syllabus_search" model="ir.ui.view">
+        <field name="name">school.syllabus.search</field>
+        <field name="model">school.syllabus</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="academic_year_id"/>
+                <field name="teacher_id"/>
+                <filter name="published" string="Published" domain="[('state', '=', 'published')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="archived" string="Archived" domain="[('state', '=', 'archived')]"/>
+                <filter name="over" string="More planned than allotted" domain="[('over_planned', '=', True)]"/>
+                <group>
+                    <filter name="group_year" string="Academic Year" context="{'group_by': 'academic_year_id'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_syllabus" model="ir.actions.act_window">
+        <field name="name">Syllabus</field>
+        <field name="res_model">school.syllabus</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_class': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No syllabus yet</p>
+            <p>Open a published curriculum and click "Create Syllabus Drafts", or create one here.</p>
+        </field>
+    </record>
+
+    <!-- the syllabus I have to prepare / maintain as the subject teacher -->
+    <record id="action_school_syllabus_mine" model="ir.actions.act_window">
+        <field name="name">My Syllabus</field>
+        <field name="res_model">school.syllabus</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('teacher_user_id', '=', uid), ('state', '!=', 'archived')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No syllabus is assigned to you</p>
+            <p>When a syllabus draft is created for a subject you teach you get a notification and it appears here.</p>
+        </field>
+    </record>
+
+    <!-- ============ Topic Tracker: every topic, tick them off as they are taught ============ -->
+    <record id="view_school_syllabus_topic_list" model="ir.ui.view">
+        <field name="name">school.syllabus.topic.list</field>
+        <field name="model">school.syllabus.topic</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" decoration-success="status == 'completed'"
+                  decoration-warning="status == 'in_progress'">
+                <field name="academic_year_id" optional="hide"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="unit_id"/>
+                <field name="name" readonly="1"/>
+                <field name="planned_periods" readonly="1"/>
+                <field name="status"/>
+                <field name="completed_date"/>
+                <field name="remarks"/>
+                <button name="action_mark_in_progress" type="object" icon="fa-play-circle" title="Started"
+                        invisible="status != 'not_started'"/>
+                <button name="action_mark_completed" type="object" icon="fa-check-circle" title="Completed"
+                        invisible="status == 'completed'"/>
+                <button name="action_reset_progress" type="object" icon="fa-undo" title="Not started again"
+                        invisible="status == 'not_started'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_syllabus_topic_search" model="ir.ui.view">
+        <field name="name">school.syllabus.topic.search</field>
+        <field name="model">school.syllabus.topic</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="subject_id"/>
+                <field name="class_id"/>
+                <field name="unit_id"/>
+                <filter name="mine" string="My topics" domain="[('teacher_user_id', '=', uid)]"/>
+                <separator/>
+                <filter name="not_started" string="Not started" domain="[('status', '=', 'not_started')]"/>
+                <filter name="in_progress" string="In progress" domain="[('status', '=', 'in_progress')]"/>
+                <filter name="completed" string="Completed" domain="[('status', '=', 'completed')]"/>
+                <group>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_unit" string="Unit" context="{'group_by': 'unit_id'}"/>
+                    <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_school_syllabus_topic_pivot" model="ir.ui.view">
+        <field name="name">school.syllabus.topic.pivot</field>
+        <field name="model">school.syllabus.topic</field>
+        <field name="arch" type="xml">
+            <pivot string="Syllabus coverage">
+                <field name="class_id" type="row"/>
+                <field name="subject_id" type="row"/>
+                <field name="completed_pct" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_syllabus_topic_graph" model="ir.ui.view">
+        <field name="name">school.syllabus.topic.graph</field>
+        <field name="model">school.syllabus.topic</field>
+        <field name="arch" type="xml">
+            <graph string="Completed %" type="bar">
+                <field name="subject_id"/>
+                <field name="completed_pct" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_school_syllabus_topic" model="ir.actions.act_window">
+        <field name="name">Topic Tracker</field>
+        <field name="res_model">school.syllabus.topic</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="domain">[('syllabus_state', '=', 'published')]</field>
+        <field name="context">{'search_default_mine': 1, 'search_default_group_subject': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No topic to track</p>
+            <p>Topics of <b>published</b> syllabus assigned to you appear here. Click the green tick when a topic is taught.</p>
+        </field>
+    </record>
+</odoo>

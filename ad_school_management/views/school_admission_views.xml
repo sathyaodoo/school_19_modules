@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <function model="school.admission" name="_ensure_default_stages"/>
+    <function model="school.admission" name="_ensure_default_sources"/>
     <function model="school.admission" name="_sync_stage_from_state"/>
 
     <record id="view_school_admission_stage_list" model="ir.ui.view">
@@ -22,6 +23,31 @@
         <field name="view_mode">list</field>
     </record>
 
+    <!-- NEW: Admission Source master -->
+    <record id="view_school_admission_source_list" model="ir.ui.view">
+        <field name="name">school.admission.source.list</field>
+        <field name="model">school.admission.source</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="source_type"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_admission_source" model="ir.actions.act_window">
+        <field name="name">Admission Sources</field>
+        <field name="res_model">school.admission.source</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add an admission source</p>
+            <p>Example: Newspaper Ad, Hoarding, Existing Parent, Education Fair.
+               Pick the Behaviour that matches the extra details you want on the form.</p>
+        </field>
+    </record>
+
     <record id="view_school_admission_tree" model="ir.ui.view">
         <field name="name">school.admission.tree</field>
         <field name="model">school.admission</field>
@@ -33,7 +59,7 @@
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="academic_year_id"/>
-                <field name="admission_source" optional="show"/>
+                <field name="admission_source_id" optional="show"/>
                 <field name="state" widget="badge" decoration-info="state in ('submitted', 'documents', 'verification', 'approval')" decoration-success="state == 'admitted'" decoration-danger="state == 'rejected'"/>
             </list>
         </field>
@@ -53,7 +79,8 @@
                             confirm="This creates the student and parent records. Continue?"/>
                     <button name="action_reject" type="object" string="Reject" class="btn-secondary" invisible="state in ('admitted', 'rejected')"/>
                     <button name="action_reset_enquiry" type="object" string="Reopen as Enquiry" class="btn-secondary" invisible="state != 'rejected'"/>
-                    <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}"/>
+                    <!-- removed 'clickable' so stage can only change via buttons (which ask for remarks) -->
+                    <field name="stage_id" widget="statusbar" options="{'fold_field': 'fold'}"/>
                     <field name="state" invisible="1"/>
                 </header>
                 <sheet>
@@ -65,7 +92,9 @@
                     </div>
                     <group string="Admission Source">
                         <group>
-                            <field name="admission_source"/>
+                            <!-- CHANGED: master dropdown + hidden source type that drives the fields below -->
+                            <field name="admission_source_id" required="1" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="admission_source" invisible="1"/>
                             <field name="referral_type" invisible="admission_source != 'referral'"/>
                             <field name="referral_student_id" invisible="admission_source != 'referral' or referral_type != 'parent'"/>
                             <field name="referral_name" invisible="admission_source != 'referral'"
@@ -155,12 +184,46 @@
                             <field name="merit_tag"/>
                         </group>
                     </group>
+
+                    <!-- stage remarks history -->
+                    <notebook>
+                        <page string="Stage Remarks" name="stage_remarks">
+                            <field name="remark_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="user_id"/>
+                                    <field name="from_state"/>
+                                    <field name="to_state"/>
+                                    <field name="remarks"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>
         </field>
     </record>
 
+    <!-- remarks popup (opens when a stage button is clicked) -->
+    <record id="view_school_admission_stage_remark_form" model="ir.ui.view">
+        <field name="name">school.admission.stage.remark.form</field>
+        <field name="model">school.admission.stage.remark</field>
+        <field name="arch" type="xml">
+            <form string="Stage Remarks">
+                <group>
+                    <field name="admission_id"/>
+                    <field name="current_state"/>
+                    <field name="target_state"/>
+                    <field name="remarks" placeholder="Why is this application moving to the next stage?"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
 
     <record id="view_school_admission_kanban" model="ir.ui.view">
         <field name="name">school.admission.kanban</field>
@@ -184,7 +247,7 @@
                             <field name="parent_name"/> <field name="parent_phone"/>
                         </div>
                         <div class="small text-muted">
-                            <field name="admission_source"/>
+                            <field name="admission_source_id"/>
                         </div>
                         <footer class="pt-1">
                             <field name="activity_ids" widget="kanban_activity"/>
@@ -204,6 +267,7 @@
                 <field name="last_name"/>
                 <field name="class_id"/>
                 <field name="academic_year_id"/>
+                <field name="admission_source_id"/>
                 <filter string="New Enquiry" name="enquiry" domain="[('state', '=', 'enquiry')]"/>
                 <filter string="In Progress" name="in_progress" domain="[('state', 'in', ('submitted', 'documents', 'verification', 'approval'))]"/>
                 <filter string="Approval Pending" name="approval" domain="[('state', '=', 'approval')]"/>
@@ -216,7 +280,7 @@
                 <group>
                     <filter string="Stage" name="group_state" context="{'group_by': 'stage_id'}"/>
                     <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
-                    <filter string="Admission Source" name="group_source" context="{'group_by': 'admission_source'}"/>
+                    <filter string="Admission Source" name="group_source" context="{'group_by': 'admission_source_id'}"/>
                 </group>
             </search>
         </field>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- same convention as the other school records: "own branch + shared main school" -->
+    <record id="rule_school_curriculum_company" model="ir.rule">
+        <field name="name">Curriculum: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_curriculum"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_curriculum_line_company" model="ir.rule">
+        <field name="name">Curriculum line: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_curriculum_line"/>
+        <field name="domain_force">['|', ('curriculum_id.company_id', '=', False), ('curriculum_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_syllabus_company" model="ir.rule">
+        <field name="name">Syllabus: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_syllabus"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_syllabus_unit_company" model="ir.rule">
+        <field name="name">Syllabus unit: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_syllabus_unit"/>
+        <field name="domain_force">['|', ('syllabus_id.company_id', '=', False), ('syllabus_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_syllabus_topic_company" model="ir.rule">
+        <field name="name">Syllabus topic: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_syllabus_topic"/>
+        <field name="domain_force">['|', ('syllabus_id.company_id', '=', False), ('syllabus_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_learning_outcome_company" model="ir.rule">
+        <field name="name">Learning outcome: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_learning_outcome"/>
+        <field name="domain_force">['|', ('syllabus_id.company_id', '=', False), ('syllabus_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_lesson_plan_company" model="ir.rule">
+        <field name="name">Lesson plan: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_lesson_plan"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_class_diary_company" model="ir.rule">
+        <field name="name">Class diary: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_class_diary"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_school_curriculum_plan_company" model="ir.rule">
+        <field name="name">Curriculum plan: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_curriculum_plan"/>
+        <field name="domain_force">['|', ('curriculum_id.company_id', '=', False), ('curriculum_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+</odoo>

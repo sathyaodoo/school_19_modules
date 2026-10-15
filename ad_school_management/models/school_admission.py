@@ -1,3 +1,5 @@
+from markupsafe import Markup
+
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
@@ -10,6 +12,30 @@ ADMISSION_STATES = [
     ('admitted', 'Admitted'),
     ('rejected', 'Rejected'),
 ]
+
+ADMISSION_SOURCE_TYPES = [
+    ('walk_in', 'Direct Walk-in'),
+    ('referral', 'Referral'),
+    ('anganwadi', 'Anganwadi Visit'),
+    ('website', 'Website'),
+    ('social_media', 'Social Media (Instagram / Facebook)'),
+    ('other', 'Other'),
+]
+
+
+class SchoolAdmissionSource(models.Model):
+    _name = 'school.admission.source'
+    _description = 'Admission Source'
+    _order = 'sequence, id'
+
+    name = fields.Char(string='Source Name', required=True, translate=True)
+    sequence = fields.Integer(default=10)
+    source_type = fields.Selection(
+        ADMISSION_SOURCE_TYPES, string='Behaviour', required=True, default='other',
+        help="Decides which extra fields the admission form asks for: "
+             "Referral -> referrer details, Anganwadi -> visit date & staff, "
+             "Website / Social Media / Other -> source details note.")
+    active = fields.Boolean(default=True)
 
 
 class SchoolAdmissionStage(models.Model):
@@ -26,6 +52,20 @@ class SchoolAdmissionStage(models.Model):
     _code_uniq = models.Constraint('unique(code)', 'Only one stage per workflow step is allowed.')
 
 
+class SchoolAdmissionRemark(models.Model):
+    _name = 'school.admission.remark'
+    _description = 'Admission Stage Remark'
+    _order = 'id desc'
+
+    admission_id = fields.Many2one('school.admission', string='Application', required=True,
+                                   ondelete='cascade', index=True)
+    from_state = fields.Selection(ADMISSION_STATES, string='From', readonly=True)
+    to_state = fields.Selection(ADMISSION_STATES, string='To', readonly=True)
+    remarks = fields.Text(string='Remarks', required=True, readonly=True)
+    user_id = fields.Many2one('res.users', string='By', default=lambda self: self.env.user, readonly=True)
+    date = fields.Datetime(string='Date', default=fields.Datetime.now, readonly=True)
+
+
 class SchoolAdmission(models.Model):
     _name = 'school.admission'
     _description = 'Admission Application'
@@ -33,16 +73,15 @@ class SchoolAdmission(models.Model):
     _order = 'id desc'
 
     name = fields.Char(string='Application Number', required=True, readonly=True, default='/', copy=False)
-    
+
     # --- Referral tracking (BRS 4.1) ---
-    admission_source = fields.Selection([
-        ('walk_in', 'Direct Walk-in'),
-        ('referral', 'Referral'),
-        ('anganwadi', 'Anganwadi Visit'),
-        ('website', 'Website'),
-        ('social_media', 'Social Media (Instagram / Facebook)'),
-        ('other', 'Other'),
-    ], string='Admission Source', default='walk_in', required=True, tracking=True)
+    admission_source_id = fields.Many2one(
+        'school.admission.source', string='Admission Source', tracking=True, index=True,
+        ondelete='restrict', default=lambda self: self._default_admission_source())
+    # type of the chosen source: drives the form logic and keeps the old filters / group-bys working
+    admission_source = fields.Selection(
+        ADMISSION_SOURCE_TYPES, string='Source Type', related='admission_source_id.source_type',
+        store=True, readonly=True)
     referral_type = fields.Selection([
         ('parent', 'Parent of Current Student'),
         ('staff', 'School Staff'),
@@ -119,7 +158,7 @@ class SchoolAdmission(models.Model):
 
     email = fields.Char(string='Email', tracking=True)
     phone = fields.Char(string='Phone', tracking=True)
-    
+
     street = fields.Char(string='Street')
     city = fields.Char(string='City')
     state_id = fields.Many2one('res.country.state', string='State')
@@ -129,7 +168,7 @@ class SchoolAdmission(models.Model):
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year', required=True, tracking=True)
     class_id = fields.Many2one('school.class', string='Class', required=True, tracking=True)
     section_id = fields.Many2one('school.section', string='Section', tracking=True)
-    
+
     parent_name = fields.Char(string='Parent Name', tracking=True)
     parent_phone = fields.Char(string='Parent Phone', tracking=True)
     parent_email = fields.Char(string='Parent Email', tracking=True)
@@ -147,6 +186,7 @@ class SchoolAdmission(models.Model):
     kanban_state_color = fields.Integer(compute='_compute_kanban_color')
 
     student_id = fields.Many2one('school.student', string='Student Profile', readonly=True)
+    remark_ids = fields.One2many('school.admission.remark', 'admission_id', string='Stage Remarks', readonly=True)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.company)
 
     def init(self):
@@ -160,12 +200,13 @@ class SchoolAdmission(models.Model):
             WHERE state IN ('draft', 'approved', 'enrolled')
         """)
 
-    @api.constrains('admission_source', 'referral_name', 'anganwadi_visit_date')
+    @api.constrains('admission_source_id', 'referral_name', 'anganwadi_visit_date')
     def _check_admission_source(self):
         for rec in self:
-            if rec.admission_source == 'referral' and not rec.referral_name:
+            source_type = rec.admission_source_id.source_type
+            if source_type == 'referral' and not rec.referral_name:
                 raise ValidationError(_("Please enter the Referrer Name for a referral admission."))
-            if rec.admission_source == 'anganwadi' and not rec.anganwadi_visit_date:
+            if source_type == 'anganwadi' and not rec.anganwadi_visit_date:
                 raise ValidationError(_("Please enter the Anganwadi Visit Date."))
 
     @api.onchange('referral_student_id')
@@ -183,6 +224,24 @@ class SchoolAdmission(models.Model):
     @api.model
     def _stage_for(self, code):
         return self.env['school.admission.stage'].search([('code', '=', code)], limit=1)
+
+    @api.model
+    def _default_admission_source(self):
+        return self.env['school.admission.source'].search([('source_type', '=', 'walk_in')], limit=1)
+
+    @api.model
+    def _ensure_default_sources(self):
+        # create the default sources once and link old applications to them (safe to run on every upgrade)
+        Source = self.env['school.admission.source']
+        existing = {}
+        for src in Source.with_context(active_test=False).search([], order='id desc'):
+            existing[src.source_type] = src
+        for seq, (code, label) in enumerate(ADMISSION_SOURCE_TYPES, start=1):
+            if code not in existing:
+                existing[code] = Source.create({'name': label, 'sequence': seq * 10, 'source_type': code})
+        for rec in self.with_context(active_test=False).search([('admission_source_id', '=', False)]):
+            src = existing.get(rec.admission_source) or existing['walk_in']
+            rec.write({'admission_source_id': src.id})
 
     @api.model
     def _ensure_default_stages(self):
@@ -241,6 +300,19 @@ class SchoolAdmission(models.Model):
         if new_state != 'admitted' and self.filtered(lambda r: r.state == 'admitted'):
             raise ValidationError(_(
                 "An admitted application cannot be moved back: the student record is already created."))
+
+        # Every move after "Application Submitted" must carry remarks.
+        # (Enquiry -> Submitted is the only move that does not need them.)
+        needs_remarks = self.filtered(
+            lambda r: r.state != new_state and not (r.state == 'enquiry' and new_state == 'submitted'))
+        if needs_remarks:
+            remarks = (self.env.context.get('stage_remarks') or '').strip()
+            if not remarks:
+                raise ValidationError(_(
+                    "Remarks are required to move an application to another stage. "
+                    "Please use the stage buttons so the remarks window opens."))
+            needs_remarks._log_stage_remark(new_state, remarks)
+
         if new_state == 'admitted':
             to_admit = self.filtered(lambda r: r.state != 'admitted')
             other_vals = {k: v for k, v in vals.items() if k not in ('state', 'stage_id')}
@@ -249,34 +321,70 @@ class SchoolAdmission(models.Model):
             return res
         return super().write(vals)
 
+    # --- remarks helpers -----------------------------------------------
+    def _open_remark_wizard(self, target_state):
+        self.ensure_one()
+        label = dict(ADMISSION_STATES).get(target_state)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Remarks - move to %s') % label,
+            'res_model': 'school.admission.stage.remark',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_admission_id': self.id,
+                'default_target_state': target_state,
+            },
+        }
+
+    def _log_stage_remark(self, new_state, remarks):
+        labels = dict(ADMISSION_STATES)
+        for rec in self:
+            self.env['school.admission.remark'].create({
+                'admission_id': rec.id,
+                'from_state': rec.state,
+                'to_state': new_state,
+                'remarks': remarks,
+            })
+            rec.message_post(body=Markup("<b>%s &rarr; %s</b><br/>%s: %s") % (
+                labels.get(rec.state), labels.get(new_state), _("Remarks"), remarks))
+
     # --- stage buttons -------------------------------------------------
     def action_submit(self):
+        # Enquiry -> Submitted: no remarks needed
         self.write({'state': 'submitted'})
 
     def action_review_documents(self):
-        self.write({'state': 'documents'})
+        return self._open_remark_wizard('documents')
 
     def action_background_verification(self):
-        self.write({'state': 'verification'})
+        return self._open_remark_wizard('verification')
 
     def action_send_for_approval(self):
-        self.write({'state': 'approval'})
+        return self._open_remark_wizard('approval')
 
     def action_admit(self):
-        self.write({'state': 'admitted'})
+        return self._open_remark_wizard('admitted')
 
     def action_reset_enquiry(self):
-        self.write({'state': 'enquiry'})
+        return self._open_remark_wizard('enquiry')
 
     def action_approve(self):
         # kept for backward compatibility
         return self.action_admit()
 
+    def action_enroll(self):
+        # kept for backward compatibility: admission and enrolment are one step now
+        return self.action_admit()
+
+    def action_reject(self):
+        return self._open_remark_wizard('rejected')
+
     def _admit(self):
         for record in self:
             if not record.section_id:
                 raise ValidationError(_("Please assign a Section before approving the admission."))
-            
+
             student_partner_vals = {
                 'name': f"{record.first_name} {record.last_name}",
                 'email': record.email,
@@ -326,7 +434,7 @@ class SchoolAdmission(models.Model):
                     'company_id': record.company_id.id,
                 }
                 parent_partner = self.env['res.partner'].create(parent_partner_vals)
-                
+
                 parent_vals = {
                     'partner_id': parent_partner.id,
                     'relation': record.parent_relation,
@@ -340,13 +448,6 @@ class SchoolAdmission(models.Model):
                 'student_id': student.id,
             })
 
-    def action_enroll(self):
-        # kept for backward compatibility: admission and enrolment are one step now
-        return self.action_admit()
-
-    def action_reject(self):
-        self.write({'state': 'rejected'})
-        
     @api.depends('date_of_birth')
     def _compute_age(self):
         today = fields.Date.today()
@@ -356,3 +457,21 @@ class SchoolAdmission(models.Model):
                 record.age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
             else:
                 record.age = 0
+
+
+class SchoolAdmissionStageRemark(models.TransientModel):
+    _name = 'school.admission.stage.remark'
+    _description = 'Admission Stage Change - Remarks'
+
+    admission_id = fields.Many2one('school.admission', string='Application', required=True, readonly=True)
+    current_state = fields.Selection(related='admission_id.state', string='Current Stage')
+    target_state = fields.Selection(ADMISSION_STATES, string='Move To', required=True, readonly=True)
+    remarks = fields.Text(string='Remarks', required=True)
+
+    def action_confirm(self):
+        self.ensure_one()
+        remarks = (self.remarks or '').strip()
+        if not remarks:
+            raise ValidationError(_("Please enter remarks before changing the stage."))
+        self.admission_id.with_context(stage_remarks=remarks).write({'state': self.target_state})
+        return {'type': 'ir.actions.client', 'tag': 'soft_reload'}

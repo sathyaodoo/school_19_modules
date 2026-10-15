@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============ Chapters ============ -->
+    <record id="view_school_oe_chapter_list" model="ir.ui.view">
+        <field name="name">school.oe.chapter.list</field>
+        <field name="model">school.oe.chapter</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="name"/>
+                <field name="question_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_oe_chapter_form" model="ir.ui.view">
+        <field name="name">school.oe.chapter.form</field>
+        <field name="model">school.oe.chapter</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="class_id"/>
+                            <field name="subject_id"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                            <field name="question_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Topics" name="topics">
+                            <field name="topic_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="question_count"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_oe_chapter_search" model="ir.ui.view">
+        <field name="name">school.oe.chapter.search</field>
+        <field name="model">school.oe.chapter</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <group>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_oe_chapter" model="ir.actions.act_window">
+        <field name="name">Chapters</field>
+        <field name="res_model">school.oe.chapter</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ============ Topics ============ -->
+    <record id="view_school_oe_topic_list" model="ir.ui.view">
+        <field name="name">school.oe.topic.list</field>
+        <field name="model">school.oe.topic</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="chapter_id"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="name"/>
+                <field name="question_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_oe_topic_search" model="ir.ui.view">
+        <field name="name">school.oe.topic.search</field>
+        <field name="model">school.oe.topic</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="chapter_id"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <group>
+                    <filter name="group_chapter" string="Chapter" context="{'group_by': 'chapter_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_oe_topic" model="ir.actions.act_window">
+        <field name="name">Topics</field>
+        <field name="res_model">school.oe.topic</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- ============ Questions (Question Bank) ============ -->
+    <record id="view_school_oe_question_list" model="ir.ui.view">
+        <field name="name">school.oe.question.list</field>
+        <field name="model">school.oe.question</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="chapter_id"/>
+                <field name="topic_id"/>
+                <field name="name"/>
+                <field name="correct_option"/>
+                <field name="difficulty"/>
+                <field name="marks"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_oe_question_form" model="ir.ui.view">
+        <field name="name">school.oe.question.form</field>
+        <field name="model">school.oe.question</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Where does it belong?">
+                            <field name="class_id"/>
+                            <field name="subject_id"/>
+                            <field name="chapter_id"/>
+                            <field name="topic_id"/>
+                        </group>
+                        <group string="Settings">
+                            <field name="difficulty"/>
+                            <field name="marks"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Question">
+                        <field name="name" nolabel="1" placeholder="Type the question here..."/>
+                    </group>
+                    <group string="Options">
+                        <group>
+                            <field name="option_a"/>
+                            <field name="option_b"/>
+                        </group>
+                        <group>
+                            <field name="option_c"/>
+                            <field name="option_d"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="correct_option" widget="radio" options="{'horizontal': true}"/>
+                        <field name="explanation"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_oe_question_search" model="ir.ui.view">
+        <field name="name">school.oe.question.search</field>
+        <field name="model">school.oe.question</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="chapter_id"/>
+                <field name="topic_id"/>
+                <filter name="easy" string="Easy" domain="[('difficulty', '=', 'easy')]"/>
+                <filter name="medium" string="Medium" domain="[('difficulty', '=', 'medium')]"/>
+                <filter name="hard" string="Hard" domain="[('difficulty', '=', 'hard')]"/>
+                <separator/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_chapter" string="Chapter" context="{'group_by': 'chapter_id'}"/>
+                    <filter name="group_topic" string="Topic" context="{'group_by': 'topic_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_oe_question" model="ir.actions.act_window">
+        <field name="name">Question Bank</field>
+        <field name="res_model">school.oe.question</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_class': 1, 'search_default_group_subject': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add the first question to the bank</p>
+            <p>Questions are organised Class &gt; Subject &gt; Chapter &gt; Topic.</p>
+        </field>
+    </record>
+</odoo>

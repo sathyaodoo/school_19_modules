@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top menu "Academics" in the School Management app bar (BRS Part II) -->
+    <menuitem id="menu_school_academic_root" name="Academics"
+              parent="ad_school_management.menu_school_root" sequence="22"
+              groups="ad_school_management.group_school_teacher,ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+    <menuitem id="menu_school_curriculum" name="Curriculum"
+              parent="menu_school_academic_root" action="action_school_curriculum" sequence="10"/>
+    <menuitem id="menu_school_curriculum_my_subjects" name="My Subjects"
+              parent="menu_school_academic_root" action="action_school_curriculum_my_subjects" sequence="5"/>
+    <menuitem id="menu_school_syllabus" name="Syllabus"
+              parent="menu_school_academic_root" action="action_school_syllabus" sequence="20"/>
+    <menuitem id="menu_school_learning_outcome" name="Learning Outcomes"
+              parent="menu_school_academic_root" action="action_school_learning_outcome" sequence="35"/>
+    <menuitem id="menu_school_lesson_plan" name="Lesson Plans"
+              parent="menu_school_academic_root" action="action_school_lesson_plan" sequence="40"/>
+    <menuitem id="menu_school_class_diary" name="Class Diary"
+              parent="menu_school_academic_root" action="action_school_class_diary" sequence="45"/>
+    <menuitem id="menu_school_homework" name="Homework"
+              parent="menu_school_academic_root" action="action_school_homework" sequence="50"/>
+    <menuitem id="menu_school_homework_check" name="Check Homework"
+              parent="menu_school_academic_root" action="action_school_homework_submissions" sequence="55"/>
+    <menuitem id="menu_school_syllabus_mine" name="My Syllabus"
+              parent="menu_school_academic_root" action="action_school_syllabus_mine" sequence="6"/>
+    <menuitem id="menu_school_topic_tracker" name="Topic Tracker"
+              parent="menu_school_academic_root" action="action_school_syllabus_topic" sequence="30"/>
+    <menuitem id="menu_school_curriculum_overview" name="Periods Overview"
+              parent="menu_school_academic_root" action="action_school_curriculum_line" sequence="90"/>
+</odoo>

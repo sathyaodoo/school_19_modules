@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- a coloured percentage bar -->
+    <template id="portal_oe_percent_bar" name="Performance - percentage bar">
+        <div class="progress" style="height: 14px;">
+            <div t-attf-class="progress-bar #{'bg-danger' if pct &lt; 40 else ('bg-warning' if pct &lt; 60 else 'bg-success')}"
+                 role="progressbar" t-attf-style="width: #{'%.0f' % pct}%;"/>
+        </div>
+    </template>
+
+    <template id="portal_oe_performance" name="Online Exam - My Performance">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h3 class="mb-0">My Performance</h3>
+                        <div class="text-muted"><t t-out="student.name"/> &#8226; <t t-out="student.class_id.name"/></div>
+                        <span t-if="is_parent" class="badge rounded-pill bg-warning text-dark mt-1">
+                            <i class="fa fa-eye"/> Parent View (read only)
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form t-if="len(students) &gt; 1" method="GET" action="/my/online-performance">
+                            <select name="student_id" class="form-select" onchange="this.form.submit()">
+                                <t t-foreach="students" t-as="s">
+                                    <option t-att-value="s.id" t-att-selected="'selected' if s.id == student.id else None" t-out="s.name"/>
+                                </t>
+                            </select>
+                        </form>
+                        <a t-attf-href="/my/online-exams?student_id=#{student.id}" class="btn btn-outline-secondary">
+                            <i class="fa fa-list-alt"/> Online Exams
+                        </a>
+                    </div>
+                </div>
+
+                <div t-if="not data['attempts']" class="alert alert-info">
+                    <i class="fa fa-info-circle"/> No finished attempts yet. Your report appears after you submit an exam,
+                    a mock test or a practice.
+                </div>
+
+                <t t-else="">
+                    <!-- summary -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-3"><div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Attempts</div>
+                            <div class="fs-3 fw-bold" t-out="data['attempts']"/>
+                        </div></div></div>
+                        <div class="col-6 col-md-3"><div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Average score</div>
+                            <div class="fs-3 fw-bold"><t t-out="'%.0f' % data['avg']"/>%</div>
+                        </div></div></div>
+                        <div class="col-6 col-md-3"><div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Best score</div>
+                            <div class="fs-3 fw-bold"><t t-out="'%.0f' % data['best']"/>%</div>
+                        </div></div></div>
+                        <div class="col-6 col-md-3"><div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Weak chapters</div>
+                            <div t-attf-class="fs-3 fw-bold #{'text-danger' if data['weak'] else 'text-success'}" t-out="len(data['weak'])"/>
+                        </div></div></div>
+                    </div>
+
+                    <!-- weak areas -->
+                    <div t-if="data['weak']" class="alert alert-warning">
+                        <h6 class="mb-2"><i class="fa fa-exclamation-triangle"/> Needs more practice</h6>
+                        <ul class="mb-2">
+                            <li t-foreach="data['weak']" t-as="w">
+                                <b t-out="w['chapter'].name"/> (<t t-out="w['subject'].name"/>) -
+                                <t t-out="'%.0f' % w['accuracy']"/>% correct in <t t-out="w['count']"/> questions
+                            </li>
+                        </ul>
+                        <a t-if="not is_parent" t-attf-href="/my/online-practice?student_id=#{student.id}" class="btn btn-sm btn-warning">
+                            <i class="fa fa-flask"/> Practise now
+                        </a>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- by subject: me vs class -->
+                        <div class="col-lg-6">
+                            <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                                <h6>Subject-wise: me vs class average</h6>
+                                <div t-foreach="data['subjects']" t-as="sr" class="mb-3">
+                                    <div class="d-flex justify-content-between small">
+                                        <b t-out="sr['subject'].name"/>
+                                        <span>Me <b><t t-out="'%.0f' % sr['avg']"/>%</b> &#8226; Class <t t-out="'%.0f' % sr['class_avg']"/>%</span>
+                                    </div>
+                                    <t t-set="pct" t-value="sr['avg']"/>
+                                    <t t-call="school_online_exam.portal_oe_percent_bar"/>
+                                    <div class="progress mt-1" style="height: 5px;">
+                                        <div class="progress-bar bg-secondary" t-attf-style="width: #{'%.0f' % sr['class_avg']}%;"/>
+                                    </div>
+                                </div>
+                                <div class="small text-muted">Thin grey bar = class average.</div>
+                            </div></div>
+                        </div>
+
+                        <!-- by type -->
+                        <div class="col-lg-6">
+                            <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                                <h6>By type</h6>
+                                <div t-foreach="data['by_type']" t-as="bt" class="mb-3">
+                                    <div class="d-flex justify-content-between small">
+                                        <b t-out="bt['label']"/>
+                                        <span><t t-out="bt['count']"/> attempt(s) &#8226; avg <b><t t-out="'%.0f' % bt['avg']"/>%</b></span>
+                                    </div>
+                                    <t t-set="pct" t-value="bt['avg']"/>
+                                    <t t-call="school_online_exam.portal_oe_percent_bar"/>
+                                </div>
+                            </div></div>
+                        </div>
+
+                        <!-- chapter accuracy -->
+                        <div class="col-lg-6">
+                            <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                                <h6>Chapter-wise accuracy (weakest first)</h6>
+                                <div t-if="not data['chapters']" class="text-muted small">
+                                    Chapter data appears when the questions you answered belong to a chapter.
+                                </div>
+                                <div t-foreach="data['chapters']" t-as="cr" class="mb-3">
+                                    <div class="d-flex justify-content-between small">
+                                        <span><b t-out="cr['chapter'].name"/> <span class="text-muted">(<t t-out="cr['subject'].name"/>)</span>
+                                            <span t-if="cr['weak']" class="badge bg-danger ms-1">Weak</span></span>
+                                        <span><b><t t-out="'%.0f' % cr['accuracy']"/>%</b> of <t t-out="cr['count']"/> questions</span>
+                                    </div>
+                                    <t t-set="pct" t-value="cr['accuracy']"/>
+                                    <t t-call="school_online_exam.portal_oe_percent_bar"/>
+                                </div>
+                            </div></div>
+                        </div>
+
+                        <!-- trend -->
+                        <div class="col-lg-6">
+                            <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                                <h6>Last <t t-out="len(data['trend'])"/> attempts</h6>
+                                <div t-foreach="data['trend']" t-as="tr" class="mb-2">
+                                    <div class="d-flex justify-content-between small">
+                                        <span><span t-field="tr['attempt'].submit_datetime" t-options="{'widget': 'date'}"/> -
+                                            <t t-out="tr['attempt'].exam_id.name"/></span>
+                                        <b><t t-out="'%.0f' % tr['percentage']"/>%</b>
+                                    </div>
+                                    <t t-set="pct" t-value="tr['percentage']"/>
+                                    <t t-call="school_online_exam.portal_oe_percent_bar"/>
+                                </div>
+                            </div></div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

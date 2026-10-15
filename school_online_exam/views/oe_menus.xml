@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top menu in the School Management app bar: "Online Exam" -->
+    <menuitem id="menu_school_oe_root" name="Online Exam"
+              parent="ad_school_management.menu_school_root" sequence="25"
+              groups="ad_school_management.group_school_teacher,ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+
+    <menuitem id="menu_school_oe_exam" name="Online Exams"
+              parent="menu_school_oe_root" action="action_school_oe_exam" sequence="10"/>
+    <menuitem id="menu_school_oe_mock" name="Mock Tests"
+              parent="menu_school_oe_root" action="action_school_oe_mock" sequence="12"/>
+    <menuitem id="menu_school_oe_assignment" name="Descriptive / Assignments"
+              parent="menu_school_oe_root" action="action_school_oe_assignment" sequence="15"/>
+    <menuitem id="menu_school_oe_submission" name="Evaluate Submissions"
+              parent="menu_school_oe_root" action="action_school_oe_submission" sequence="16"/>
+    <menuitem id="menu_school_oe_marks" name="Marks Approval"
+              parent="menu_school_oe_root" action="action_school_oe_mark_entry" sequence="17"/>
+    <menuitem id="menu_school_oe_question" name="Question Bank"
+              parent="menu_school_oe_root" action="action_school_oe_question" sequence="20"/>
+    <menuitem id="menu_school_oe_chapter" name="Chapters"
+              parent="menu_school_oe_root" action="action_school_oe_chapter" sequence="30"/>
+    <menuitem id="menu_school_oe_topic" name="Topics"
+              parent="menu_school_oe_root" action="action_school_oe_topic" sequence="40"/>
+    <menuitem id="menu_school_oe_analysis_root" name="Performance Analysis"
+              parent="menu_school_oe_root" sequence="55"/>
+    <menuitem id="menu_school_oe_analysis_student" name="Student &amp; Exam Analysis"
+              parent="menu_school_oe_analysis_root" action="action_school_oe_analysis_student" sequence="10"/>
+    <menuitem id="menu_school_oe_analysis_chapter" name="Chapter-wise (weak areas)"
+              parent="menu_school_oe_analysis_root" action="action_school_oe_analysis_chapter" sequence="20"/>
+    <menuitem id="menu_school_oe_analysis_question" name="Question Difficulty"
+              parent="menu_school_oe_analysis_root" action="action_school_oe_analysis_question" sequence="30"/>
+    <menuitem id="menu_school_oe_practice_setting" name="Practice Settings"
+              parent="menu_school_oe_root" action="action_school_oe_practice_setting" sequence="60"/>
+    <menuitem id="menu_school_oe_attempt" name="Attempt History"
+              parent="menu_school_oe_root" action="action_school_oe_attempt" sequence="50"/>
+</odoo>

@@ -1,4 +1,7 @@
+import logging
 from odoo import models, fields, api, _
+_logger = logging.getLogger(__name__)
+
 
 class SchoolDashboard(models.TransientModel):
     _name = 'school.dashboard'
@@ -14,49 +17,101 @@ class SchoolDashboard(models.TransientModel):
             'name': _('Dashboard'),
             'target': 'current',
         }
+        
+    def _safe_count(self, model, domain=None):
+        # a user who cannot read a model (for example a teacher and the fees) just sees 0 for it
+        if model not in self.env:
+            return 0
+        try:
+            with self.env.cr.savepoint():
+                return self.env[model].search_count(domain or [])
+        except Exception:
+            _logger.warning("School dashboard: cannot count %s for user %s", model, self.env.user.login, exc_info=True)
+            return 0
+
+    def _safe_search(self, model, domain=None):
+        if model not in self.env:
+            return self.browse()
+        try:
+            with self.env.cr.savepoint():
+                return self.env[model].search(domain or [])
+        except Exception:
+            _logger.warning("School dashboard: cannot read %s for user %s", model, self.env.user.login, exc_info=True)
+            return self.env[model].browse()    
 
     @api.model
     def get_dashboard_stats(self):
         today = fields.Date.context_today(self)
         
-        total_students = self.env['school.student'].search_count([])
-        enrolled_students = self.env['school.student'].search_count([('student_status', '=', 'enrolled')])
-        draft_students = self.env['school.student'].search_count([('student_status', '=', 'draft')])
-        promoted_students = self.env['school.student'].search_count([('student_status', '=', 'promoted')])
+        total_students = self._safe_count('school.student', [])
+        enrolled_students = self._safe_count('school.student', [('student_status', '=', 'enrolled')])
+        draft_students = self._safe_count('school.student', [('student_status', '=', 'draft')])
+        promoted_students = self._safe_count('school.student', [('student_status', '=', 'promoted')])
         
-        total_teachers = self.env['school.teacher'].search_count([])
-        total_parents = self.env['school.parent'].search_count([])
+        total_teachers = self._safe_count('school.teacher', [])
+        total_parents = self._safe_count('school.parent', [])
         
-        total_admissions = self.env['school.admission'].search_count([])
-        pending_admissions = self.env['school.admission'].search_count(
-            [('state', 'in', ('submitted', 'documents', 'verification', 'approval'))])
-        approved_admissions = self.env['school.admission'].search_count([('state', '=', 'admitted')])
+        total_admissions = self._safe_count('school.admission', [])
+        pending_admissions = self._safe_count('school.admission', [('state', 'in', ('submitted', 'documents', 'verification', 'approval'))])
+        approved_admissions = self._safe_count('school.admission', [('state', '=', 'admitted')])
         
+
+        # These are aggregate, school-wide KPI totals (headcounts, sums),
+        # not individual sensitive records, and the dashboard itself is
+        # already gated by menu/action security. So we compute the counts
+        # with sudo() rather than requiring every role (teacher, parent,
+        # accountant, ...) to also have its own explicit access row on
+        # every single model the dashboard touches (library, hostel, etc).
+        # Without this, any model missing an access row for the current
+        # user's group raises an AccessError that crashes this whole call.
+        Student = self.env['school.student'].sudo()
+        Teacher = self.env['school.teacher'].sudo()
+        Parent = self.env['school.parent'].sudo()
+        Admission = self.env['school.admission'].sudo()
+        Vehicle = self.env['school.vehicle'].sudo()
+        Route = self.env['school.transport.route'].sudo()
+        Fee = self.env['school.student.fee'].sudo()
+        Attendance = self.env['school.attendance'].sudo()
+
+        total_students = Student.search_count([])
+        enrolled_students = Student.search_count([('student_status', '=', 'enrolled')])
+        draft_students = Student.search_count([('student_status', '=', 'draft')])
+        promoted_students = Student.search_count([('student_status', '=', 'promoted')])
+
+        total_teachers = Teacher.search_count([])
+        total_parents = Parent.search_count([])
+
+        total_admissions = Admission.search_count([])
+        pending_admissions = Admission.search_count([('state', '=', 'submitted')])
+        approved_admissions = Admission.search_count([('state', '=', 'approved')])
+        pending_admissions = Admission.search_count([('state', 'in', ('submitted', 'documents', 'verification', 'approval'))])
+        approved_admissions = Admission.search_count([('state', '=', 'admitted')])
+
         has_library = 'school.book' in self.env
-        total_books = self.env['school.book'].search_count([]) if has_library else 0
-        total_borrowed = self.env['school.book.issue'].search_count([('state', '=', 'issued')]) if has_library else 0
-        
-        total_vehicles = self.env['school.vehicle'].search_count([])
-        total_routes = self.env['school.transport.route'].search_count([])
-        
+        total_books = self._safe_count('school.book', []) if has_library else 0
+        total_borrowed = self._safe_count('school.book.issue', [('state', '=', 'issued')]) if has_library else 0
+
+        total_vehicles = self._safe_count('school.vehicle', [])
+        total_routes = self._safe_count('school.transport.route', [])
+
         has_hostel = 'school.hostel.room' in self.env
         if has_hostel:
-            rooms = self.env['school.hostel.room'].search([])
+            rooms = self._safe_search('school.hostel.room', [])
             total_beds = sum(rooms.mapped('capacity'))
-            occupied_beds = self.env['school.hostel.allocation'].search_count([('state', '=', 'allocated')])
+            occupied_beds = self._safe_count('school.hostel.allocation', [('state', '=', 'allocated')])
             available_beds = max(total_beds - occupied_beds, 0)
         else:
             total_beds = 0
             occupied_beds = 0
             available_beds = 0
-        
-        fees = self.env['school.student.fee'].search([])
+
+        fees = self._safe_search('school.student.fee', [])
         invoiced_fees = sum(fees.filtered(lambda f: f.state == 'invoiced').mapped('net_amount'))
         paid_fees = sum(fees.filtered(lambda f: f.state == 'paid').mapped('net_amount'))
         total_outstanding = invoiced_fees
-        
-        total_marked_today = self.env['school.attendance'].search_count([('date', '=', today)])
-        present_today = self.env['school.attendance'].search_count([
+
+        total_marked_today = self._safe_count('school.attendance', [('date', '=', today)])
+        present_today = self._safe_count('school.attendance', [
             ('date', '=', today),
             ('status', 'in', ('present', 'late'))
         ])

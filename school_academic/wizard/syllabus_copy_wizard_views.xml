@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_syllabus_copy_wizard_form" model="ir.ui.view">
+        <field name="name">school.syllabus.copy.wizard.form</field>
+        <field name="model">school.syllabus.copy.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="syllabus_id"/>
+                    <field name="source_year_id"/>
+                    <field name="target_year_id"/>
+                </group>
+                <p class="text-muted">A new <b>draft</b> syllabus is created for the chosen academic year with the
+                   same units. Edit it and publish it when ready.</p>
+                <footer>
+                    <button name="action_copy" string="Copy" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

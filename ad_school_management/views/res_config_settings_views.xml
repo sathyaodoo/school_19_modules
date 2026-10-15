@@ -1,4 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
+
+    <!-- Settings > School Management -->
+    <record id="res_config_settings_view_form_school" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.school</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="60"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="School Management" string="School Management" name="ad_school_management">
+                    <field name="library_currency_id" invisible="1"/>
+                    <block title="Library" name="school_library_settings">
+                        <setting id="library_fine_per_day" company_dependent="1"
+                                 string="Late Return Fine"
+                                 help="Fine charged for each day a book is returned after its due date. New book issues use this rate; books already issued keep the rate they were issued with.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="library_fine_per_day" string="Fine per Day" class="col-lg-4 o_light_label"/>
+                                    <field name="library_fine_per_day" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_school_config_settings" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module': 'ad_school_management', 'bin_size': False}</field>
+    </record>
+
+    <menuitem id="menu_school_config_settings" name="Settings" parent="menu_school_configuration"
+              action="action_school_config_settings" sequence="0" groups="base.group_system"/>
+
 </odoo>

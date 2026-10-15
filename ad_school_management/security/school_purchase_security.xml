@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- MMD users approve purchase orders, so they need the Purchase app.
+         Implying "Purchase: User" makes the app visible and gives them
+         access to RFQs / Purchase Orders. Existing MMD users receive the
+         right automatically when the module is upgraded. -->
+    <record id="group_school_mmd" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('purchase.group_purchase_user'))]"/>
+    </record>
+</odoo>
