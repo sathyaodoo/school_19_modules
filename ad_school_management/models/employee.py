@@ -13,7 +13,6 @@ class HrEmployee(models.Model):
     teacher_type = fields.Selection([
         ('teaching', 'Teaching Staff'),
         ('non_teaching', 'Non-Teaching Staff'),
-    ], string='Teacher Type')
     ], string='Teacher Type', help='Classification of role eg: teaching staff, non-teaching staff')
     is_own_driver = fields.Boolean(
         string='Driver Type (Own Driver)',
