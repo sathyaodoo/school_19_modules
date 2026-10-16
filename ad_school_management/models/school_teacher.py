@@ -13,6 +13,10 @@ class SchoolTeacher(models.Model):
     class_teacher_class_ids = fields.One2many('school.class', 'class_teacher_id', string='Class Teacher For')
     class_teacher_section_ids = fields.One2many('school.section', 'class_teacher_id', string='Class Teacher Sections')
     class_teacher_for_text = fields.Char(string='Class Teacher For', compute='_compute_class_teacher_for_text')
+    meal_entitled = fields.Boolean(
+        string='Meal Entitled', default=False,
+        help='Staff entitled to a canteen meal (used by the Canteen Daily Planning count)',
+    )
 
     @api.depends('class_teacher_section_ids.name', 'class_teacher_section_ids.class_id.name')
     def _compute_class_teacher_for_text(self):
