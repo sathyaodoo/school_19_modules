@@ -12,7 +12,6 @@
                 <field name="work_phone"/>
                 <field name="qualification"/>
                 <field name="specialization"/>
-                <field name="driver_type"/>
             </list>
         </field>
     </record>
@@ -45,7 +44,6 @@
                             <field name="mobile_phone"/>
                             <field name="is_own_driver"/>
                             <field name="class_teacher_for"/>
-                            <field name="driver_type"/>
                             <field name="meal_entitled"/>
                             <field name="user_id" string="Related User"/>
                         </group>
@@ -76,7 +74,6 @@
                 <field name="teacher_type"/>
                 <filter string="Teaching Staff" name="filter_teaching" domain="[('teacher_type', '=', 'teaching')]"/>
                 <filter string="Non-Teaching Staff" name="filter_non_teaching" domain="[('teacher_type', '=', 'non_teaching')]"/>
-                <filter string="Own Driver" name="filter_own_driver" domain="[('driver_type', '=', True)]"/>
             </search>
         </field>
     </record>
