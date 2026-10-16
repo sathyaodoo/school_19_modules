@@ -49,7 +49,6 @@ class HrApplicantInterview(models.Model):
     )
     meal_entitled = fields.Boolean(
         string='Meal Entitled', default=False,
-        string='Meal Entitled',
         default=False,
         help='Staff entitled to a canteen meal (used by the Canteen Daily Planning count)',
     )
