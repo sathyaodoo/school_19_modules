@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- card on the portal home -->
+    <template id="portal_my_home_diary" inherit_id="portal.portal_my_home" priority="48">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Class Diary</t>
+                <t t-set="text">What was taught in class and the homework given</t>
+                <t t-set="url" t-value="'/my/diary'"/>
+                <t t-set="placeholder_count" t-value="'diary_count'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- "Homework" label in the Online Exam assignment list -->
+    <template id="portal_oe_as_list_homework" inherit_id="school_online_exam.portal_oe_as_list">
+        <xpath expr="//t[contains(@t-elif, 'assignment')]" position="after">
+            <t t-elif="a.kind == 'homework'">Homework</t>
+        </xpath>
+    </template>
+
+    <template id="portal_ac_diary" name="Academics - Class Diary">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5" style="max-width: 900px;">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h3 class="mb-0">Class Diary</h3>
+                        <div class="text-muted"><t t-out="student.name"/> &#8226; <t t-out="student.class_id.name"/></div>
+                        <span t-if="is_parent" class="badge rounded-pill bg-warning text-dark mt-1">
+                            <i class="fa fa-eye"/> Parent View
+                        </span>
+                    </div>
+                    <form method="GET" action="/my/diary" class="d-flex gap-2">
+                        <select t-if="len(students) &gt; 1" name="student_id" class="form-select" onchange="this.form.submit()">
+                            <t t-foreach="students" t-as="s">
+                                <option t-att-value="s.id" t-att-selected="'selected' if s.id == student.id else None" t-out="s.name"/>
+                            </t>
+                        </select>
+                        <select name="days" class="form-select" onchange="this.form.submit()">
+                            <t t-foreach="day_options" t-as="d">
+                                <option t-att-value="d" t-att-selected="'selected' if d == days else None">Last <t t-out="d"/> days</option>
+                            </t>
+                        </select>
+                    </form>
+                </div>
+
+                <div t-if="not groups" class="alert alert-info">
+                    <i class="fa fa-info-circle"/> No class diary entries in the last <t t-out="days"/> days.
+                </div>
+
+                <t t-foreach="groups" t-as="grp">
+                    <h6 class="text-primary mt-4 mb-2"><i class="fa fa-calendar"/> <span t-out="grp[0]" t-options="{'widget': 'date'}"/></h6>
+                    <t t-foreach="grp[1]" t-as="entry">
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="mb-0"><i class="fa fa-book text-primary"/> <t t-out="entry.subject_id.name"/></h5>
+                                    <span class="small text-muted">
+                                        <t t-if="entry.period_no">Period <t t-out="entry.period_no"/> &#8226; </t>
+                                        <t t-out="entry.teacher_id.name or ''"/>
+                                    </span>
+                                </div>
+                                <div t-if="entry.summary" class="mb-2">
+                                    <div class="text-muted small">Taught today</div>
+                                    <div style="white-space: pre-line;" t-out="entry.summary"/>
+                                </div>
+                                <div t-if="entry.topic_ids" class="mb-2">
+                                    <t t-foreach="entry.topic_ids" t-as="topic">
+                                        <span class="badge bg-light text-dark border me-1" t-out="topic.name"/>
+                                    </t>
+                                </div>
+                                <div t-if="entry.outcome_ids" class="mb-2">
+                                    <div class="text-muted small">I can now ...</div>
+                                    <ul class="mb-0 small">
+                                        <li t-foreach="entry.outcome_ids" t-as="lo" t-out="lo.name"/>
+                                    </ul>
+                                </div>
+                                <div t-if="entry.classwork" class="mb-2">
+                                    <div class="text-muted small">Classwork</div>
+                                    <div style="white-space: pre-line;" t-out="entry.classwork"/>
+                                </div>
+                                <div t-if="entry.homework_text or homework[entry.id]" class="mb-2 p-2 rounded" style="background: #FFF4D6;">
+                                    <div class="small fw-bold"><i class="fa fa-pencil-square-o"/> Homework</div>
+                                    <div t-if="entry.homework_text" style="white-space: pre-line;" t-out="entry.homework_text"/>
+                                    <t t-foreach="homework[entry.id]" t-as="work">
+                                        <a t-attf-href="/my/online-assignments/#{work.id}?student_id=#{student.id}"
+                                           class="btn btn-sm btn-outline-primary me-2 mt-1">
+                                            <i class="fa fa-upload"/> <t t-out="work.name"/>
+                                            <span class="small">(due <span t-field="work.due_datetime"/>)</span>
+                                        </a>
+                                    </t>
+                                </div>
+                                <div t-if="entry.remarks" class="small text-muted">
+                                    <i class="fa fa-comment-o"/> <span style="white-space: pre-line;" t-out="entry.remarks"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

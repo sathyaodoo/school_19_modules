@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         Card on the portal home (/my) - same pattern as the college portal
+         ============================================================ -->
+    <template id="portal_my_home_online_exam" inherit_id="portal.portal_my_home" priority="45">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/school_online_exam/static/src/img/online_exam.svg'"/>
+                <t t-set="title">Online Exam</t>
+                <t t-set="text">Attend online exams, practise and see your attempt history</t>
+                <t t-set="url" t-value="'/my/online-exams'"/>
+                <t t-set="placeholder_count" t-value="'online_exam_count'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- ============================================================
+         Simple message page
+         ============================================================ -->
+    <template id="portal_oe_message" name="Online Exam - Message">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading" t-out="title"/>
+                    <p class="mb-2" t-out="message"/>
+                    <a href="/my/online-exams" class="btn btn-primary btn-sm">Back to Online Exams</a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================
+         Exam list
+         ============================================================ -->
+    <template id="portal_oe_exam_list" name="Online Exam - My Exams">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h3 class="mb-0">Online Exams</h3>
+                        <span t-if="is_parent" class="badge rounded-pill bg-warning text-dark mt-1">
+                            <i class="fa fa-eye"/> Parent View (read only)
+                        </span>
+                    </div>
+                    <a t-attf-href="/my/online-performance?student_id=#{student.id}" class="btn btn-outline-secondary">
+                        <i class="fa fa-line-chart"/> My Performance
+                    </a>
+                    <a t-attf-href="/my/online-practice?student_id=#{student.id}" class="btn btn-outline-secondary">
+                        <i class="fa fa-flask"/> Self Practice
+                    </a>
+                    <a t-attf-href="/my/online-assignments?student_id=#{student.id}" class="btn btn-outline-secondary">
+                        <i class="fa fa-upload"/> Descriptive &amp; Assignments
+                    </a>
+                    <form t-if="len(students) &gt; 1" method="GET" action="/my/online-exams" class="d-flex gap-2">
+                        <select name="student_id" class="form-select" onchange="this.form.submit()">
+                            <t t-foreach="students" t-as="s">
+                                <option t-att-value="s.id" t-att-selected="'selected' if s.id == student.id else None"
+                                        t-out="s.name"/>
+                            </t>
+                        </select>
+                    </form>
+                </div>
+
+                <div t-if="error" class="alert alert-danger" role="alert">
+                    <i class="fa fa-exclamation-circle"/> <t t-out="error"/>
+                </div>
+
+                <div t-if="not rows" class="alert alert-info">
+                    <i class="fa fa-info-circle"/> No online exams are open for
+                    <b t-out="student.class_id.name"/> right now.
+                </div>
+
+                <div class="row g-3">
+                    <t t-foreach="rows" t-as="row">
+                        <t t-set="exam" t-value="row['exam']"/>
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body">
+                                    <span t-if="exam.exam_type == 'mock'" class="badge bg-info mb-2">
+                                        <i class="fa fa-flask"/> Mock Test - practice only
+                                    </span>
+                                    <h5 class="card-title text-primary mb-1" t-out="exam.name"/>
+                                    <div class="text-muted mb-3">
+                                        <i class="fa fa-book"/> <t t-out="exam.subject_id.name"/>
+                                    </div>
+                                    <ul class="list-unstyled small mb-3">
+                                        <li><i class="fa fa-question-circle text-muted"/>
+                                            <t t-out="exam.questions_per_attempt"/> questions per attempt</li>
+                                        <li><i class="fa fa-clock-o text-muted"/>
+                                            <t t-out="exam.duration_minutes"/> minute(s) per attempt</li>
+                                        <li><i class="fa fa-repeat text-muted"/>
+                                            Attempts used:
+                                            <b t-out="row['used']"/>
+                                            <t t-if="exam.max_attempts"> / <t t-out="exam.max_attempts"/></t>
+                                            <t t-else=""> (unlimited)</t>
+                                        </li>
+                                        <li t-if="row['final']"><i class="fa fa-trophy text-muted"/>
+                                            <t t-if="exam.score_policy == 'best'">Best</t>
+                                            <t t-elif="exam.score_policy == 'latest'">Latest</t>
+                                            <t t-else="">First</t> score:
+                                            <b><t t-out="'%g' % row['final'].score"/> / <t t-out="'%g' % row['final'].total_marks"/></b>
+                                            (<t t-out="'%.0f' % row['final'].percentage"/>%)
+                                        </li>
+                                    </ul>
+
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <t t-if="not is_parent">
+                                            <form t-if="row['open_attempt']" method="POST"
+                                                  t-attf-action="/my/online-exams/#{exam.id}/start">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="fa fa-play"/> Resume Exam
+                                                </button>
+                                            </form>
+                                            <form t-elif="not row['limit_hit'] and row['window_ok']" method="POST"
+                                                  t-attf-action="/my/online-exams/#{exam.id}/start">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fa fa-play"/>
+                                                    <t t-if="row['used']">Attempt Again</t>
+                                                    <t t-else="">Start Exam</t>
+                                                </button>
+                                            </form>
+                                            <span t-elif="row['limit_hit']" class="badge bg-secondary align-self-center">
+                                                All attempts used
+                                            </span>
+                                            <span t-else="" class="badge bg-secondary align-self-center">
+                                                Not available now
+                                            </span>
+                                        </t>
+                                        <a t-attf-href="/my/online-exams/#{exam.id}/history?student_id=#{student.id}"
+                                           class="btn btn-outline-secondary">
+                                            <i class="fa fa-history"/> History
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================
+         Question paper (attempt in progress)
+         ============================================================ -->
+    <template id="portal_oe_attempt_paper" name="Online Exam - Question Paper">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div id="oe_exam_root" class="container mt-2 mb-5"
+                 t-att-data-remaining="remaining"
+                 t-att-data-csrf="request.csrf_token()"
+                 t-attf-data-answer-url="/my/online-exams/attempt/#{attempt.id}/answer">
+
+                <div id="oe_timer_bar" class="bg-primary text-white rounded px-3 py-2 mb-3 d-flex justify-content-between align-items-center sticky-top shadow-sm"
+                     style="top: 70px; z-index: 100;">
+                    <div>
+                        <b t-out="exam.name"/> &#8226; Attempt <t t-out="attempt.attempt_no"/>
+                    </div>
+                    <div class="fs-4 fw-bold"><i class="fa fa-clock-o"/> <span id="oe_timer">--:--</span></div>
+                </div>
+
+                <div class="small text-muted mb-3">
+                    Answers are saved as you click. If you leave this page, the timer keeps running -
+                    log in again and press <b>Resume Exam</b> to continue the same questions.
+                    <span id="oe_save_state" class="ms-2 fw-bold text-success"/>
+                </div>
+
+                <form id="oe_exam_form" method="POST"
+                      t-attf-action="/my/online-exams/attempt/#{attempt.id}/submit">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="timeout" id="oe_timeout" value=""/>
+
+                    <t t-foreach="attempt.line_ids.sorted('sequence')" t-as="line">
+                        <div class="card mb-3 shadow-sm border-0">
+                            <div class="card-body">
+                                <div class="fw-bold mb-2">
+                                    Q<t t-out="line.sequence"/>.
+                                    <span style="white-space: pre-line;" t-out="line.question_text"/>
+                                    <span class="badge bg-light text-dark border ms-1">
+                                        <t t-out="'%g' % line.marks"/> mark(s)
+                                    </span>
+                                </div>
+                                <t t-foreach="line.get_display_options()" t-as="opt">
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="radio"
+                                               t-att-name="'q_%s' % line.id"
+                                               t-att-id="'q_%s_%s' % (line.id, opt[0])"
+                                               t-att-value="opt[0]"
+                                               t-att-data-line-id="line.id"
+                                               t-att-checked="'checked' if line.selected_option == opt[0] else None"/>
+                                        <label class="form-check-label"
+                                               t-att-for="'q_%s_%s' % (line.id, opt[0])"
+                                               t-out="opt[1]"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+
+                    <button type="submit" class="btn btn-success btn-lg"
+                            onclick="return confirm('Submit your answers now?');">
+                        <i class="fa fa-paper-plane"/> Submit Exam
+                    </button>
+                </form>
+            </div>
+            <!-- loaded directly (not via the asset bundle) so the timer always starts -->
+            <script type="text/javascript" src="/school_online_exam/static/src/js/exam_timer.js?v=3"></script>
+        </t>
+    </template>
+
+    <!-- ============================================================
+         Result of one attempt
+         ============================================================ -->
+    <template id="portal_oe_attempt_result" name="Online Exam - Attempt Result">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5">
+                <h3 class="mb-1"><t t-out="exam.name"/> - Attempt <t t-out="attempt.attempt_no"/></h3>
+                <div class="text-muted mb-3">
+                    <t t-out="student.name"/> &#8226; <t t-out="exam.subject_id.name"/>
+                </div>
+
+                <div class="alert alert-secondary" t-if="exam.exam_type in ('mock', 'practice')">
+                    <i class="fa fa-flask"/> This was
+                    <b><t t-if="exam.exam_type == 'mock'">a mock test</t><t t-else="">self-practice</t></b>
+                    - practice only, the score is not counted in your marks.
+                </div>
+                <div class="alert alert-info" t-if="attempt.state == 'auto_submitted'">
+                    <i class="fa fa-clock-o"/> Time was over - the attempt was submitted automatically
+                    with the answers saved so far.
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Score</div>
+                            <div class="fs-3 fw-bold">
+                                <t t-out="'%g' % attempt.score"/> / <t t-out="'%g' % attempt.total_marks"/>
+                            </div>
+                        </div></div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Percentage</div>
+                            <div class="fs-3 fw-bold"><t t-out="'%.1f' % attempt.percentage"/>%</div>
+                        </div></div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Correct / Answered</div>
+                            <div class="fs-3 fw-bold">
+                                <t t-out="attempt.correct_count"/> / <t t-out="attempt.answered_count"/>
+                            </div>
+                        </div></div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card text-center border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted small">Result</div>
+                            <div class="fs-3 fw-bold">
+                                <span t-if="attempt.result == 'pass'" class="text-success">PASS</span>
+                                <span t-else="" class="text-danger">FAIL</span>
+                            </div>
+                        </div></div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <form t-if="can_retry" method="POST" t-attf-action="/my/online-exams/#{exam.id}/start">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-repeat"/> Attempt Again</button>
+                    </form>
+                    <a t-attf-href="/my/online-exams/#{exam.id}/history?student_id=#{student.id}"
+                       class="btn btn-outline-secondary"><i class="fa fa-history"/> All Attempts</a>
+                    <a t-attf-href="/my/online-exams?student_id=#{student.id}"
+                       class="btn btn-outline-secondary"><i class="fa fa-th-large"/> Online Exams</a>
+                </div>
+
+                <t t-if="exam.show_answers or exam.exam_type in ('mock', 'practice')">
+                    <h5 class="mb-3">Review</h5>
+                    <t t-foreach="attempt.line_ids.sorted('sequence')" t-as="line">
+                        <div class="card mb-3 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="fw-bold mb-2">
+                                    Q<t t-out="line.sequence"/>.
+                                    <span style="white-space: pre-line;" t-out="line.question_text"/>
+                                    <span t-if="line.is_correct" class="badge bg-success ms-1">Correct</span>
+                                    <span t-elif="line.selected_option" class="badge bg-danger ms-1">Wrong</span>
+                                    <span t-else="" class="badge bg-secondary ms-1">Not answered</span>
+                                </div>
+                                <t t-foreach="line.get_display_options()" t-as="opt">
+                                    <div t-attf-class="px-2 py-1 rounded mb-1 #{'bg-success-subtle fw-bold' if opt[0] == line.correct_key else ('bg-danger-subtle' if opt[0] == line.selected_option else '')}">
+                                        <t t-out="opt[1]"/>
+                                        <span t-if="opt[0] == line.selected_option" class="text-muted small"> (your answer)</span>
+                                        <span t-if="opt[0] == line.correct_key" class="text-success small"> (correct)</span>
+                                    </div>
+                                </t>
+                                <div t-if="line.question_id.explanation" class="small text-muted mt-2">
+                                    <i class="fa fa-lightbulb-o"/> <t t-out="line.question_id.explanation"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================
+         Attempt history for one exam
+         ============================================================ -->
+    <template id="portal_oe_history" name="Online Exam - Attempt History">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5">
+                <h3 class="mb-1"><t t-out="exam.name"/> - Attempt History</h3>
+                <div class="text-muted mb-3">
+                    <t t-out="student.name"/> &#8226; <t t-out="exam.subject_id.name"/>
+                    <span t-if="final" class="ms-2 badge bg-success">
+                        Counted score:
+                        <t t-out="'%g' % final.score"/> / <t t-out="'%g' % final.total_marks"/>
+                        (attempt <t t-out="final.attempt_no"/>)
+                    </span>
+                </div>
+
+                <div t-if="not attempts" class="alert alert-info">No attempts yet.</div>
+                <div t-else="" class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Attempt</th><th>Started</th><th>Status</th>
+                                <th class="text-end">Score</th><th class="text-end">%</th>
+                                <th>Result</th><th/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="attempts" t-as="att">
+                                <td><b>#<t t-out="att.attempt_no"/></b></td>
+                                <td><span t-field="att.start_datetime"/></td>
+                                <td>
+                                    <span t-if="att.state == 'in_progress'" class="badge bg-warning text-dark">In progress</span>
+                                    <span t-elif="att.state == 'submitted'" class="badge bg-success">Submitted</span>
+                                    <span t-else="" class="badge bg-secondary">Auto-submitted</span>
+                                </td>
+                                <td class="text-end"><t t-out="'%g' % att.score"/> / <t t-out="'%g' % att.total_marks"/></td>
+                                <td class="text-end"><t t-out="'%.0f' % att.percentage"/>%</td>
+                                <td>
+                                    <span t-if="att.result == 'pass'" class="text-success fw-bold">Pass</span>
+                                    <span t-elif="att.result == 'fail'" class="text-danger fw-bold">Fail</span>
+                                </td>
+                                <td class="text-end">
+                                    <a t-if="att.state != 'in_progress' or not is_parent"
+                                       t-attf-href="/my/online-exams/attempt/#{att.id}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <t t-if="att.state == 'in_progress'">Resume</t>
+                                        <t t-else="">View</t>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <a t-attf-href="/my/online-exams?student_id=#{student.id}" class="btn btn-outline-secondary">
+                    <i class="fa fa-arrow-left"/> Back
+                </a>
+            </div>
+        </t>
+    </template>
+
+</odoo>

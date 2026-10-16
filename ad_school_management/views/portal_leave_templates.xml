@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Portal home card (always visible for users linked to an employee) -->
+    <template id="portal_my_home_school_leave" inherit_id="portal.portal_my_home" priority="31">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-if="request.env.user.sudo().employee_id">
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="title">Leave Requests</t>
+                    <t t-set="text">Apply for leave and follow its approval</t>
+                    <t t-set="url" t-value="'/my/leaves'"/>
+                    <t t-set="placeholder_count" t-value="'leave_count'"/>
+                    <t t-set="config_card" t-value="True"/>
+                </t>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_breadcrumbs_school_leave" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name in ('school_leaves', 'school_leave_new')" class="breadcrumb-item">
+                <a t-if="page_name == 'school_leave_new'" href="/my/leaves">Leave Requests</a>
+                <t t-else="">Leave Requests</t>
+            </li>
+            <li t-if="page_name == 'school_leave_new'" class="breadcrumb-item active">Apply for Leave</li>
+        </xpath>
+    </template>
+
+    <!-- Rules box shared by both pages -->
+    <template id="portal_school_leave_rules" name="School Leave Rules">
+        <div class="alert alert-info small">
+            <strong>Leave rules</strong>
+            <ul class="mb-0">
+                <li>Apply at least <strong>3 days</strong> before the leave starts (medical leave is exempt).</li>
+                <li>Leave of <strong>30 days or more</strong> needs at least <strong>10 days</strong> prior notice.</li>
+                <li>Approval flow: Administration → HR Manager → Principal (Principal approves at least 1 day before the leave).</li>
+                <li><strong>Medical leave</strong> requires a medical certificate for any duration.</li>
+            </ul>
+        </div>
+    </template>
+
+    <!-- List of my leave requests -->
+    <template id="portal_my_leaves" name="My Leave Requests">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="container mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">My Leave Requests</h3>
+                    <a t-if="employee" href="/my/leaves/new" class="btn btn-primary">Apply for Leave</a>
+                </div>
+
+                <div t-if="submitted" class="alert alert-success">
+                    Your leave request was submitted and is waiting for Administration approval.
+                </div>
+                <div t-if="not employee" class="alert alert-warning">
+                    Your user is not linked to an employee record. Please contact the HR department.
+                </div>
+
+                <t t-call="ad_school_management.portal_school_leave_rules"/>
+
+                <div t-if="employee and not leaves" class="alert alert-light border">
+                    You have no leave requests yet.
+                </div>
+
+                <div t-if="leaves" class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Leave Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th class="text-end">Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="leaves" t-as="leave">
+                                <td><t t-out="leave.holiday_status_id.name"/></td>
+                                <td><t t-out="leave.request_date_from"/></td>
+                                <td><t t-out="leave.request_date_to"/></td>
+                                <td class="text-end"><t t-out="leave.number_of_days"/></td>
+                                <td><t t-out="leave.private_name"/></td>
+                                <td>
+                                    <t t-set="stage" t-value="leave.school_approval_stage"/>
+                                    <span t-attf-class="badge #{'text-bg-success' if stage == 'approved' else 'text-bg-danger' if stage == 'refused' else 'text-bg-secondary' if stage == 'cancelled' else 'text-bg-info'}">
+                                        <t t-out="stage_labels.get(stage, stage)"/>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Leave application form -->
+    <template id="portal_leave_new" name="Apply for Leave">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="container mt-3" style="max-width: 760px;">
+                <h3 class="mb-3">Apply for Leave</h3>
+
+                <div t-if="error" class="alert alert-danger" role="alert"><t t-out="error"/></div>
+                <div t-if="not employee" class="alert alert-warning">
+                    Your user is not linked to an employee record. Please contact the HR department.
+                </div>
+
+                <t t-call="ad_school_management.portal_school_leave_rules"/>
+
+                <form t-if="employee and leave_types" action="/my/leaves/new" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="holiday_status_id">Leave Type *</label>
+                        <select class="form-select" id="holiday_status_id" name="holiday_status_id" required="required">
+                            <option value="">Select...</option>
+                            <t t-foreach="leave_types" t-as="lt">
+                                <option t-att-value="lt.id"
+                                        t-att-selected="str(lt.id) == str(values.get('holiday_status_id'))">
+                                    <t t-out="lt.name"/><t t-if="lt.school_is_medical"> (medical certificate required)</t>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold" for="request_date_from">From *</label>
+                            <input type="date" class="form-control" id="request_date_from" name="request_date_from"
+                                   required="required" t-att-value="values.get('request_date_from')"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold" for="request_date_to">To *</label>
+                            <input type="date" class="form-control" id="request_date_to" name="request_date_to"
+                                   required="required" t-att-value="values.get('request_date_to')"/>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="name">Reason *</label>
+                        <textarea class="form-control" id="name" name="name" rows="3" required="required"><t t-out="values.get('name', '')"/></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="attachments">Attachments / Medical Certificate</label>
+                        <input type="file" class="form-control" id="attachments" name="attachments"
+                               multiple="multiple" accept=".pdf,.jpg,.jpeg,.png"/>
+                        <div class="form-text">Mandatory for medical leave (PDF, JPG or PNG).</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                        <a href="/my/leaves" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+
+                <div t-if="employee and not leave_types" class="alert alert-warning">
+                    No school leave types are configured yet. Please contact the HR department.
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

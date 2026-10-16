@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_oe_mark_entry_list" model="ir.ui.view">
+        <field name="name">school.oe.mark.entry.list</field>
+        <field name="model">school.oe.mark.entry</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" decoration-warning="state == 'pending'"
+                  decoration-success="state == 'approved'" decoration-danger="state == 'rejected'">
+                <field name="source_name"/>
+                <field name="source"/>
+                <field name="student_id"/>
+                <field name="class_id" optional="hide"/>
+                <field name="subject_id"/>
+                <field name="percentage" widget="percentage" optional="hide"/>
+                <field name="marks"/>
+                <field name="max_marks"/>
+                <field name="school_exam_id" optional="hide"/>
+                <field name="submitted_by" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-warning="state == 'pending'" decoration-success="state == 'approved'"
+                       decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_oe_mark_entry_form" model="ir.ui.view">
+        <field name="name">school.oe.mark.entry.form</field>
+        <field name="model">school.oe.mark.entry</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <button name="action_approve" string="Approve &amp; Post to Marks Register" type="object"
+                            class="btn-primary" invisible="state == 'approved'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_reject" string="Reject" type="object" invisible="state != 'pending'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,approved"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="What">
+                            <field name="source_name"/>
+                            <field name="source"/>
+                            <field name="student_id"/>
+                            <field name="subject_id"/>
+                            <field name="school_exam_id"/>
+                        </group>
+                        <group string="Marks">
+                            <field name="score"/>
+                            <field name="total"/>
+                            <field name="percentage"/>
+                            <field name="marks"/>
+                            <field name="max_marks"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Workflow">
+                            <field name="submitted_by"/>
+                            <field name="submitted_datetime"/>
+                            <field name="approved_by"/>
+                            <field name="approved_datetime"/>
+                            <field name="result_id"/>
+                        </group>
+                        <group string="Rejection">
+                            <field name="reject_reason" readonly="state == 'approved'"
+                                   placeholder="Write the reason here, then press Reject..."/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_oe_mark_entry_search" model="ir.ui.view">
+        <field name="name">school.oe.mark.entry.search</field>
+        <field name="model">school.oe.mark.entry</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="source_name"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <filter name="pending" string="Waiting for Approval" domain="[('state', '=', 'pending')]"/>
+                <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
+                <filter name="rejected" string="Rejected" domain="[('state', '=', 'rejected')]"/>
+                <group>
+                    <filter name="group_source" string="Exam / Assignment" context="{'group_by': 'source_name'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_oe_mark_entry" model="ir.actions.act_window">
+        <field name="name">Marks Approval</field>
+        <field name="res_model">school.oe.mark.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1, 'search_default_group_source': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No marks waiting</p>
+            <p>Teachers send exam / assignment marks here with "Send Marks for Approval".
+               After the principal approves, the marks are written to the marks register.</p>
+        </field>
+    </record>
+
+    <!-- list: select several rows -> Actions -> Approve selected marks -->
+    <record id="action_server_oe_mark_approve" model="ir.actions.server">
+        <field name="name">Approve selected marks</field>
+        <field name="model_id" ref="model_school_oe_mark_entry"/>
+        <field name="binding_model_id" ref="model_school_oe_mark_entry"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_approve()</field>
+    </record>
+</odoo>

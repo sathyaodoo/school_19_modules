@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         List: descriptive exams / assignments / projects
+         ============================================================ -->
+    <template id="portal_oe_as_list" name="Online Exam - Descriptive / Assignments">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h3 class="mb-0">Descriptive &amp; Assignments</h3>
+                        <span t-if="is_parent" class="badge rounded-pill bg-warning text-dark mt-1">
+                            <i class="fa fa-eye"/> Parent View (read only)
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form t-if="len(students) &gt; 1" method="GET" action="/my/online-assignments">
+                            <select name="student_id" class="form-select" onchange="this.form.submit()">
+                                <t t-foreach="students" t-as="s">
+                                    <option t-att-value="s.id" t-att-selected="'selected' if s.id == student.id else None" t-out="s.name"/>
+                                </t>
+                            </select>
+                        </form>
+                        <a t-attf-href="/my/online-exams?student_id=#{student.id}" class="btn btn-outline-secondary">
+                            <i class="fa fa-list-alt"/> MCQ Exams
+                        </a>
+                    </div>
+                </div>
+
+                <div t-if="not rows" class="alert alert-info">
+                    <i class="fa fa-info-circle"/> Nothing to submit right now.
+                </div>
+
+                <div class="row g-3">
+                    <t t-foreach="rows" t-as="row">
+                        <t t-set="a" t-value="row['assignment']"/>
+                        <t t-set="sub" t-value="row['sub']"/>
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body">
+                                    <span class="badge bg-light text-dark border mb-2">
+                                        <t t-if="a.kind == 'descriptive'">Descriptive Exam</t>
+                                        <t t-elif="a.kind == 'assignment'">Assignment</t>
+                                        <t t-else="">Project</t>
+                                    </span>
+                                    <h5 class="card-title text-primary mb-1" t-out="a.name"/>
+                                    <div class="text-muted mb-3"><i class="fa fa-book"/> <t t-out="a.subject_id.name"/></div>
+                                    <ul class="list-unstyled small mb-3">
+                                        <li><i class="fa fa-calendar text-muted"/> Due: <span t-field="a.due_datetime"/></li>
+                                        <li t-if="a.duration_minutes"><i class="fa fa-clock-o text-muted"/>
+                                            Time limit: <t t-out="a.duration_minutes"/> minute(s)</li>
+                                        <li><i class="fa fa-star-o text-muted"/> Max marks: <t t-out="'%g' % a.max_marks"/></li>
+                                        <li>
+                                            <i class="fa fa-flag-o text-muted"/> Status:
+                                            <span t-if="sub and sub.state == 'evaluated'" class="badge bg-success">Evaluated</span>
+                                            <span t-elif="sub and sub.state == 'submitted'" class="badge bg-info">Submitted<t t-if="sub.is_late"> (late)</t></span>
+                                            <span t-else="" class="badge bg-warning text-dark">Not submitted</span>
+                                        </li>
+                                        <li t-if="sub and sub.state == 'evaluated'">
+                                            <i class="fa fa-trophy text-muted"/> Marks:
+                                            <b><t t-out="'%g' % sub.marks"/> / <t t-out="'%g' % a.max_marks"/></b>
+                                        </li>
+                                    </ul>
+                                    <a t-attf-href="/my/online-assignments/#{a.id}?student_id=#{student.id}" class="btn btn-primary">
+                                        <i class="fa fa-folder-open"/> Open
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================
+         Detail: question, upload form, submit, result
+         ============================================================ -->
+    <template id="portal_oe_as_detail" name="Online Exam - Assignment Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container-fluid px-2 px-md-4 mt-3 mb-5" style="max-width: 900px;">
+                <a t-attf-href="/my/online-assignments?student_id=#{student.id}" class="small">
+                    <i class="fa fa-arrow-left"/> Back
+                </a>
+                <h3 class="mt-2 mb-1" t-out="assignment.name"/>
+                <div class="text-muted mb-3">
+                    <t t-out="student.name"/> &#8226; <t t-out="assignment.subject_id.name"/> &#8226;
+                    Due <span t-field="assignment.due_datetime"/> &#8226;
+                    Max marks <t t-out="'%g' % assignment.max_marks"/>
+                </div>
+
+                <div t-if="error" class="alert alert-danger"><i class="fa fa-exclamation-circle"/> <t t-out="error"/></div>
+                <div t-if="ok" class="alert alert-success"><i class="fa fa-check-circle"/> <t t-out="ok"/></div>
+
+                <!-- question -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="text-muted">Question / Instructions</h6>
+                        <div t-if="assignment.instructions" style="white-space: pre-line;" t-out="assignment.instructions"/>
+                        <div t-else="" class="text-muted">See the attached question paper.</div>
+                        <div t-if="assignment.question_attachment_ids" class="mt-3">
+                            <t t-foreach="assignment.question_attachment_ids" t-as="qa">
+                                <a t-attf-href="/my/online-assignments/#{assignment.id}/file/#{qa.id}?student_id=#{student.id}"
+                                   class="btn btn-sm btn-outline-primary me-2 mb-1">
+                                    <i class="fa fa-download"/> <t t-out="qa.name"/>
+                                </a>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- result (after evaluation) -->
+                <div t-if="sub and sub.state == 'evaluated'" class="card border-success shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="text-success mb-2"><i class="fa fa-check-circle"/> Evaluated</h5>
+                        <div class="fs-3 fw-bold"><t t-out="'%g' % sub.marks"/> / <t t-out="'%g' % assignment.max_marks"/></div>
+                        <div t-if="sub.feedback" class="mt-2">
+                            <div class="text-muted small">Teacher feedback</div>
+                            <div style="white-space: pre-line;" t-out="sub.feedback"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- timed work: start button -->
+                <div t-if="needs_start" class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <p class="mb-2">
+                            This work has a time limit of <b><t t-out="assignment.duration_minutes"/> minute(s)</b>.
+                            The timer starts when you press <b>Start</b>.
+                        </p>
+                        <form method="POST" t-attf-action="/my/online-assignments/#{assignment.id}/start">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <button type="submit" class="btn btn-warning btn-lg"><i class="fa fa-play"/> Start</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- my submission -->
+                <div t-if="sub" class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Your files</h6>
+                            <div t-if="can_edit and assignment.duration_minutes" class="fs-5 fw-bold text-primary">
+                                <i class="fa fa-clock-o"/> <span id="oe_as_timer" t-att-data-remaining="remaining">--:--</span>
+                            </div>
+                        </div>
+
+                        <div t-if="not sub.attachment_ids" class="text-muted mb-2">No files uploaded yet.</div>
+                        <ul class="list-unstyled mb-3">
+                            <li t-foreach="sub.attachment_ids" t-as="att" class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fa fa-file-o text-muted"/>
+                                <a t-attf-href="/my/online-assignments/#{assignment.id}/file/#{att.id}?student_id=#{student.id}" t-out="att.name"/>
+                                <form t-if="can_edit" method="POST" class="ms-2"
+                                      t-attf-action="/my/online-assignments/#{assignment.id}/remove/#{att.id}">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0">Remove</button>
+                                </form>
+                            </li>
+                        </ul>
+
+                        <t t-if="can_edit">
+                            <form method="POST" enctype="multipart/form-data" class="mb-3"
+                                  t-attf-action="/my/online-assignments/#{assignment.id}/upload">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <label class="form-label small text-muted">
+                                    Add answer sheet - PDF, JPG or PNG (max 5 MB each, up to 10 files)
+                                </label>
+                                <input type="file" name="files" multiple="multiple" class="form-control mb-2"
+                                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"/>
+                                <textarea name="note" rows="2" class="form-control mb-2"
+                                          placeholder="Note to the teacher (optional)" t-out="sub.note"></textarea>
+                                <button type="submit" class="btn btn-outline-primary"><i class="fa fa-upload"/> Upload</button>
+                            </form>
+
+                            <form method="POST" t-attf-action="/my/online-assignments/#{assignment.id}/submit">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit" class="btn btn-success btn-lg"
+                                        onclick="return confirm('Submit now? You cannot change the files after submitting.');">
+                                    <i class="fa fa-paper-plane"/> Submit
+                                </button>
+                            </form>
+                        </t>
+
+                        <div t-elif="sub.state == 'draft'" class="alert alert-warning mb-0">
+                            <i class="fa fa-clock-o"/> Time is over - you can no longer upload or submit.
+                        </div>
+                        <div t-else="" class="small text-muted">
+                            Submitted on <span t-field="sub.submitted_datetime"/>
+                            <span t-if="sub.is_late" class="badge bg-danger ms-1">Late</span>
+                            <span t-if="sub.state == 'submitted'"> - waiting for the teacher to evaluate.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div t-if="not sub and not needs_start" class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <t t-if="is_parent">
+                            <span class="text-muted">Your child has not uploaded anything yet.</span>
+                        </t>
+                        <t t-else="">
+                            <form method="POST" enctype="multipart/form-data"
+                                  t-attf-action="/my/online-assignments/#{assignment.id}/upload">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <label class="form-label small text-muted">
+                                    Upload answer sheet - PDF, JPG or PNG (max 5 MB each, up to 10 files)
+                                </label>
+                                <input type="file" name="files" multiple="multiple" class="form-control mb-2"
+                                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"/>
+                                <textarea name="note" rows="2" class="form-control mb-2"
+                                          placeholder="Note to the teacher (optional)"></textarea>
+                                <button type="submit" class="btn btn-outline-primary"><i class="fa fa-upload"/> Upload</button>
+                            </form>
+                        </t>
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript" src="/school_online_exam/static/src/js/assignment_timer.js?v=1"></script>
+        </t>
+    </template>
+
+</odoo>

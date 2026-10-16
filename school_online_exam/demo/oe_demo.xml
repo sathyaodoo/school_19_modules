@@ -1,0 +1,754 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Chapters / topics for Class 10 Mathematics -->
+        <record id="demo_oe_chapter_arith" model="school.oe.chapter">
+            <field name="name">Arithmetic</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="sequence">10</field>
+        </record>
+        <record id="demo_oe_chapter_algebra" model="school.oe.chapter">
+            <field name="name">Algebra</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="sequence">20</field>
+        </record>
+
+        <record id="demo_oe_topic_addition" model="school.oe.topic">
+            <field name="name">Addition</field>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+        </record>
+        <record id="demo_oe_topic_multiplication" model="school.oe.topic">
+            <field name="name">Multiplication</field>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+        </record>
+        <record id="demo_oe_topic_percentage" model="school.oe.topic">
+            <field name="name">Percentage</field>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+        </record>
+        <record id="demo_oe_topic_linear_equations" model="school.oe.topic">
+            <field name="name">Linear Equations</field>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+        </record>
+        <record id="demo_oe_topic_squares_and_roots" model="school.oe.topic">
+            <field name="name">Squares and Roots</field>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+        </record>
+
+        <record id="demo_oe_q_01" model="school.oe.question">
+            <field name="name">What is 75% of 400?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">600</field>
+            <field name="option_b">295</field>
+            <field name="option_c">300</field>
+            <field name="option_d">305</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_02" model="school.oe.question">
+            <field name="name">What is 10% of 40?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">-1</field>
+            <field name="option_b">8</field>
+            <field name="option_c">9</field>
+            <field name="option_d">4</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_03" model="school.oe.question">
+            <field name="name">What is 13 x 9?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">127</field>
+            <field name="option_b">130</field>
+            <field name="option_c">108</field>
+            <field name="option_d">117</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_04" model="school.oe.question">
+            <field name="name">Solve for x: 6x + 17 = 41</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">3</field>
+            <field name="option_b">4</field>
+            <field name="option_c">5</field>
+            <field name="option_d">6</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_05" model="school.oe.question">
+            <field name="name">What is the square of 11?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">22</field>
+            <field name="option_b">110</field>
+            <field name="option_c">132</field>
+            <field name="option_d">121</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_06" model="school.oe.question">
+            <field name="name">Solve for x: 9x + 15 = 42</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">5</field>
+            <field name="option_b">2</field>
+            <field name="option_c">3</field>
+            <field name="option_d">4</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_07" model="school.oe.question">
+            <field name="name">What is 20% of 200?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">35</field>
+            <field name="option_b">40</field>
+            <field name="option_c">80</field>
+            <field name="option_d">45</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_08" model="school.oe.question">
+            <field name="name">Solve for x: 5x + 17 = 37</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">6</field>
+            <field name="option_b">3</field>
+            <field name="option_c">4</field>
+            <field name="option_d">5</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_09" model="school.oe.question">
+            <field name="name">What is 11 x 9?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">99</field>
+            <field name="option_b">110</field>
+            <field name="option_c">109</field>
+            <field name="option_d">90</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_10" model="school.oe.question">
+            <field name="name">What is 16 x 13?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">208</field>
+            <field name="option_b">224</field>
+            <field name="option_c">218</field>
+            <field name="option_d">195</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_11" model="school.oe.question">
+            <field name="name">Solve for x: 2x + 15 = 19</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">1</field>
+            <field name="option_b">2</field>
+            <field name="option_c">4</field>
+            <field name="option_d">3</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_12" model="school.oe.question">
+            <field name="name">Solve for x: 9x + 11 = 101</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">10</field>
+            <field name="option_b">12</field>
+            <field name="option_c">11</field>
+            <field name="option_d">9</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_13" model="school.oe.question">
+            <field name="name">Solve for x: 2x + 12 = 18</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">4</field>
+            <field name="option_b">5</field>
+            <field name="option_c">3</field>
+            <field name="option_d">2</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_14" model="school.oe.question">
+            <field name="name">What is 15 x 9?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">145</field>
+            <field name="option_b">126</field>
+            <field name="option_c">135</field>
+            <field name="option_d">150</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_15" model="school.oe.question">
+            <field name="name">What is 56 + 57?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">114</field>
+            <field name="option_b">113</field>
+            <field name="option_c">112</field>
+            <field name="option_d">123</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_16" model="school.oe.question">
+            <field name="name">What is the square root of 361?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">19</field>
+            <field name="option_b">18</field>
+            <field name="option_c">20</field>
+            <field name="option_d">38</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_17" model="school.oe.question">
+            <field name="name">Solve for x: 7x + 15 = 71</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">10</field>
+            <field name="option_b">8</field>
+            <field name="option_c">7</field>
+            <field name="option_d">9</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_18" model="school.oe.question">
+            <field name="name">What is 25% of 120?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">25</field>
+            <field name="option_b">35</field>
+            <field name="option_c">30</field>
+            <field name="option_d">60</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_19" model="school.oe.question">
+            <field name="name">What is 86 + 82?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">167</field>
+            <field name="option_b">169</field>
+            <field name="option_c">168</field>
+            <field name="option_d">178</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_20" model="school.oe.question">
+            <field name="name">What is 50% of 40?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">20</field>
+            <field name="option_b">40</field>
+            <field name="option_c">25</field>
+            <field name="option_d">15</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_21" model="school.oe.question">
+            <field name="name">What is 30 + 94?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">134</field>
+            <field name="option_b">125</field>
+            <field name="option_c">124</field>
+            <field name="option_d">123</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_22" model="school.oe.question">
+            <field name="name">What is the square root of 400?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">21</field>
+            <field name="option_b">40</field>
+            <field name="option_c">20</field>
+            <field name="option_d">19</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_23" model="school.oe.question">
+            <field name="name">What is 85 + 82?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">167</field>
+            <field name="option_b">168</field>
+            <field name="option_c">166</field>
+            <field name="option_d">177</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_24" model="school.oe.question">
+            <field name="name">What is 20% of 40?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">8</field>
+            <field name="option_b">13</field>
+            <field name="option_c">16</field>
+            <field name="option_d">3</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_25" model="school.oe.question">
+            <field name="name">What is the square root of 441?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">21</field>
+            <field name="option_b">42</field>
+            <field name="option_c">20</field>
+            <field name="option_d">22</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_26" model="school.oe.question">
+            <field name="name">Solve for x: 6x + 3 = 69</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">12</field>
+            <field name="option_b">11</field>
+            <field name="option_c">10</field>
+            <field name="option_d">13</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_27" model="school.oe.question">
+            <field name="name">What is 10% of 80?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">3</field>
+            <field name="option_b">13</field>
+            <field name="option_c">8</field>
+            <field name="option_d">16</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_28" model="school.oe.question">
+            <field name="name">What is 17 x 15?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">240</field>
+            <field name="option_b">255</field>
+            <field name="option_c">272</field>
+            <field name="option_d">265</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_29" model="school.oe.question">
+            <field name="name">What is 27 + 52?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">78</field>
+            <field name="option_b">80</field>
+            <field name="option_c">89</field>
+            <field name="option_d">79</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_30" model="school.oe.question">
+            <field name="name">What is 42 + 12?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">53</field>
+            <field name="option_b">55</field>
+            <field name="option_c">64</field>
+            <field name="option_d">54</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_31" model="school.oe.question">
+            <field name="name">What is 58 + 71?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">128</field>
+            <field name="option_b">130</field>
+            <field name="option_c">129</field>
+            <field name="option_d">139</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_32" model="school.oe.question">
+            <field name="name">What is 16 x 10?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">160</field>
+            <field name="option_b">150</field>
+            <field name="option_c">176</field>
+            <field name="option_d">170</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_33" model="school.oe.question">
+            <field name="name">What is the square root of 625?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">24</field>
+            <field name="option_b">50</field>
+            <field name="option_c">25</field>
+            <field name="option_d">26</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_34" model="school.oe.question">
+            <field name="name">Solve for x: 8x + 2 = 82</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">12</field>
+            <field name="option_b">10</field>
+            <field name="option_c">9</field>
+            <field name="option_d">11</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_35" model="school.oe.question">
+            <field name="name">What is 8 x 16?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">128</field>
+            <field name="option_b">136</field>
+            <field name="option_c">112</field>
+            <field name="option_d">138</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_36" model="school.oe.question">
+            <field name="name">What is 98 + 52?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">150</field>
+            <field name="option_b">149</field>
+            <field name="option_c">160</field>
+            <field name="option_d">151</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_37" model="school.oe.question">
+            <field name="name">What is 9 x 10?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">99</field>
+            <field name="option_b">100</field>
+            <field name="option_c">90</field>
+            <field name="option_d">80</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_38" model="school.oe.question">
+            <field name="name">What is 50% of 200?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">95</field>
+            <field name="option_b">100</field>
+            <field name="option_c">105</field>
+            <field name="option_d">200</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_39" model="school.oe.question">
+            <field name="name">Solve for x: 5x + 13 = 63</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_linear_equations"/>
+            <field name="option_a">9</field>
+            <field name="option_b">11</field>
+            <field name="option_c">12</field>
+            <field name="option_d">10</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">hard</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_40" model="school.oe.question">
+            <field name="name">What is the square root of 289?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">16</field>
+            <field name="option_b">34</field>
+            <field name="option_c">17</field>
+            <field name="option_d">18</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_41" model="school.oe.question">
+            <field name="name">What is the square of 16?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">240</field>
+            <field name="option_b">272</field>
+            <field name="option_c">256</field>
+            <field name="option_d">32</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_42" model="school.oe.question">
+            <field name="name">What is the square of 13?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">169</field>
+            <field name="option_b">156</field>
+            <field name="option_c">26</field>
+            <field name="option_d">182</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_43" model="school.oe.question">
+            <field name="name">What is 19 x 12?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">247</field>
+            <field name="option_b">228</field>
+            <field name="option_c">216</field>
+            <field name="option_d">238</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_44" model="school.oe.question">
+            <field name="name">What is 75% of 120?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">85</field>
+            <field name="option_b">95</field>
+            <field name="option_c">90</field>
+            <field name="option_d">180</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_45" model="school.oe.question">
+            <field name="name">What is 24 + 69?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">103</field>
+            <field name="option_b">94</field>
+            <field name="option_c">92</field>
+            <field name="option_d">93</field>
+            <field name="correct_option">d</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_46" model="school.oe.question">
+            <field name="name">What is the square of 9?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">72</field>
+            <field name="option_b">81</field>
+            <field name="option_c">90</field>
+            <field name="option_d">18</field>
+            <field name="correct_option">b</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_47" model="school.oe.question">
+            <field name="name">What is the square of 22?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_algebra"/>
+            <field name="topic_id" ref="demo_oe_topic_squares_and_roots"/>
+            <field name="option_a">462</field>
+            <field name="option_b">44</field>
+            <field name="option_c">484</field>
+            <field name="option_d">506</field>
+            <field name="correct_option">c</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_48" model="school.oe.question">
+            <field name="name">What is 14 x 18?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_multiplication"/>
+            <field name="option_a">252</field>
+            <field name="option_b">234</field>
+            <field name="option_c">266</field>
+            <field name="option_d">262</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_49" model="school.oe.question">
+            <field name="name">What is 75% of 40?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_percentage"/>
+            <field name="option_a">30</field>
+            <field name="option_b">35</field>
+            <field name="option_c">60</field>
+            <field name="option_d">25</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">medium</field>
+            <field name="marks">1</field>
+        </record>
+        <record id="demo_oe_q_50" model="school.oe.question">
+            <field name="name">What is 55 + 23?</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="chapter_id" ref="demo_oe_chapter_arith"/>
+            <field name="topic_id" ref="demo_oe_topic_addition"/>
+            <field name="option_a">78</field>
+            <field name="option_b">88</field>
+            <field name="option_c">79</field>
+            <field name="option_d">77</field>
+            <field name="correct_option">a</field>
+            <field name="difficulty">easy</field>
+            <field name="marks">1</field>
+        </record>
+
+        <!-- Demo exam: 10 random questions out of the 50, 2 minutes, unlimited attempts -->
+        <record id="demo_oe_exam_math" model="school.oe.exam">
+            <field name="name">Maths Quick Test (10 of 50, 2 min)</field>
+            <field name="class_id" ref="ad_school_management.demo_class_10"/>
+            <field name="subject_id" ref="ad_school_management.demo_subject_math"/>
+            <field name="questions_per_attempt">10</field>
+            <field name="duration_minutes">2</field>
+            <field name="max_attempts">0</field>
+            <field name="avoid_repeat" eval="True"/>
+            <field name="state">published</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================= Activity (standard event form) ================= -->
+    <record id="view_event_form_school_activity" model="ir.ui.view">
+        <field name="name">event.event.form.school.activity</field>
+        <field name="model">event.event</field>
+        <field name="inherit_id" ref="event.view_event_form"/>
+        <field name="arch" type="xml">
+            <!-- ===== Show only what the BRS needs on school activities =====
+                 Hidden only when "School Activity" is ticked, so normal events
+                 in the standard Events app are unchanged. -->
+            <xpath expr="//header/button[contains(., 'Registration Desk')]" position="attributes">
+                <attribute name="invisible">not seats_taken or is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//div[@name='button_box']/button[@icon='fa-line-chart']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//div[@name='button_box']/button[@icon='fa-users']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//label[@for='is_multi_slots']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//label[@for='is_multi_slots']/following-sibling::div[1]" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//field[@name='lang']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//field[@name='event_type_id']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//field[@name='tag_ids']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//field[@name='organizer_id']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//field[@name='address_id']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//field[@name='event_url']" position="attributes">
+                <attribute name="invisible">address_id or is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//label[@for='seats_limited']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//label[@for='seats_limited']/following-sibling::div[1]" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//page[@name='tickets']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//page[@name='event_communication']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//page[@name='questions']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//page[@name='event_notes']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+
+            <xpath expr="//label[@for='name']" position="attributes">
+                <attribute name="invisible">is_school_activity</attribute>
+            </xpath>
+            <xpath expr="//label[@for='name']" position="after">
+                <label for="name" string="Activity Name" invisible="not is_school_activity"/>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_school_add_participants" type="object" string="Add Participants"
+                        class="btn-primary" icon="fa-user-plus" invisible="not is_school_activity or not id"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_school_view_participants" type="object" class="oe_stat_button"
+                        icon="fa-graduation-cap" invisible="not is_school_activity">
+                    <field name="school_participant_count" widget="statinfo" string="Students"/>
+                </button>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <group name="school_activity" invisible="not is_school_activity">
+                    <group string="School Activity">
+                        <field name="is_school_activity" invisible="1"/>
+                        <field name="school_activity_type" required="is_school_activity"/>
+                        <field name="school_venue" placeholder="e.g. Main Ground, Auditorium"/>
+                        <field name="school_participation" widget="radio" options="{'horizontal': true}"/>
+                    </group>
+                    <group string="Who Takes Part">
+                        <field name="school_class_ids" widget="many2many_tags"/>
+                        <field name="school_house_ids" widget="many2many_tags" options="{'color_field': 'color'}"
+                               invisible="school_participation != 'group'"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Description" name="school_description" invisible="not is_school_activity">
+                    <field name="description" placeholder="Describe the activity: rules, schedule, what students should bring..."/>
+                </page>
+                <page string="Participants" name="school_participants" invisible="not is_school_activity">
+                    <field name="registration_ids" context="{'default_event_id': id}">
+                        <list editable="bottom" decoration-success="school_position">
+                            <field name="student_id" required="1" options="{'no_create': True}"/>
+                            <field name="partner_id" column_invisible="True"/>
+                            <field name="name" column_invisible="True"/>
+                            <field name="admission_no"/>
+                            <field name="school_class_id"/>
+                            <field name="school_section_id"/>
+                            <field name="school_house_id"/>
+                            <field name="school_position"/>
+                            <field name="state" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Winners" name="school_winners" invisible="not is_school_activity">
+                    <group string="Winning Groups" invisible="school_participation != 'group'">
+                        <field name="school_first_house_id" options="{'no_create': True}"/>
+                        <field name="school_second_house_id" options="{'no_create': True}"/>
+                        <field name="school_third_house_id" options="{'no_create': True}"/>
+                    </group>
+                    <separator string="Winning Students (set First / Second / Third Place on the Participants tab)"/>
+                    <field name="school_winner_registration_ids" readonly="1">
+                        <list>
+                            <field name="school_position"/>
+                            <field name="student_id"/>
+                            <field name="admission_no"/>
+                            <field name="school_class_id"/>
+                            <field name="school_house_id"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Activities list (primary, so the standard Events list is not changed) -->
+    <record id="view_school_activity_list" model="ir.ui.view">
+        <field name="name">event.event.list.school.activity</field>
+        <field name="model">event.event</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" string="Activity Name"/>
+                <field name="school_activity_type"/>
+                <field name="date_begin" string="Start"/>
+                <field name="date_end" string="End"/>
+                <field name="school_venue"/>
+                <field name="school_participation" optional="show"/>
+                <field name="school_participant_count"/>
+                <field name="school_winner_count" optional="show"/>
+                <field name="stage_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_activity_calendar" model="ir.ui.view">
+        <field name="name">event.event.calendar.school.activity</field>
+        <field name="model">event.event</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <calendar date_start="date_begin" date_stop="date_end" color="school_activity_type" mode="month">
+                <field name="name"/>
+                <field name="school_venue"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_school_activity_search" model="ir.ui.view">
+        <field name="name">event.event.search.school.activity</field>
+        <field name="model">event.event</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Activity"/>
+                <field name="school_venue"/>
+                <filter string="Sports" name="type_sports" domain="[('school_activity_type', '=', 'sports')]"/>
+                <filter string="Arts" name="type_arts" domain="[('school_activity_type', '=', 'arts')]"/>
+                <filter string="Cultural" name="type_cultural" domain="[('school_activity_type', '=', 'cultural')]"/>
+                <filter string="Academic" name="type_academic" domain="[('school_activity_type', '=', 'academic')]"/>
+                <separator/>
+                <filter string="Upcoming" name="upcoming" domain="[('date_end', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Group Events" name="group_events" domain="[('school_participation', '=', 'group')]"/>
+                <group>
+                    <filter string="Activity Type" name="group_type" context="{'group_by': 'school_activity_type'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date_begin:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_activity" model="ir.actions.act_window">
+        <field name="name">Activities</field>
+        <field name="res_model">event.event</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_school_activity_list')}),
+            (0, 0, {'view_mode': 'calendar', 'view_id': ref('view_school_activity_calendar')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('event.view_event_form')})]"/>
+        <field name="search_view_id" ref="view_school_activity_search"/>
+        <field name="domain">[('is_school_activity', '=', True)]</field>
+        <field name="context">{'default_is_school_activity': True, 'default_address_id': False, 'default_description': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first school activity</p>
+            <p>Sports day, art competition, cultural fest, quiz… then add participants and winners.</p>
+        </field>
+    </record>
+
+    <!-- ================= Participants / Students by activity ================= -->
+    <record id="view_school_activity_participant_list" model="ir.ui.view">
+        <field name="name">event.registration.list.school</field>
+        <field name="model">event.registration</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" decoration-success="school_position">
+                <field name="event_id" string="Activity" domain="[('is_school_activity', '=', True)]"/>
+                <field name="school_activity_type" optional="show"/>
+                <field name="student_id" required="1" options="{'no_create': True}"/>
+                <field name="partner_id" column_invisible="True"/>
+                <field name="name" column_invisible="True"/>
+                <field name="admission_no"/>
+                <field name="school_class_id"/>
+                <field name="school_section_id" optional="show"/>
+                <field name="school_house_id"/>
+                <field name="school_position"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_activity_participant_search" model="ir.ui.view">
+        <field name="name">event.registration.search.school</field>
+        <field name="model">event.registration</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="event_id" string="Activity"/>
+                <field name="student_id"/>
+                <field name="admission_no"/>
+                <field name="school_class_id"/>
+                <field name="school_house_id"/>
+                <filter string="Winners" name="winners" domain="[('school_position', '!=', False)]"/>
+                <filter string="First Place" name="first" domain="[('school_position', '=', 'first')]"/>
+                <filter string="Second Place" name="second" domain="[('school_position', '=', 'second')]"/>
+                <filter string="Third Place" name="third" domain="[('school_position', '=', 'third')]"/>
+                <group>
+                    <filter string="Activity" name="group_event" context="{'group_by': 'event_id'}"/>
+                    <filter string="Student" name="group_student" context="{'group_by': 'student_id'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'school_class_id'}"/>
+                    <filter string="Group (House)" name="group_house" context="{'group_by': 'school_house_id'}"/>
+                    <filter string="Position" name="group_position" context="{'group_by': 'school_position'}"/>
+                    <filter string="Activity Type" name="group_type" context="{'group_by': 'school_activity_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_school_activity_participant_pivot" model="ir.ui.view">
+        <field name="name">event.registration.pivot.school</field>
+        <field name="model">event.registration</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="event_id" type="row"/>
+                <field name="school_house_id" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_activity_participants" model="ir.actions.act_window">
+        <field name="name">Students by Activity</field>
+        <field name="res_model">event.registration</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_school_activity_participant_list')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_school_activity_participant_pivot')})]"/>
+        <field name="search_view_id" ref="view_school_activity_participant_search"/>
+        <field name="domain">[('is_school_activity', '=', True), ('student_id', '!=', False)]</field>
+        <field name="context">{'search_default_group_event': 1}</field>
+    </record>
+
+    <record id="action_school_activity_winners" model="ir.actions.act_window">
+        <field name="name">Winners</field>
+        <field name="res_model">event.registration</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_school_activity_participant_list')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_school_activity_participant_pivot')})]"/>
+        <field name="search_view_id" ref="view_school_activity_participant_search"/>
+        <field name="domain">[('is_school_activity', '=', True), ('school_position', '!=', False)]</field>
+        <field name="context">{'search_default_group_event': 1, 'create': False}</field>
+    </record>
+
+    <!-- ================= Add Participants wizard ================= -->
+    <record id="view_school_activity_participant_wizard_form" model="ir.ui.view">
+        <field name="name">school.activity.participant.wizard.form</field>
+        <field name="model">school.activity.participant.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Add Participants">
+                <group>
+                    <group>
+                        <field name="event_id" readonly="context.get('default_event_id')"/>
+                        <field name="class_id"/>
+                        <field name="section_id" domain="[('class_id', '=', class_id)] if class_id else []"/>
+                    </group>
+                    <group>
+                        <field name="house_id"/>
+                        <field name="gender"/>
+                    </group>
+                </group>
+                <separator string="Or pick students (leave empty to add everyone matching the filters)"/>
+                <field name="student_ids"
+                       domain="([('class_id', '=', class_id)] if class_id else []) + ([('house_id', '=', house_id)] if house_id else [])">
+                    <list>
+                        <field name="name"/>
+                        <field name="admission_no"/>
+                        <field name="class_id"/>
+                        <field name="section_id"/>
+                        <field name="house_id"/>
+                        <field name="gender"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_add" type="object" string="Add Participants" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================= Menus ================= -->
+    <menuitem id="menu_school_activities_root" name="Activities" parent="menu_school_root" sequence="45"/>
+    <menuitem id="menu_school_activity" name="Activities" parent="menu_school_activities_root"
+              action="action_school_activity" sequence="10"/>
+    <menuitem id="menu_school_activity_participants" name="Students by Activity" parent="menu_school_activities_root"
+              action="action_school_activity_participants" sequence="20"/>
+    <menuitem id="menu_school_activity_winners" name="Winners" parent="menu_school_activities_root"
+              action="action_school_activity_winners" sequence="30"/>
+    <menuitem id="menu_school_class_house" name="Class Groups &amp; Leaders" parent="menu_school_activities_root"
+              action="action_school_class_house" sequence="40"/>
+    <menuitem id="menu_school_house" name="Student Groups (Houses)" parent="menu_school_configuration"
+              action="action_school_house" sequence="80"/>
+
+</odoo>

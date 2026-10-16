@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Helpdesk ticket: Maintenance tick + smart button -->
+    <record id="view_dev_helpdesk_ticket_form_maintenance" model="ir.ui.view">
+        <field name="name">dev.helpdesk.ticket.form.maintenance</field>
+        <field name="model">dev.helpdesk.ticket</field>
+        <field name="inherit_id" ref="dev_all_in_one_helpdesk.form_ticket_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_maintenance_request" type="object" class="oe_stat_button"
+                        icon="fa-wrench" invisible="not maintenance_request_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Maintenance</span>
+                        <field name="maintenance_stage_id" readonly="1"/>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='category_id']" position="before">
+                <field name="is_maintenance" readonly="maintenance_request_id"/>
+                <field name="maintenance_location" invisible="not is_maintenance"
+                       required="is_maintenance" placeholder="e.g. Main Block - Room 12"/>
+                <field name="maintenance_equipment_id" invisible="not is_maintenance"/>
+                <field name="maintenance_request_id" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_dev_helpdesk_ticket_search_maintenance" model="ir.ui.view">
+        <field name="name">dev.helpdesk.ticket.search.maintenance</field>
+        <field name="model">dev.helpdesk.ticket</field>
+        <field name="inherit_id" ref="dev_all_in_one_helpdesk.search_ticket_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter string="Maintenance Tickets" name="maintenance_tickets" domain="[('is_maintenance', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Maintenance request: link back to ticket -->
+    <record id="view_maintenance_request_form_helpdesk" model="ir.ui.view">
+        <field name="name">maintenance.request.form.helpdesk</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='request_date']" position="before">
+                <field name="helpdesk_ticket_id" invisible="not helpdesk_ticket_id"/>
+                <field name="school_location"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_maintenance_request_search_helpdesk" model="ir.ui.view">
+        <field name="name">maintenance.request.search.helpdesk</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter string="From Helpdesk" name="from_helpdesk" domain="[('helpdesk_ticket_id', '!=', False)]"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

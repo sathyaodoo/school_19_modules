@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_school_purchase_request" model="ir.sequence">
+            <field name="name">School Purchase Request</field>
+            <field name="code">school.purchase.request</field>
+            <field name="prefix">PUR/%(year)s/</field>
+            <field name="padding">3</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+
+    <record id="view_school_purchase_request_list" model="ir.ui.view">
+        <field name="name">school.purchase.request.list</field>
+        <field name="model">school.purchase.request</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="request_date"/>
+                <field name="requested_by_id"/>
+                <field name="department_id"/>
+                <field name="priority"/>
+                <field name="total_amount"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_purchase_request_form" model="ir.ui.view">
+        <field name="name">school.purchase.request.form</field>
+        <field name="model">school.purchase.request</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_approve" type="object" string="Approve" class="btn-success"
+                            invisible="state != 'submitted'"/>
+                    <button name="action_reject" type="object" string="Reject"
+                            invisible="state != 'submitted'"/>
+                    <button name="action_create_po" type="object" string="Create Purchase Order" class="btn-primary"
+                            invisible="state != 'approved'"/>
+                    <button name="action_reset_draft" type="object" string="Set to Draft"
+                            invisible="state != 'rejected'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,po_created"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="request_date" readonly="state != 'draft'"/>
+                            <field name="requested_by_id"/>
+                            <field name="department_id" readonly="state != 'draft'"/>
+                            <field name="priority" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="approver_id" readonly="state != 'draft'"/>
+                            <field name="vendor_id" readonly="state in ('po_created', 'rejected')"/>
+                            <field name="purchase_order_id" invisible="not purchase_order_id"/>
+                            <field name="total_amount"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="justification" readonly="state != 'draft'"/>
+                    </group>
+                    <notebook>
+                        <page string="Products" name="products">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="name"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_id"/>
+                                    <field name="unit_cost"/>
+                                    <field name="subtotal" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Approval" name="approval">
+                            <group>
+                                <field name="approval_date"/>
+                                <field name="approval_comments"
+                                       readonly="state not in ('submitted', 'draft')"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_purchase_request_search" model="ir.ui.view">
+        <field name="name">school.purchase.request.search</field>
+        <field name="model">school.purchase.request</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="requested_by_id"/>
+                <field name="department_id"/>
+                <filter string="Waiting for Approval" name="submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <group>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Priority" name="group_priority" context="{'group_by': 'priority'}"/>
+                    <filter string="Department" name="group_department" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_purchase_request" model="ir.actions.act_window">
+        <field name="name">Purchase Requests</field>
+        <field name="res_model">school.purchase.request</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_school_purchase_request" name="Purchase Requests"
+              parent="menu_school_facilities" action="action_school_purchase_request" sequence="40"/>
+
+    <!-- Section 24: link a Purchase Order to the repair ticket -->
+    <record id="view_maintenance_request_form_school_po" model="ir.ui.view">
+        <field name="name">maintenance.request.form.school.po</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="view_maintenance_request_form_school_phase2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vendor_bill_id']" position="before">
+                <field name="purchase_order_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Section 26: Vendor Type and Quality Rating on the vendor form -->
+    <record id="view_partner_form_school_vendor" model="ir.ui.view">
+        <field name="name">res.partner.form.school.vendor</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vat']" position="after">
+                <field name="quality_rating"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

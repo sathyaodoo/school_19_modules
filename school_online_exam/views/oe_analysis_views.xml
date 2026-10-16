@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== 1. Student / exam analysis (one row per attempt) ===== -->
+    <record id="view_school_oe_attempt_pivot" model="ir.ui.view">
+        <field name="name">school.oe.attempt.pivot</field>
+        <field name="model">school.oe.attempt</field>
+        <field name="arch" type="xml">
+            <pivot string="Student Performance">
+                <field name="student_id" type="row"/>
+                <field name="exam_type" type="col"/>
+                <field name="percentage" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_oe_attempt_graph" model="ir.ui.view">
+        <field name="name">school.oe.attempt.graph</field>
+        <field name="model">school.oe.attempt</field>
+        <field name="arch" type="xml">
+            <graph string="Average Score %" type="bar">
+                <field name="exam_id"/>
+                <field name="percentage" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_school_oe_analysis_student" model="ir.actions.act_window">
+        <field name="name">Student &amp; Exam Analysis</field>
+        <field name="res_model">school.oe.attempt</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="domain">[('state', '!=', 'in_progress')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No finished attempts yet</p>
+            <p>Average score % per student, exam, class or subject. Use Group By and the
+               measures to slice the data. Class average = the "Total" row.</p>
+        </field>
+    </record>
+
+    <!-- ===== 2. Chapter / topic analysis (weak areas) and 3. Question analysis ===== -->
+    <record id="view_school_oe_line_pivot" model="ir.ui.view">
+        <field name="name">school.oe.attempt.line.pivot</field>
+        <field name="model">school.oe.attempt.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Accuracy">
+                <field name="subject_id" type="row"/>
+                <field name="chapter_id" type="row"/>
+                <field name="accuracy" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_oe_line_graph" model="ir.ui.view">
+        <field name="name">school.oe.attempt.line.graph</field>
+        <field name="model">school.oe.attempt.line</field>
+        <field name="arch" type="xml">
+            <graph string="Accuracy %" type="bar">
+                <field name="chapter_id"/>
+                <field name="accuracy" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_oe_line_list" model="ir.ui.view">
+        <field name="name">school.oe.attempt.line.list</field>
+        <field name="model">school.oe.attempt.line</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" decoration-danger="not is_correct and selected_option"
+                  decoration-success="is_correct">
+                <field name="student_id"/>
+                <field name="subject_id"/>
+                <field name="chapter_id"/>
+                <field name="topic_id"/>
+                <field name="question_text"/>
+                <field name="selected_option"/>
+                <field name="correct_key"/>
+                <field name="is_correct"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_oe_line_search" model="ir.ui.view">
+        <field name="name">school.oe.attempt.line.search</field>
+        <field name="model">school.oe.attempt.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="chapter_id"/>
+                <field name="topic_id"/>
+                <field name="question_text"/>
+                <filter name="type_exam" string="Exams" domain="[('exam_type', '=', 'exam')]"/>
+                <filter name="type_mock" string="Mock Tests" domain="[('exam_type', '=', 'mock')]"/>
+                <filter name="type_practice" string="Self Practice" domain="[('exam_type', '=', 'practice')]"/>
+                <separator/>
+                <filter name="wrong" string="Wrong answers" domain="[('is_correct', '=', False), ('selected_option', '!=', False)]"/>
+                <filter name="unanswered" string="Not answered" domain="[('selected_option', '=', False)]"/>
+                <group>
+                    <filter name="group_student" string="Student" context="{'group_by': 'student_id'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_chapter" string="Chapter" context="{'group_by': 'chapter_id'}"/>
+                    <filter name="group_topic" string="Topic" context="{'group_by': 'topic_id'}"/>
+                    <filter name="group_question" string="Question" context="{'group_by': 'question_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_oe_analysis_chapter" model="ir.actions.act_window">
+        <field name="name">Chapter-wise Analysis (weak areas)</field>
+        <field name="res_model">school.oe.attempt.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="domain">[('attempt_state', '!=', 'in_progress'), ('chapter_id', '!=', False)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No answers to analyse yet</p>
+            <p>"Correct %" per chapter and topic. Low numbers = weak areas. Filter by class, student or type.</p>
+        </field>
+    </record>
+
+    <record id="view_school_oe_line_pivot_question" model="ir.ui.view">
+        <field name="name">school.oe.attempt.line.pivot.question</field>
+        <field name="model">school.oe.attempt.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Question difficulty">
+                <field name="question_id" type="row"/>
+                <field name="accuracy" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_oe_analysis_question" model="ir.actions.act_window">
+        <field name="name">Question Analysis (difficulty)</field>
+        <field name="res_model">school.oe.attempt.line</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="view_id" ref="view_school_oe_line_pivot_question"/>
+        <field name="domain">[('attempt_state', '!=', 'in_progress')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No answers to analyse yet</p>
+            <p>Which questions are answered correctly by few students? Click the "Correct %" header to sort.</p>
+        </field>
+    </record>
+</odoo>

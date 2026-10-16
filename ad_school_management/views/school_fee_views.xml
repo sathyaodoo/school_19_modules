@@ -9,6 +9,7 @@
                 <field name="name"/>
                 <field name="code"/>
                 <field name="academic_year_id"/>
+                <field name="class_ids" widget="many2many_tags"/>
                 <field name="total_amount"/>
             </list>
         </field>
@@ -29,6 +30,7 @@
                     <group>
                         <group>
                             <field name="code" placeholder="e.g. FS-G10"/>
+                            <field name="class_ids" widget="many2many_tags" placeholder="e.g. Class 1, Class 2"/>
                         </group>
                         <group>
                             <field name="academic_year_id"/>
@@ -79,8 +81,10 @@
             <list decoration-info="state == 'draft'" decoration-warning="state == 'invoiced'" decoration-success="state == 'paid'" decoration-muted="state == 'cancelled'">
                 <field name="name"/>
                 <field name="student_id"/>
+                <field name="class_id" optional="show"/>
+                <field name="section_id" optional="show"/>
                 <field name="structure_id"/>
-                <field name="net_amount"/>
+                <field name="net_amount" sum="Total"/>
                 <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'invoiced'" decoration-success="state == 'paid'" decoration-muted="state == 'cancelled'"/>
             </list>
         </field>
@@ -145,6 +149,8 @@
             <search>
                 <field name="student_id"/>
                 <field name="structure_id"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
                 <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Invoiced" name="invoiced" domain="[('state', '=', 'invoiced')]"/>
                 <filter string="Paid" name="paid" domain="[('state', '=', 'paid')]"/>
@@ -152,6 +158,8 @@
                 <group>
                     <filter string="Student" name="group_by_student" context="{'group_by': 'student_id'}"/>
                     <filter string="Structure" name="group_by_structure" context="{'group_by': 'structure_id'}"/>
+                    <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Section" name="group_by_section" context="{'group_by': 'section_id'}"/>
                 </group>
             </search>
         </field>
@@ -167,5 +175,61 @@
                 Assign and Invoice a Student Fee!
             </p>
         </field>
+    </record>
+
+    <record id="view_school_fee_generate_form" model="ir.ui.view">
+        <field name="name">school.fee.generate.form</field>
+        <field name="model">school.fee.generate</field>
+        <field name="arch" type="xml">
+            <form string="Generate Class Fees">
+                <group>
+                    <group>
+                        <field name="academic_year_id"/>
+                        <field name="class_id"/>
+                        <field name="section_id" placeholder="All sections"/>
+                    </group>
+                    <group>
+                        <field name="structure_id"/>
+                        <field name="structure_total"/>
+                        <field name="apply_scholarship"/>
+                        <field name="create_invoices"/>
+                    </group>
+                </group>
+                <button name="action_fetch_students" type="object" string="Fetch Students" class="btn-secondary"
+                        icon="fa-users" invisible="not class_id or not academic_year_id or not structure_id"/>
+                <div class="alert alert-info mt-2" role="alert" invisible="not line_ids">
+                    Students: <field name="student_count" class="oe_inline"/> |
+                    To Generate: <field name="new_count" class="oe_inline"/> |
+                    Total Net: <field name="total_net" class="oe_inline"/>
+                </div>
+                <div class="text-muted small mb-1" invisible="not line_ids">
+                    Discount (₹) = fixed amount off. Scholarship % = percentage off (0 to 100).
+                </div>
+                <field name="line_ids" invisible="not line_ids">
+                    <list editable="bottom" create="0" decoration-muted="already_assigned">
+                        <field name="selected" readonly="already_assigned"/>
+                        <field name="student_id" readonly="1"/>
+                        <field name="admission_no"/>
+                        <field name="section_id"/>
+                        <field name="discount" readonly="already_assigned" string="Discount (₹)"/>
+                        <field name="scholarship" readonly="already_assigned" string="Scholarship %"/>
+                        <field name="net_amount" sum="Total"/>
+                        <field name="already_assigned" widget="boolean"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_generate" type="object" string="Generate Fees" class="btn-primary"
+                            invisible="not line_ids"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_fee_generate" model="ir.actions.act_window">
+        <field name="name">Generate Class Fees</field>
+        <field name="res_model">school.fee.generate</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
     </record>
 </odoo>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_oe_exam_list" model="ir.ui.view">
+        <field name="name">school.oe.exam.list</field>
+        <field name="model">school.oe.exam</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'published'" decoration-muted="state == 'closed'">
+                <field name="name"/>
+                <field name="exam_type"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="subject_id"/>
+                <field name="student_count"/>
+                <field name="questions_per_attempt"/>
+                <field name="duration_minutes"/>
+                <field name="max_attempts"/>
+                <field name="pool_count"/>
+                <field name="attempt_count"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'published'"
+                       decoration-info="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_oe_exam_form" model="ir.ui.view">
+        <field name="name">school.oe.exam.form</field>
+        <field name="model">school.oe.exam</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" string="Publish" type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_close" string="Close Exam" type="object"
+                            invisible="state != 'published'"/>
+                    <button name="action_draft" string="Back to Draft" type="object"
+                            invisible="state == 'draft'"/>
+                    <button name="action_send_for_approval" string="Send Marks for Approval" type="object"
+                            invisible="not school_exam_id or exam_type != 'exam'"
+                            confirm="Send each student's counted score to the principal for approval?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_questions" type="object" class="oe_stat_button"
+                                icon="fa-question-circle">
+                            <field name="pool_count" widget="statinfo" string="Questions in Bank"/>
+                        </button>
+                        <button name="action_view_students" type="object" class="oe_stat_button"
+                                icon="fa-users">
+                            <field name="student_count" widget="statinfo" string="Students"/>
+                        </button>
+                        <button name="action_view_mark_entries" type="object" class="oe_stat_button"
+                                icon="fa-check-square-o" invisible="exam_type != 'exam'">
+                            <field name="mark_entry_count" widget="statinfo" string="Marks Approval"/>
+                        </button>
+                        <button name="action_view_attempts" type="object" class="oe_stat_button"
+                                icon="fa-list-alt">
+                            <field name="attempt_count" widget="statinfo" string="Attempts"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Maths Quick Test - Chapter 1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Who / What">
+                            <field name="exam_type"/>
+                            <field name="class_id"/>
+                            <field name="section_id" placeholder="Whole class"/>
+                            <field name="subject_id"/>
+                            <field name="chapter_ids" widget="many2many_tags"/>
+                            <field name="topic_ids" widget="many2many_tags"/>
+                        </group>
+                        <group string="Attempt Rules">
+                            <field name="questions_per_attempt"/>
+                            <field name="duration_minutes"/>
+                            <field name="max_attempts"/>
+                            <field name="avoid_repeat"/>
+                            <field name="shuffle_options"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Result">
+                            <field name="pass_percentage"/>
+                            <field name="score_policy"/>
+                            <field name="show_answers"/>
+                            <field name="school_exam_id" invisible="exam_type != 'exam'"/>
+                        </group>
+                        <group string="Availability (optional)">
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Students" name="students">
+                            <div class="text-muted mb-2">
+                                Students who will see this exam in their portal
+                                (all students of the selected class / section).
+                            </div>
+                            <field name="student_ids" readonly="1">
+                                <list>
+                                    <field name="admission_no"/>
+                                    <field name="name"/>
+                                    <field name="class_id"/>
+                                    <field name="section_id"/>
+                                    <field name="roll_number"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_oe_exam_search" model="ir.ui.view">
+        <field name="name">school.oe.exam.search</field>
+        <field name="model">school.oe.exam</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="subject_id"/>
+                <filter name="type_exam" string="Exams" domain="[('exam_type', '=', 'exam')]"/>
+                <filter name="type_mock" string="Mock Tests" domain="[('exam_type', '=', 'mock')]"/>
+                <separator/>
+                <filter name="published" string="Published" domain="[('state', '=', 'published')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="closed" string="Closed" domain="[('state', '=', 'closed')]"/>
+                <group>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_section" string="Section" context="{'group_by': 'section_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_oe_exam" model="ir.actions.act_window">
+        <field name="name">Online Exams</field>
+        <field name="res_model">school.oe.exam</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('exam_type', '=', 'exam')]</field>
+        <field name="context">{'default_exam_type': 'exam'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first online exam</p>
+            <p>Pick a class and subject, say how many questions each attempt shows
+               (default 10) and the time limit (default 2 minutes), then publish it.</p>
+        </field>
+    </record>
+
+    <record id="action_school_oe_mock" model="ir.actions.act_window">
+        <field name="name">Mock Tests</field>
+        <field name="res_model">school.oe.exam</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('exam_type', '=', 'mock')]</field>
+        <field name="context">{'default_exam_type': 'mock', 'default_show_answers': True,
+                               'default_max_attempts': 0, 'default_name': 'Mock Test'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a mock test</p>
+            <p>Mock tests are practice exams: unlimited attempts, correct answers shown,
+               scores are never added to the marks register.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         LEARNING OUTCOMES
+         ================================================================ -->
+    <!-- tab inside the syllabus form -->
+    <record id="view_school_syllabus_form_outcomes" model="ir.ui.view">
+        <field name="name">school.syllabus.form.outcomes</field>
+        <field name="model">school.syllabus</field>
+        <field name="inherit_id" ref="view_school_syllabus_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='units']" position="after">
+                <page string="Learning Outcomes" name="outcomes">
+                    <div class="text-muted mb-2">
+                        What a student can do after learning. Write each outcome like "Counts objects up to 100".
+                        An outcome is <b>covered</b> when a class diary entry that teaches it is published.
+                    </div>
+                    <field name="outcome_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="bloom_level"/>
+                            <field name="unit_id" domain="[('syllabus_id', '=', parent.id)]" options="{'no_create': True}"/>
+                            <field name="topic_id" domain="[('syllabus_id', '=', parent.id)]" options="{'no_create': True}"/>
+                            <field name="taught_count" readonly="1"/>
+                            <field name="covered" widget="boolean" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_school_learning_outcome_list" model="ir.ui.view">
+        <field name="name">school.learning.outcome.list</field>
+        <field name="model">school.learning.outcome</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-success="covered" decoration-muted="not covered">
+                <field name="academic_year_id" optional="hide"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="unit_id"/>
+                <field name="topic_id" optional="show"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="bloom_level" optional="show"/>
+                <field name="taught_count"/>
+                <field name="covered" widget="boolean"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_learning_outcome_search" model="ir.ui.view">
+        <field name="name">school.learning.outcome.search</field>
+        <field name="model">school.learning.outcome</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="subject_id"/>
+                <field name="class_id"/>
+                <field name="unit_id"/>
+                <filter name="mine" string="My subjects" domain="[('teacher_user_id', '=', uid)]"/>
+                <filter name="not_covered" string="Not yet taught" domain="[('covered', '=', False)]"/>
+                <filter name="covered" string="Covered" domain="[('covered', '=', True)]"/>
+                <separator/>
+                <filter name="published" string="Published syllabus" domain="[('syllabus_state', '=', 'published')]"/>
+                <group>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_unit" string="Unit" context="{'group_by': 'unit_id'}"/>
+                    <filter name="group_bloom" string="Thinking Level" context="{'group_by': 'bloom_level'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_school_learning_outcome_pivot" model="ir.ui.view">
+        <field name="name">school.learning.outcome.pivot</field>
+        <field name="model">school.learning.outcome</field>
+        <field name="arch" type="xml">
+            <pivot string="Outcome coverage">
+                <field name="class_id" type="row"/>
+                <field name="subject_id" type="row"/>
+                <field name="bloom_level" type="col"/>
+                <field name="taught_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_learning_outcome" model="ir.actions.act_window">
+        <field name="name">Learning Outcomes</field>
+        <field name="res_model">school.learning.outcome</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{'search_default_published': 1, 'search_default_group_subject': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No learning outcomes yet</p>
+            <p>Add them in the <b>Learning Outcomes</b> tab of a syllabus.</p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         LESSON PLANS
+         ================================================================ -->
+    <record id="view_school_lesson_plan_list" model="ir.ui.view">
+        <field name="name">school.lesson.plan.list</field>
+        <field name="model">school.lesson.plan</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'approved'" decoration-warning="state == 'submitted'"
+                  decoration-danger="state == 'rejected'">
+                <field name="planned_date"/>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="section_id" optional="show"/>
+                <field name="subject_id"/>
+                <field name="teacher_id"/>
+                <field name="periods" optional="hide"/>
+                <field name="diary_count" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'approved'"
+                       decoration-warning="state == 'submitted'" decoration-danger="state == 'rejected'"
+                       decoration-info="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_lesson_plan_form" model="ir.ui.view">
+        <field name="name">school.lesson.plan.form</field>
+        <field name="model">school.lesson.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" string="Submit for Approval" type="object" class="btn-primary"
+                            invisible="state not in ('draft', 'rejected')"/>
+                    <button name="action_approve" string="Approve" type="object" class="btn-primary"
+                            invisible="state != 'submitted'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_reject" string="Send Back" type="object" invisible="state != 'submitted'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_set_draft" string="Back to Draft" type="object"
+                            invisible="state not in ('submitted', 'rejected', 'approved')"/>
+                    <button name="action_create_diary" string="I Taught This (Class Diary)" type="object"
+                            invisible="state != 'approved'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="state != 'rejected'">
+                        Sent back by the principal: <b><field name="reject_reason" readonly="1" nolabel="1" class="d-inline"/></b>
+                    </div>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_diary" type="object" class="oe_stat_button" icon="fa-book" invisible="not id">
+                            <field name="diary_count" widget="statinfo" string="Class Diary"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Counting up to 100"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="syllabus_id"/>
+                            <field name="class_id"/>
+                            <field name="subject_id"/>
+                            <field name="section_id" placeholder="Whole class"/>
+                            <field name="teacher_id"/>
+                        </group>
+                        <group>
+                            <field name="planned_date"/>
+                            <field name="periods"/>
+                            <field name="unit_id" options="{'no_create': True}"/>
+                            <field name="topic_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="outcome_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Plan" name="plan">
+                            <group>
+                                <field name="objectives" placeholder="By the end of the lesson the student will..."/>
+                                <field name="activities" placeholder="Introduction, explanation, activity, practice..."/>
+                                <field name="teaching_aids"/>
+                                <field name="assessment"/>
+                                <field name="homework_plan"/>
+                            </group>
+                        </page>
+                        <page string="Files" name="files">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Approval" name="approval" invisible="state in ('draft',)">
+                            <group>
+                                <field name="submitted_datetime"/>
+                                <field name="approved_by"/>
+                                <field name="approved_datetime"/>
+                                <field name="reject_reason" readonly="state != 'submitted'"
+                                       placeholder="Principal: write the reason here, then press Send Back..."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_lesson_plan_search" model="ir.ui.view">
+        <field name="name">school.lesson.plan.search</field>
+        <field name="model">school.lesson.plan</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="teacher_id"/>
+                <filter name="mine" string="My plans" domain="[('teacher_user_id', '=', uid)]"/>
+                <filter name="to_approve" string="To approve" domain="[('state', '=', 'submitted')]"/>
+                <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="rejected" string="Sent back" domain="[('state', '=', 'rejected')]"/>
+                <group>
+                    <filter name="group_teacher" string="Teacher" context="{'group_by': 'teacher_id'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_lesson_plan" model="ir.actions.act_window">
+        <field name="name">Lesson Plans</field>
+        <field name="res_model">school.lesson.plan</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Plan your first lesson</p>
+            <p>Choose the syllabus, topics and learning outcomes, write the activities, and submit it to the principal.</p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         CLASS DIARY
+         ================================================================ -->
+    <record id="view_school_class_diary_list" model="ir.ui.view">
+        <field name="name">school.class.diary.list</field>
+        <field name="model">school.class.diary</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'draft'">
+                <field name="date"/>
+                <field name="class_id"/>
+                <field name="section_id" optional="show"/>
+                <field name="subject_id"/>
+                <field name="period_no" optional="show"/>
+                <field name="teacher_id"/>
+                <field name="summary" optional="show"/>
+                <field name="homework_count" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'published'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_class_diary_form" model="ir.ui.view">
+        <field name="name">school.class.diary.form</field>
+        <field name="model">school.class.diary</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" string="Publish to Students &amp; Parents" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_unpublish" string="Back to Draft" type="object" invisible="state != 'published'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_homework" type="object" class="oe_stat_button" icon="fa-pencil-square-o"
+                                invisible="not id">
+                            <field name="homework_count" widget="statinfo" string="Homework"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group string="Which lesson">
+                            <field name="date"/>
+                            <field name="class_id"/>
+                            <field name="section_id" placeholder="All sections"/>
+                            <field name="subject_id"/>
+                            <field name="period_no"/>
+                            <field name="teacher_id"/>
+                        </group>
+                        <group string="Linked to" invisible="1">   <!-- hidden on screen; "I Taught This" still fills these -->
+                            <field name="lesson_plan_id" options="{'no_create': True}"/>
+                            <field name="syllabus_id"/>
+                            <field name="topic_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="mark_topics_done"/>
+                            <field name="outcome_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="summary" placeholder="What was taught today..."/>
+                        <field name="classwork"/>
+                        <field name="homework_text" placeholder="Short homework note (or press Give Homework to make a real one)"/>
+                        <field name="remarks" placeholder="Anything parents should know..."/>
+                    </group>
+                    <notebook>
+                        <page string="Homework" name="homework">
+                            <field name="homework_ids">
+                                <list create="0" delete="0">
+                                    <field name="name"/>
+                                    <field name="due_datetime"/>
+                                    <field name="max_marks"/>
+                                    <field name="submission_count"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_class_diary_search" model="ir.ui.view">
+        <field name="name">school.class.diary.search</field>
+        <field name="model">school.class.diary</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="teacher_id"/>
+                <field name="summary"/>
+                <filter name="mine" string="My entries" domain="[('teacher_user_id', '=', uid)]"/>
+                <filter name="today" string="Today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="published" string="Published" domain="[('state', '=', 'published')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <group>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date:day'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_teacher" string="Teacher" context="{'group_by': 'teacher_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_class_diary" model="ir.actions.act_window">
+        <field name="name">Class Diary</field>
+        <field name="res_model">school.class.diary</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Write today's class diary</p>
+            <p>Record what you taught and the homework. When you publish it, students and parents see it in the portal.</p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         HOMEWORK (= Online Exam assignment of type Homework)
+         ================================================================ -->
+    <record id="view_school_oe_assignment_form_homework" model="ir.ui.view">
+        <field name="name">school.oe.assignment.form.homework</field>
+        <field name="model">school.oe.assignment</field>
+        <field name="inherit_id" ref="school_online_exam.view_school_oe_assignment_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='school_exam_id']" position="after">
+                <field name="diary_id" options="{'no_create': True}"/>
+                <field name="outcome_ids" widget="many2many_tags" options="{'no_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_school_homework" model="ir.actions.act_window">
+        <field name="name">Homework</field>
+        <field name="res_model">school.oe.assignment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('kind', '=', 'homework')]</field>
+        <field name="context">{'default_kind': 'homework', 'default_max_marks': 10.0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No homework yet</p>
+            <p>Open a class diary entry and press <b>Give Homework</b>, or create it here. Students upload their
+               work in the portal; you give marks and feedback in <b>Check Homework</b>.</p>
+        </field>
+    </record>
+
+    <record id="action_school_homework_submissions" model="ir.actions.act_window">
+        <field name="name">Check Homework</field>
+        <field name="res_model">school.oe.submission</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('assignment_id.kind', '=', 'homework'), ('state', '!=', 'draft')]</field>
+        <field name="context">{'search_default_to_evaluate': 1}</field>
+    </record>
+</odoo>

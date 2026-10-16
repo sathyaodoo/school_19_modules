@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_curriculum_list" model="ir.ui.view">
+        <field name="name">school.curriculum.list</field>
+        <field name="model">school.curriculum</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state in ('published', 'done')" decoration-muted="state == 'archived'">
+                <field name="name"/>
+                <field name="academic_year_id"/>
+                <field name="class_id"/>
+                <field name="teacher_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="subject_count"/>
+                <field name="periods_per_week"/>
+                <field name="total_periods"/>
+                <field name="state" widget="badge" decoration-success="state in ('published', 'done')"
+                       decoration-info="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_curriculum_form" model="ir.ui.view">
+        <field name="name">school.curriculum.form</field>
+        <field name="model">school.curriculum</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" string="Publish" type="object" class="btn-primary"
+                            invisible="state != 'draft'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_set_draft" string="Back to Draft" type="object"
+                            invisible="state == 'draft'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_archive_curriculum" string="Archive" type="object"
+                            invisible="state not in ('published', 'done')"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                    <button name="action_open_copy_wizard" string="Copy to Another Year" type="object"
+                            invisible="not id"/>
+                    <button name="action_create_syllabus_drafts" string="Create Syllabus Drafts" type="object"
+                            invisible="state not in ('published', 'done')"
+                            confirm="Create a draft syllabus for every subject and tell the subject teachers?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_syllabus" type="object" class="oe_stat_button" icon="fa-book"
+                                invisible="not id">
+                            <field name="syllabus_count" widget="statinfo" string="Syllabus"/>
+                        </button>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="state != 'draft'">
+                        Draft: teachers can edit. The principal / admin publishes it; after that only they can change it.
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Class 1 - 2026-27 Curriculum"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="can_edit_structure" invisible="1"/>
+                            <field name="academic_year_id"/>
+                            <label for="year_start" string="Academic Year Runs"/>
+                            <div class="o_row">
+                                <field name="year_start" readonly="1"/> <span>to</span> <field name="year_end" readonly="1"/>
+                            </div>
+                            <field name="teacher_id" options="{'no_create': True}"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="teaching_weeks"/>
+                            <field name="subject_count"/>
+                            <field name="total_periods"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Subjects" name="subjects">
+                            <div class="text-muted mb-2">
+                                One row for every topic: its class, section, subject, topic, description, dates and status. The class of the first row is the class of the curriculum. After publishing, the teacher changes only the <b>Status</b>; when every topic is Completed the curriculum becomes <b>Done</b>.
+                                The dates must be inside the academic year. A new subject is added to the
+                                <b>Periods &amp; Teachers</b> tab by itself.
+                            </div>
+                            <field name="plan_ids" context="{'default_class_id': class_id}">
+                                <list editable="bottom" decoration-success="status == 'completed'"
+                                      decoration-warning="status == 'in_progress'">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="class_id" options="{'no_create': True}" readonly="not parent.can_edit_structure"/>
+                                    <field name="section_id" options="{'no_create': True}" readonly="not parent.can_edit_structure"/>
+                                    <field name="subject_id" options="{'no_create': True}" readonly="not parent.can_edit_structure"
+                                           domain="['|', ('class_ids', '=', False), ('class_ids', 'in', [class_id])]"/>
+                                    <field name="topic" readonly="not parent.can_edit_structure"/>
+                                    <field name="description" readonly="not parent.can_edit_structure"/>
+                                    <field name="date_start" readonly="not parent.can_edit_structure"/>
+                                    <field name="date_end" readonly="not parent.can_edit_structure"/>
+                                    <field name="status"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Periods &amp; Teachers" name="periods">
+                            <div class="text-muted mb-2">
+                                Periods per week and the subject teacher of every subject. Fill the periods here.
+                            </div>
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="subject_id"/>
+                                    <field name="subject_type"/>
+                                    <field name="periods_per_week"/>
+                                    <field name="total_periods"/>
+                                    <field name="teacher_id"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Overview &amp; Objectives" name="overview">
+                            <field name="description" placeholder="Aims, approach and objectives of this curriculum..."/>
+                        </page>
+                        <page string="Approval" name="approval" invisible="state == 'draft'">
+                            <group>
+                                <field name="approved_by"/>
+                                <field name="approved_datetime"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_curriculum_search" model="ir.ui.view">
+        <field name="name">school.curriculum.search</field>
+        <field name="model">school.curriculum</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="class_id"/>
+                <field name="academic_year_id"/>
+                <filter name="published" string="Published" domain="[('state', '=', 'published')]"/>
+                <filter name="done" string="Done" domain="[('state', '=', 'done')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="archived" string="Archived" domain="[('state', '=', 'archived')]"/>
+                <group>
+                    <filter name="group_year" string="Academic Year" context="{'group_by': 'academic_year_id'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_curriculum" model="ir.actions.act_window">
+        <field name="name">Curriculum</field>
+        <field name="res_model">school.curriculum</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_year': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create the first curriculum</p>
+            <p>One curriculum per class and academic year: the subjects, periods per week and annual periods.</p>
+        </field>
+    </record>
+
+    <!-- ===== periods overview (pivot / graph over all subject lines) ===== -->
+    <record id="view_school_curriculum_line_pivot" model="ir.ui.view">
+        <field name="name">school.curriculum.line.pivot</field>
+        <field name="model">school.curriculum.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Periods overview">
+                <field name="class_id" type="row"/>
+                <field name="subject_id" type="col"/>
+                <field name="periods_per_week" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_curriculum_line_graph" model="ir.ui.view">
+        <field name="name">school.curriculum.line.graph</field>
+        <field name="model">school.curriculum.line</field>
+        <field name="arch" type="xml">
+            <graph string="Annual periods" type="bar">
+                <field name="subject_id"/>
+                <field name="total_periods" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_curriculum_line_list" model="ir.ui.view">
+        <field name="name">school.curriculum.line.list</field>
+        <field name="model">school.curriculum.line</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="academic_year_id"/>
+                <field name="class_id"/>
+                <field name="subject_id"/>
+                <field name="subject_type"/>
+                <field name="periods_per_week"/>
+                <field name="total_periods"/>
+                <field name="teacher_id"/>
+                <field name="curriculum_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_curriculum_line_search" model="ir.ui.view">
+        <field name="name">school.curriculum.line.search</field>
+        <field name="model">school.curriculum.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="subject_id"/>
+                <field name="class_id"/>
+                <field name="academic_year_id"/>
+                <field name="teacher_id"/>
+                <filter name="published" string="Published" domain="[('curriculum_state', 'in', ('published', 'done'))]"/>
+                <group>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_teacher" string="Teacher" context="{'group_by': 'teacher_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- "My Subjects": the published subject lines where I am the subject teacher -->
+    <record id="action_school_curriculum_my_subjects" model="ir.actions.act_window">
+        <field name="name">My Subjects</field>
+        <field name="res_model">school.curriculum.line</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('teacher_user_id', '=', uid), ('curriculum_state', 'in', ('published', 'done'))]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No subject is assigned to you yet</p>
+            <p>When the principal publishes a curriculum in which you are the subject teacher,
+               it appears here and you get a notification.</p>
+        </field>
+    </record>
+
+    <record id="action_school_curriculum_line" model="ir.actions.act_window">
+        <field name="name">Periods Overview</field>
+        <field name="res_model">school.curriculum.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_published': 1}</field>
+    </record>
+</odoo>

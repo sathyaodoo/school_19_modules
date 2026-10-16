@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <function model="school.subject" name="_sync_all_teacher_classes"/>
     <record id="view_school_student_tree" model="ir.ui.view">
         <field name="name">school.student.tree</field>
         <field name="model">school.student</field>
@@ -11,6 +12,19 @@
                 <field name="section_id"/>
                 <field name="roll_number"/>
                 <field name="student_status" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_student_birthday_tree" model="ir.ui.view">
+        <field name="name">school.student.birthday.tree</field>
+        <field name="model">school.student</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <field name="name" string="Student Name"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="date_of_birth" string="Date of Birth"/>
             </list>
         </field>
     </record>
@@ -75,7 +89,7 @@
                         <group string="Academic Information">
                             <field name="academic_year_id"/>
                             <field name="class_id"/>
-                            <field name="section_id"/>
+                            <field name="section_id" domain="[('class_id', '=', class_id)]"/>
                             <field name="roll_number"/>
                             <field name="gpa" readonly="1"/>
                             <field name="company_id" groups="base.group_multi_company"/>
@@ -99,6 +113,15 @@
                                     <field name="caste"/>
                                 </group>
                             </group>
+                            <group string="Additional Information">
+                                <group>
+                                    <field name="hobbies"/>
+                                </group>
+                                <group>
+                                    <field name="date_of_leaving"/>
+                                    <field name="reason_for_leaving" invisible="not date_of_leaving"/>
+                                </group>
+                            </group>
                         </page>
                         <page string="Parents &amp; Guardians" name="parents">
                             <field name="parent_ids">
@@ -107,14 +130,55 @@
                                     <field name="relation"/>
                                     <field name="phone"/>
                                     <field name="email"/>
+                                    <field name="occupation"/>
+                                    <field name="annual_income"/>
+                                    <field name="student_ids" widget="many2many_tags"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="Facilities" name="facilities">
+                       <page string="Facilities" name="facilities">
                             <group>
                                 <group string="Transport">
                                     <field name="transport_route_id"/>
+                                    <field name="van_boarding_point_id"/>
+                                    <field name="vehicle_id" invisible="not transport_route_id"/>
+                                    <field name="vehicle_number" invisible="not vehicle_id"/>
                                 </group>
+                            </group>
+                            <!-- CHANGED: transport fee can be created / invoiced right here (admin, principal, accountant see it) -->
+                            <group string="Transport Fee History" invisible="not transport_route_id"
+                                   groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
+                                <div colspan="2" groups="ad_school_management.group_school_admin,ad_school_management.group_school_accountant">
+                                    <button name="action_generate_transport_fee" type="object" class="btn-primary"
+                                            string="Generate This Month's Fee" invisible="not id"/>
+                                </div>
+                                <field name="transport_fee_ids" nolabel="1" colspan="2"
+                                       context="{'default_route_id': transport_route_id}">
+                                    <list editable="bottom">
+                                        <field name="billing_month" readonly="invoice_id"/>
+                                        <field name="route_id" readonly="invoice_id" options="{'no_create': True}"/>
+                                        <field name="amount" readonly="invoice_id"/>
+                                        <field name="state" widget="badge"/>
+                                        <field name="invoice_id" column_invisible="1"/>
+                                        <button name="action_create_invoice" type="object" icon="fa-file-text-o"
+                                                title="Create Invoice" invisible="invoice_id or not id"/>
+                                        <button name="action_view_invoice" type="object" icon="fa-external-link"
+                                                title="View Invoice" invisible="not invoice_id"/>
+                                    </list>
+                                </field>
+                            </group>
+                            <!-- only admin / principal / accountant see route change requests -->
+                            <group string="Route Change Requests"
+                                   groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
+                                <field name="route_change_request_ids" nolabel="1" readonly="1" colspan="2">
+                                    <list>
+                                        <field name="request_date"/>
+                                        <field name="current_route_id"/>
+                                        <field name="requested_route_id"/>
+                                        <field name="reason"/>
+                                        <field name="state" widget="badge"/>
+                                    </list>
+                                </field>
                             </group>
                         </page>
                         <page string="Medical &amp; Notes" name="medical_notes">
@@ -122,6 +186,79 @@
                                 <field name="emergency_contact"/>
                                 <field name="medical_notes" placeholder="Any allergies, chronic illnesses, or general medical notes..."/>
                             </group>
+                        </page>
+                         <page string="Sponsorship &amp; Scholarship" name="sponsorship">
+                            <group>
+                                <group string="Sponsor">
+                                    <field name="sponsor_name"/>
+                                    <field name="sponsor_type"/>
+                                    <field name="sponsor_contact"/>
+                                    <field name="sponsorship_status"/>
+                                    <field name="relationship_to_student"/>
+                                </group>
+                                <group string="Scholarship">
+                                    <field name="scholarship_amount"/>
+                                    <field name="scholarship_type"/>
+                                    <field name="scholarship_approved_date"/>
+                                    <field name="scholarship_expiry_date"/>
+                                    <field name="merit_tag"/>
+                                </group>
+                            </group>
+                            <group string="Scholarship / Discount Applied in Fees"
+                                   groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
+                                <field name="fee_concession_total"/>
+                            </group>
+                            <field name="student_fee_ids" readonly="1" nolabel="1"
+                                   groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="structure_id"/>
+                                    <field name="academic_year_id"/>
+                                    <field name="amount"/>
+                                    <field name="discount"/>
+                                    <field name="scholarship"/>
+                                    <field name="scholarship_value"/>
+                                    <field name="concession_amount" sum="Total"/>
+                                    <field name="net_amount"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Fees" name="fees"
+                              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
+                            <group>
+                                <group>
+                                    <field name="fee_total"/>
+                                    <field name="fee_concession_total"/>
+                                </group>
+                                <group>
+                                    <field name="fee_paid_total"/>
+                                    <field name="fee_due_total" decoration-danger="fee_due_total &gt; 0"/>
+                                </group>
+                            </group>
+                            <field name="student_fee_ids" readonly="1" nolabel="1"
+                                   groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
+                                <list decoration-success="state == 'paid'" decoration-warning="state == 'invoiced'">
+                                    <field name="name"/>
+                                    <field name="structure_id"/>
+                                    <field name="academic_year_id"/>
+                                    <field name="net_amount" sum="Total"/>
+                                    <field name="paid_amount" sum="Total"/>
+                                    <field name="due_amount" sum="Total"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                       
+                            <page string="Siblings" name="siblings">
+                            <field name="sibling_ids">
+                                <list editable="bottom">
+                                    <field name="sibling_student_id"/>
+                                    <field name="sibling_class_id"/>
+                                    <field name="sibling_section_id"/>
+                                    <field name="sibling_admission_no"/>
+                                    <field name="relation_type"/>
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

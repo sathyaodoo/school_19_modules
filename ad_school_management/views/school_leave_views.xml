@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============ Time Off Type: school rules ============ -->
+    <record id="view_hr_leave_type_form_school" model="ir.ui.view">
+        <field name="name">hr.leave.type.form.school</field>
+        <field name="model">hr.leave.type</field>
+        <field name="inherit_id" ref="hr_holidays.edit_holiday_status_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='leave_validation']" position="inside">
+                <field name="school_approval_workflow"/>
+                <field name="school_is_medical" invisible="not school_approval_workflow"/>
+            </xpath>
+            <xpath expr="//group[@name='configuration']/.." position="before">
+                <group name="school_leave_rules" string="School Leave Rules" invisible="not school_approval_workflow">
+                    <group>
+                        <field name="school_notice_days" invisible="school_is_medical"/>
+                        <field name="school_long_leave_days" invisible="school_is_medical"/>
+                        <field name="school_long_leave_notice_days" invisible="school_is_medical"/>
+                        <field name="school_principal_lead_days" invisible="school_is_medical"/>
+                    </group>
+                    <group>
+                        <div colspan="2" class="text-muted">
+                            Flow: Teacher request → Admin (1st level) → HR Manager (2nd level) → Principal (final).
+                            <br/>Medical leave is exempt from the notice rules, but a medical certificate
+                            must be attached for any duration.
+                        </div>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============ Time Off request form ============ -->
+    <record id="view_hr_leave_form_school" model="ir.ui.view">
+        <field name="name">hr.leave.form.school</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Replace the standard 2-step statusbar with the school stages -->
+            <xpath expr="//header/field[@name='state'][1]" position="attributes">
+                <attribute name="invisible">validation_type != 'both' or is_school_workflow</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <field name="school_approval_stage" widget="statusbar"
+                       statusbar_visible="admin,hr,principal,approved"
+                       invisible="not is_school_workflow"/>
+            </xpath>
+
+            <xpath expr="//div[hasclass('o_hr_leave_content')]" position="before">
+                <field name="is_school_workflow" invisible="1"/>
+                <field name="school_is_medical" invisible="1"/>
+                <field name="school_hr_approved" invisible="1"/>
+                <div class="alert alert-warning mt-2" role="alert"
+                     invisible="not school_notice_warning">
+                    <field name="school_notice_warning" readonly="1"/>
+                </div>
+                <div class="alert alert-danger mt-2" role="alert"
+                     invisible="not school_is_medical or supported_attachment_ids_count or state not in ['confirm', 'validate1']">
+                    Medical leave: a medical certificate must be attached (any duration).
+                    It cannot be approved without it.
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('o_hr_leave_content')]" position="after">
+                <group string="School Approval" invisible="not is_school_workflow">
+                    <group>
+                        <field name="school_notice_given_days" invisible="school_is_medical"/>
+                        <field name="school_principal_deadline" invisible="school_is_medical or not school_principal_deadline"/>
+                    </group>
+                    <group>
+                        <label for="school_admin_approver_id" string="1. Admin"/>
+                        <div class="o_row">
+                            <field name="school_admin_approver_id"/>
+                            <field name="school_admin_approval_date"/>
+                        </div>
+                        <label for="school_hr_approver_id" string="2. HR Manager"/>
+                        <div class="o_row">
+                            <field name="school_hr_approver_id"/>
+                            <field name="school_hr_approval_date"/>
+                        </div>
+                        <label for="school_principal_approver_id" string="3. Principal"/>
+                        <div class="o_row">
+                            <field name="school_principal_approver_id"/>
+                            <field name="school_principal_approval_date"/>
+                        </div>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============ List ============ -->
+    <record id="view_hr_leave_list_school" model="ir.ui.view">
+        <field name="name">hr.leave.list.school</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="school_approval_stage" optional="show" widget="badge"
+                       decoration-info="school_approval_stage in ('admin', 'hr', 'principal')"
+                       decoration-success="school_approval_stage == 'approved'"
+                       decoration-danger="school_approval_stage == 'refused'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============ Search ============ -->
+    <record id="view_hr_leave_search_school" model="ir.ui.view">
+        <field name="name">hr.leave.search.school</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.view_hr_holidays_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='to_approve']" position="after">
+                <separator/>
+                <filter string="Pending: Admin" name="school_pending_admin"
+                        domain="[('school_approval_stage', '=', 'admin')]"/>
+                <filter string="Pending: HR Manager" name="school_pending_hr"
+                        domain="[('school_approval_stage', '=', 'hr')]"/>
+                <filter string="Pending: Principal" name="school_pending_principal"
+                        domain="[('school_approval_stage', '=', 'principal')]"/>
+            </xpath>
+            <xpath expr="//filter[@name='group_state']" position="after">
+                <filter name="group_school_stage" string="Approval Stage"
+                        context="{'group_by': 'school_approval_stage'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============ Action + menu ============ -->
+    <record id="action_school_leave_approval" model="ir.actions.act_window">
+        <field name="name">Leave Approvals</field>
+        <field name="res_model">hr.leave</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('hr_holidays.hr_leave_view_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('hr_holidays.hr_leave_view_form_manager')})]"/>
+        <field name="search_view_id" ref="hr_holidays.view_hr_holidays_filter"/>
+        <field name="domain">[('holiday_status_id.school_approval_workflow', '=', True)]</field>
+        <field name="context">{'search_default_to_approve': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No leave requests waiting for approval</p>
+            <p>Teachers apply from the portal (My Account → Leave Requests) or from the Time Off app.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_school_leave_approval" name="Leave Approvals"
+              parent="menu_school_personnel" action="action_school_leave_approval" sequence="45"
+              groups="group_school_admin,group_school_hr_manager,group_school_principal"/>
+
+</odoo>

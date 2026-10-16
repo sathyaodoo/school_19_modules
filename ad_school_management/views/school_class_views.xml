@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+       <function model="school.class" name="_migrate_class_teachers"/>
+    <function model="school.class" name="_cleanup_class_teacher_links"/>
     <record id="view_school_class_tree" model="ir.ui.view">
         <field name="name">school.class.tree</field>
         <field name="model">school.class</field>
@@ -8,7 +10,6 @@
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="code"/>
-                <field name="class_teacher_id"/>
                 <field name="active" widget="boolean_toggle"/>
             </list>
         </field>
@@ -32,7 +33,6 @@
                             <field name="sequence"/>
                         </group>
                         <group>
-                            <field name="class_teacher_id"/>
                             <field name="active" invisible="1"/>
                         </group>
                     </group>
@@ -41,6 +41,7 @@
                             <field name="section_ids">
                                 <list editable="bottom">
                                     <field name="name"/>
+                                    <field name="class_teacher_id" options="{'no_create': True}"/>
                                     <field name="capacity"/>
                                 </list>
                             </field>
@@ -62,7 +63,7 @@
             <search>
                 <field name="name"/>
                 <field name="code"/>
-                <field name="class_teacher_id"/>
+ <field name="section_ids" string="Class Teacher" filter_domain="[('section_ids.class_teacher_id', 'ilike', self)]"/>
                 <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
             </search>
         </field>

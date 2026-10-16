@@ -164,4 +164,5 @@
     <menuitem id="menu_school_library_sub" name="Library" parent="ad_school_management.menu_school_facilities" sequence="10"/>
     <menuitem id="menu_school_book" name="Books Catalog" parent="menu_school_library_sub" action="action_school_book" sequence="10"/>
     <menuitem id="menu_school_book_issue" name="Book Issues" parent="menu_school_library_sub" action="action_school_book_issue" sequence="20"/>
+
 </odoo>
