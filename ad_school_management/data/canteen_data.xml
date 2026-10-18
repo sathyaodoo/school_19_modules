@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Default customer for guests / visitors buying at the canteen counter -->
+    <record id="partner_canteen_walk_in" model="res.partner">
+        <field name="name">Canteen Walk-in Customer</field>
+        <field name="comment">Used for canteen sales to guests and visitors.</field>
+    </record>
+</odoo>

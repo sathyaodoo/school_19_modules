@@ -17,10 +17,19 @@
          letterhead and footer repeat on each page). One document per student
          would need the "patched Qt" build of wkhtmltopdf; this works with any
          build. BRS columns: Student Name, Admission No (student block), Exam,
-         Subject, Marks, Grade, Percentage. -->
+         Subject, Marks, Grade, Percentage.
+         When Settings > School Management > Exam Marks > "Allow Activity
+         Marks in Exam Total" is ticked, the activity marks a teacher added to
+         a subject (exam > Activity Marks tab) are added to THAT subject
+         (Activity + Final Marks columns; a subject never goes above its max
+         marks) and to the Total row. -->
     <template id="report_exam_mark_list">
         <t t-call="web.html_container">
             <t t-set="grades" t-value="docs.env['school.grade']"/>
+            <!-- {(student id, exam id, subject id): activity marks the teacher added
+                 to that subject in the exam's Activity Marks tab}; empty unless
+                 Settings > Exam Marks is ticked. -->
+            <t t-set="activity_details" t-value="docs.get_activity_mark_details()"/>
             <t t-set="students" t-value="docs.student_id.sorted(lambda s: (s.class_id.name or '', s.section_id.name or '', s.name or ''))"/>
             <t t-set="o" t-value="docs[:1]"/>
             <t t-call="web.external_layout">
@@ -53,39 +62,62 @@
                             </tr>
                         </table>
 
-                        <!-- Marks -->
+                        <!-- Marks. Activity marks (if any) are added to the subject they
+                             were given to; grade, percentage and result of that row use the
+                             subject's final marks. -->
+                        <!-- one tuple per subject: (result, activity added, final marks,
+                             percentage, grade, passed) - built in Python (get_mark_list_rows) -->
+                        <t t-set="rows" t-value="lines.get_mark_list_rows(activity_details)"/>
+                        <t t-set="has_activity" t-value="any(r[1] for r in rows)"/>
                         <table class="table table-sm table-bordered" style="font-size: 13px;">
                             <thead>
                                 <tr>
                                     <th style="background-color: #dbe4f0;">Exam</th>
                                     <th style="background-color: #dbe4f0;">Subject</th>
                                     <th class="text-end" style="background-color: #dbe4f0;">Marks</th>
+                                    <th t-if="has_activity" class="text-end" style="background-color: #dbe4f0;">Activity</th>
+                                    <th t-if="has_activity" class="text-end" style="background-color: #dbe4f0;">Final Marks</th>
                                     <th class="text-center" style="background-color: #dbe4f0;">Grade</th>
                                     <th class="text-end" style="background-color: #dbe4f0;">Percentage</th>
                                     <th class="text-center" style="background-color: #dbe4f0;">Result</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr t-foreach="lines" t-as="line">
-                                    <t t-set="fail_style" t-value="'color: #dc3545;' if line.result_status == 'fail' else ''"/>
+                                <tr t-foreach="rows" t-as="row">
+                                    <t t-set="line" t-value="row[0]"/>
+                                    <t t-set="fail_style" t-value="'color: #dc3545;' if not row[5] else ''"/>
                                     <td t-att-style="fail_style"><span t-out="line.exam_id.name"/></td>
                                     <td t-att-style="fail_style"><span t-out="line.subject_id.name"/></td>
                                     <td class="text-end" t-att-style="fail_style">
                                         <span t-out="'%g' % line.marks_obtained"/> / <span t-out="'%g' % line.max_marks"/>
                                     </td>
-                                    <td class="text-center" t-att-style="fail_style"><span t-out="line.grade_id.grade or '-'"/></td>
-                                    <td class="text-end" t-att-style="fail_style"><span t-out="'%.2f' % line.percentage"/> %</td>
+                                    <td t-if="has_activity" class="text-end" t-att-style="fail_style">
+                                        <t t-if="row[1]">+ <span t-out="'%g' % row[1]"/></t>
+                                        <t t-else="">-</t>
+                                    </td>
+                                    <td t-if="has_activity" class="text-end fw-bold" t-att-style="fail_style">
+                                        <span t-out="'%g' % row[2]"/> / <span t-out="'%g' % line.max_marks"/>
+                                    </td>
+                                    <td class="text-center" t-att-style="fail_style"><span t-out="row[4].grade or '-'"/></td>
+                                    <td class="text-end" t-att-style="fail_style"><span t-out="'%.2f' % row[3]"/> %</td>
                                     <td class="text-center" t-att-style="fail_style">
-                                        <span t-out="'Pass' if line.result_status == 'pass' else 'Fail'"/>
+                                        <span t-out="'Pass' if row[5] else 'Fail'"/>
                                     </td>
                                 </tr>
-                                <t t-set="obtained" t-value="sum(lines.mapped('marks_obtained'))"/>
+                                <t t-set="obtained" t-value="sum(r[2] for r in rows)"/>
                                 <t t-set="maximum" t-value="sum(lines.mapped('max_marks'))"/>
+                                <t t-set="activity_total" t-value="sum(r[1] for r in rows)"/>
                                 <t t-set="total_pct" t-value="(obtained / maximum * 100.0) if maximum else 0.0"/>
                                 <t t-set="total_grade" t-value="grades.search([('min_mark', '&lt;=', total_pct), ('max_mark', '&gt;=', total_pct)], limit=1)"/>
                                 <tr class="fw-bold">
                                     <td colspan="2" class="text-end" style="background-color: #f2f2f2;">Total</td>
-                                    <td class="text-end" style="background-color: #f2f2f2;"><span t-out="'%g' % obtained"/> / <span t-out="'%g' % maximum"/></td>
+                                    <td class="text-end" style="background-color: #f2f2f2;">
+                                        <span t-out="'%g' % sum(lines.mapped('marks_obtained'))"/> / <span t-out="'%g' % maximum"/>
+                                    </td>
+                                    <td t-if="has_activity" class="text-end" style="background-color: #f2f2f2;">+ <span t-out="'%g' % activity_total"/></td>
+                                    <td t-if="has_activity" class="text-end" style="background-color: #f2f2f2;">
+                                        <span t-out="'%g' % obtained"/> / <span t-out="'%g' % maximum"/>
+                                    </td>
                                     <td class="text-center" style="background-color: #f2f2f2;"><span t-out="total_grade.grade or '-'"/></td>
                                     <td class="text-end" style="background-color: #f2f2f2;"><span t-out="'%.2f' % total_pct"/> %</td>
                                     <td style="background-color: #f2f2f2;"></td>
@@ -93,15 +125,15 @@
                             </tbody>
                         </table>
 
-                        <!-- Overall result -->
-                        <t t-set="failed" t-value="lines.filtered(lambda r: r.result_status == 'fail')"/>
+                        <!-- Overall result (uses each subject's final marks) -->
+                        <t t-set="failed" t-value="[r[0] for r in rows if not r[5]]"/>
                         <p style="font-size: 14px;">
                             <strong>Overall Result: </strong>
                             <strong t-if="not failed" style="color: #198754;">PASS</strong>
                             <strong t-else="" style="color: #dc3545;">FAIL</strong>
                             <span t-if="failed" class="text-muted">
                                 (<span t-out="len(failed)"/> subject(s) below the pass mark:
-                                <span t-out="', '.join(failed.subject_id.mapped('name'))"/>)</span>
+                                <span t-out="', '.join(r.subject_id.name for r in failed)"/>)</span>
                         </p>
 
                         <!-- Signatures -->

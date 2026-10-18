@@ -13,12 +13,14 @@ from . import school_admission
 from . import school_timetable
 from . import school_attendance
 from . import school_exam
+from . import school_exam_activity_mark
 from . import school_grade
 from . import school_fee
 from . import school_transport
 from . import school_promotion
 from . import school_dashboard
 from . import school_library
+from . import school_library_reading
 from . import school_hostel
 from . import school_maintenance
 from . import school_purchase
@@ -33,4 +35,9 @@ from . import hr_leave_type
 from . import hr_leave
 from . import school_house
 from . import school_event
+from . import school_house_point
+from . import school_student_activity_score
 from . import school_substitution
+from . import school_early_warning
+from . import school_teacher_growth
+from . import school_student_360

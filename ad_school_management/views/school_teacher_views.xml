@@ -55,6 +55,19 @@
                         <page string="Assigned Subjects" name="subjects">
                             <field name="subject_ids" widget="many2many_tags"/>
                         </page>
+                        <page string="Timetable" name="timetable">
+                            <field name="weekly_period_count" invisible="1"/>
+                            <field name="timetable_line_ids" readonly="1">
+                                <list>
+                                    <field name="day_of_week"/>
+                                    <field name="start_time" widget="float_time"/>
+                                    <field name="end_time" widget="float_time"/>
+                                    <field name="subject_id"/>
+                                    <field name="class_name"/>
+                                    <field name="classroom"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
                 <chatter/>

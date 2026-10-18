@@ -91,6 +91,17 @@
                         <field name="school_house_ids" widget="many2many_tags" options="{'color_field': 'color'}"
                                invisible="school_participation != 'group'"/>
                     </group>
+                    <!-- NEW: student score points for this activity -->
+                    <group string="Student Score Points" name="school_score_points">
+                        <field name="school_score_custom"/>
+                        <field name="school_score_participation" invisible="not school_score_custom"/>
+                        <field name="school_score_first" invisible="not school_score_custom"/>
+                        <field name="school_score_second" invisible="not school_score_custom"/>
+                        <field name="school_score_third" invisible="not school_score_custom"/>
+                        <div class="text-muted small" colspan="2" invisible="school_score_custom">
+                            Using the points set in Settings &gt; School Management &gt; Student Activity Score.
+                        </div>
+                    </group>
                 </group>
             </xpath>
             <xpath expr="//notebook" position="inside">
@@ -108,6 +119,7 @@
                             <field name="school_section_id"/>
                             <field name="school_house_id"/>
                             <field name="school_position"/>
+                            <field name="school_score" string="Score"/>
                             <field name="state" optional="hide"/>
                         </list>
                     </field>
@@ -118,14 +130,25 @@
                         <field name="school_second_house_id" options="{'no_create': True}"/>
                         <field name="school_third_house_id" options="{'no_create': True}"/>
                     </group>
-                    <separator string="Winning Students (set First / Second / Third Place on the Participants tab)"/>
-                    <field name="school_winner_registration_ids" readonly="1">
-                        <list>
-                            <field name="school_position"/>
-                            <field name="student_id"/>
+                    <separator string="Winning Students"/>
+                    <div class="text-muted small mb-2">
+                        Click <b>Add a line</b> to pick a participant, then choose the position.
+                        Change a position directly in the list; delete a row to remove the prize
+                        (the student stays a participant).
+                    </div>
+                    <field name="school_winner_registration_ids"
+                           domain="[('event_id', '=', id), ('student_id', '!=', False), ('state', '!=', 'cancel'), ('school_position', '=', False)]"
+                           context="{'list_view_ref': 'ad_school_management.view_school_activity_participant_list'}"
+                           >
+                        <!-- create="0": pick existing participants only (no "New" in the dialog) -->
+                        <list editable="bottom" create="0" decoration-success="school_position">
+                            <field name="school_position" required="1"/>
+                            <field name="student_id" readonly="1"/>
                             <field name="admission_no"/>
                             <field name="school_class_id"/>
+                            <field name="school_section_id" optional="show"/>
                             <field name="school_house_id"/>
+                            <field name="school_score" string="Score"/>
                         </list>
                     </field>
                 </page>
@@ -222,6 +245,8 @@
                 <field name="school_section_id" optional="show"/>
                 <field name="school_house_id"/>
                 <field name="school_position"/>
+                <field name="school_activity_date" optional="show"/>
+                <field name="school_score" string="Score" sum="Total Score"/>
             </list>
         </field>
     </record>
@@ -261,6 +286,7 @@
             <pivot>
                 <field name="event_id" type="row"/>
                 <field name="school_house_id" type="col"/>
+                <field name="school_score" type="measure"/>
             </pivot>
         </field>
     </record>
@@ -277,6 +303,8 @@
         <field name="context">{'search_default_group_event': 1}</field>
     </record>
 
+    <!-- Winners action no longer used (see the menu note below). -->
+    <!--
     <record id="action_school_activity_winners" model="ir.actions.act_window">
         <field name="name">Winners</field>
         <field name="res_model">event.registration</field>
@@ -288,6 +316,7 @@
         <field name="domain">[('is_school_activity', '=', True), ('school_position', '!=', False)]</field>
         <field name="context">{'search_default_group_event': 1, 'create': False}</field>
     </record>
+    -->
 
     <!-- ================= Add Participants wizard ================= -->
     <record id="view_school_activity_participant_wizard_form" model="ir.ui.view">
@@ -330,10 +359,18 @@
     <menuitem id="menu_school_activities_root" name="Activities" parent="menu_school_root" sequence="45"/>
     <menuitem id="menu_school_activity" name="Activities" parent="menu_school_activities_root"
               action="action_school_activity" sequence="10"/>
+    <!-- "Students by Activity" menu removed: participants are managed on each
+         activity's Participants tab (the action is still used by the
+         "Students" smart button on the activity). -->
+    <!--
     <menuitem id="menu_school_activity_participants" name="Students by Activity" parent="menu_school_activities_root"
               action="action_school_activity_participants" sequence="20"/>
+    -->
+    <!-- Separate "Winners" menu removed: winners are set on each activity's Winners tab. -->
+    <!--
     <menuitem id="menu_school_activity_winners" name="Winners" parent="menu_school_activities_root"
               action="action_school_activity_winners" sequence="30"/>
+    -->
     <menuitem id="menu_school_class_house" name="Class Groups &amp; Leaders" parent="menu_school_activities_root"
               action="action_school_class_house" sequence="40"/>
     <menuitem id="menu_school_house" name="Student Groups (Houses)" parent="menu_school_configuration"

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Exam form > Activity Marks tab (subject-wise).
+         Shown only when Settings > Exam Marks > "Allow Activity Marks in Exam
+         Total" is ticked. The teacher picks the student and the subject and
+         types the marks; nothing is added automatically. -->
+    <record id="view_school_exam_form_activity_marks" model="ir.ui.view">
+        <field name="name">school.exam.form.activity.marks</field>
+        <field name="model">school.exam</field>
+        <field name="inherit_id" ref="view_school_exam_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Activity Marks" name="activity_marks" invisible="not activity_marks_enabled">
+                    <field name="activity_marks_enabled" invisible="1"/>
+                    <div class="alert alert-info small mb-2" role="status"
+                         style="white-space: normal; overflow-wrap: anywhere;">
+                        Pick the student and the subject, then type the activity marks.
+                        Teachers can pick only the subjects they teach. A student's activity marks in
+                        all subjects together cannot exceed the Maximum Activity Marks (Settings),
+                        and a subject can never go above its Max Marks.
+                    </div>
+                    <field name="activity_mark_ids" nolabel="1" class="w-100">
+                        <list editable="bottom">
+                            <field name="available_subject_ids" column_invisible="1"/>
+                            <field name="student_id" options="{'no_create': True}"
+                                   domain="[('class_id', 'in', parent.class_ids)]"/>
+                            <field name="subject_id" options="{'no_create': True}"
+                                   domain="[('id', 'in', available_subject_ids)]"/>
+                            <field name="admission_no" optional="hide"/>
+                            <field name="class_id" optional="hide" width="90px"/>
+                            <field name="subject_marks" string="Subject" width="75px"/>
+                            <field name="max_marks" string="Max" width="65px"/>
+                            <field name="available_marks" string="Room Left" width="85px" optional="show"/>
+                            <field name="has_limit" column_invisible="1"/>
+                            <field name="limit_left" string="Limit Left" width="85px" optional="show"
+                                   invisible="not has_limit"/>
+                            <field name="marks" string="Activity Marks" width="110px" sum="Total"/>
+                            <field name="total_marks" string="Subject Total" width="100px" class="fw-bold"/>
+                            <field name="added_by" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

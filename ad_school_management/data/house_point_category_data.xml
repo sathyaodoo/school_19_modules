@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- The 12 BRS House Championship categories. More can be created from the screen. -->
+    <record id="house_point_category_academics" model="school.house.point.category">
+        <field name="name">Academics</field>
+        <field name="code">academics</field>
+        <field name="sequence">10</field>
+        <field name="default_nature">achievement</field>
+    </record>
+    <record id="house_point_category_sports" model="school.house.point.category">
+        <field name="name">Sports</field>
+        <field name="code">sports</field>
+        <field name="sequence">20</field>
+        <field name="default_nature">achievement</field>
+    </record>
+    <record id="house_point_category_arts" model="school.house.point.category">
+        <field name="name">Arts</field>
+        <field name="code">arts</field>
+        <field name="sequence">30</field>
+        <field name="default_nature">achievement</field>
+    </record>
+    <record id="house_point_category_discipline" model="school.house.point.category">
+        <field name="name">Discipline</field>
+        <field name="code">discipline</field>
+        <field name="sequence">40</field>
+        <field name="default_nature">cooperation</field>
+    </record>
+    <record id="house_point_category_attendance" model="school.house.point.category">
+        <field name="name">Attendance</field>
+        <field name="code">attendance</field>
+        <field name="sequence">50</field>
+        <field name="default_nature">cooperation</field>
+    </record>
+    <record id="house_point_category_reading" model="school.house.point.category">
+        <field name="name">Reading</field>
+        <field name="code">reading</field>
+        <field name="sequence">60</field>
+        <field name="default_nature">achievement</field>
+    </record>
+    <record id="house_point_category_environment" model="school.house.point.category">
+        <field name="name">Environment</field>
+        <field name="code">environment</field>
+        <field name="sequence">70</field>
+        <field name="default_nature">community</field>
+    </record>
+    <record id="house_point_category_innovation" model="school.house.point.category">
+        <field name="name">Innovation</field>
+        <field name="code">innovation</field>
+        <field name="sequence">80</field>
+        <field name="default_nature">achievement</field>
+    </record>
+    <record id="house_point_category_community_service" model="school.house.point.category">
+        <field name="name">Community Service</field>
+        <field name="code">community_service</field>
+        <field name="sequence">90</field>
+        <field name="default_nature">community</field>
+    </record>
+    <record id="house_point_category_leadership" model="school.house.point.category">
+        <field name="name">Leadership</field>
+        <field name="code">leadership</field>
+        <field name="sequence">100</field>
+        <field name="default_nature">cooperation</field>
+    </record>
+    <record id="house_point_category_cleanliness" model="school.house.point.category">
+        <field name="name">Cleanliness</field>
+        <field name="code">cleanliness</field>
+        <field name="sequence">110</field>
+        <field name="default_nature">community</field>
+    </record>
+    <record id="house_point_category_cultural" model="school.house.point.category">
+        <field name="name">Cultural Activities</field>
+        <field name="code">cultural</field>
+        <field name="sequence">120</field>
+        <field name="default_nature">achievement</field>
+    </record>
+</odoo>

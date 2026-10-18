@@ -51,6 +51,7 @@
 
                 <div t-if="submitted" class="alert alert-success">
                     Your leave request was submitted and is waiting for Administration approval.
+                    The approvers have been notified, and you will receive a notification at every step.
                 </div>
                 <div t-if="not employee" class="alert alert-warning">
                     Your user is not linked to an employee record. Please contact the HR department.

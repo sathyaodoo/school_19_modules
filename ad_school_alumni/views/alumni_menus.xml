@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Separate app, listed right after "School Management" in the apps menu -->
+    <menuitem id="menu_alumni_root" name="Alumni Management"
+              web_icon="ad_school_alumni,static/description/icon.png" sequence="11"
+              groups="ad_school_alumni.group_alumni_user"/>
+
+    <menuitem id="menu_alumni_main" name="Alumni" parent="menu_alumni_root" sequence="10"/>
+    <menuitem id="menu_alumni_directory" name="Alumni Directory" parent="menu_alumni_main"
+              action="action_school_alumni" sequence="10"/>
+    <menuitem id="menu_alumni_mentors" name="Mentors" parent="menu_alumni_main"
+              action="action_school_alumni_mentors" sequence="20"/>
+    <menuitem id="menu_alumni_achievements" name="Achievements" parent="menu_alumni_main"
+              action="action_school_alumni_achievements" sequence="30"/>
+    <menuitem id="menu_alumni_graduate" name="Graduate Students" parent="menu_alumni_main"
+              action="action_school_alumni_graduate_wizard" sequence="40"
+              groups="ad_school_alumni.group_alumni_manager"/>
+
+    <menuitem id="menu_alumni_engagement" name="Engagement" parent="menu_alumni_root" sequence="20"/>
+    <menuitem id="menu_alumni_mentorship" name="Mentorships" parent="menu_alumni_engagement"
+              action="action_school_alumni_mentorship" sequence="10"/>
+    <menuitem id="menu_alumni_guidance" name="Career Guidance" parent="menu_alumni_engagement"
+              action="action_school_alumni_guidance" sequence="20"/>
+    <menuitem id="menu_alumni_events" name="Alumni Events" parent="menu_alumni_engagement"
+              action="action_school_alumni_event" sequence="30"/>
+
+    <menuitem id="menu_alumni_donations_root" name="Donations" parent="menu_alumni_root" sequence="30"/>
+    <menuitem id="menu_alumni_donations" name="Donations" parent="menu_alumni_donations_root"
+              action="action_school_alumni_donation" sequence="10"/>
+
+    <menuitem id="menu_alumni_reporting" name="Reporting" parent="menu_alumni_root" sequence="40"/>
+    <menuitem id="menu_alumni_report_alumni" name="Alumni Analysis" parent="menu_alumni_reporting"
+              action="action_school_alumni" sequence="10"/>
+    <menuitem id="menu_alumni_report_donations" name="Donation Analysis" parent="menu_alumni_reporting"
+              action="action_school_alumni_donation_analysis" sequence="20"/>
+
+    <menuitem id="menu_alumni_config" name="Configuration" parent="menu_alumni_root" sequence="90"
+              groups="ad_school_alumni.group_alumni_manager"/>
+    <menuitem id="menu_alumni_expertise" name="Expertise Areas" parent="menu_alumni_config"
+              action="action_school_alumni_expertise" sequence="10"/>
+    <menuitem id="menu_alumni_industry" name="Industries" parent="menu_alumni_config"
+              action="action_school_alumni_industry" sequence="20"/>
+</odoo>

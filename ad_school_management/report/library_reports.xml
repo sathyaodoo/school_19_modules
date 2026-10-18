@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Book labels: accession no., title, rack, Code128 barcode and QR code -->
+    <record id="action_report_book_labels" model="ir.actions.report">
+        <field name="name">Book Labels (Barcode / QR)</field>
+        <field name="model">school.book.copy</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_book_labels</field>
+        <field name="report_file">ad_school_management.report_book_labels</field>
+        <field name="print_report_name">'Book Labels'</field>
+        <field name="binding_model_id" ref="model_school_book_copy"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_book_labels">
+        <t t-call="web.html_container">
+            <div class="page">
+                <!-- two labels per row -->
+                <table style="width: 100%; border-collapse: separate; border-spacing: 8px;">
+                    <t t-foreach="[docs[i:i + 2] for i in range(0, len(docs), 2)]" t-as="pair">
+                        <tr style="page-break-inside: avoid;">
+                            <t t-foreach="pair" t-as="copy">
+                                <td style="width: 50%; border: 1px solid #333; padding: 8px; vertical-align: top;">
+                                    <table style="width: 100%;">
+                                        <tr>
+                                            <td style="vertical-align: top;">
+                                                <div style="font-weight: bold; font-size: 13px;" t-out="copy.book_id.name"/>
+                                                <div style="font-size: 11px;" t-out="copy.book_id.author or ''"/>
+                                                <div style="font-size: 11px;">Acc. No: <b t-out="copy.accession_no"/></div>
+                                                <div style="font-size: 11px;" t-if="copy.rack_id">Rack: <t t-out="copy.rack_id.name"/></div>
+                                                <t t-set="bc" t-value="copy._label_barcode()"/><img t-if="bc" t-att-src="bc" style="width: 200px; height: 40px; margin-top: 4px;" alt="Barcode"/>
+                                                <div style="font-size: 10px;" t-out="copy.barcode or copy.accession_no"/>
+                                            </td>
+                                            <td style="width: 90px; vertical-align: top; text-align: right;">
+                                                <t t-set="qr" t-value="copy._label_qr()"/><img t-if="qr" t-att-src="qr" style="width: 85px; height: 85px;" alt="QR code"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </t>
+                            <td t-if="len(pair) == 1" style="width: 50%;"/>
+                        </tr>
+                    </t>
+                </table>
+            </div>
+        </t>
+    </template>
+
+    <!-- Library card -->
+    <record id="action_report_library_card" model="ir.actions.report">
+        <field name="name">Library Card</field>
+        <field name="model">school.library.membership</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_library_card</field>
+        <field name="report_file">ad_school_management.report_library_card</field>
+        <field name="print_report_name">'Library Card - %s' % object.name</field>
+        <field name="binding_model_id" ref="model_school_library_membership"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_library_card">
+        <t t-call="web.html_container">
+            <div class="page">
+                <t t-foreach="docs" t-as="card">
+                    <div style="border: 2px solid #714B67; border-radius: 8px; padding: 12px; width: 340px; margin-bottom: 20px; page-break-inside: avoid;">
+                        <div style="font-weight: bold; color: #714B67; font-size: 15px;">
+                            <t t-out="card.env.company.name"/> - Library Card
+                        </div>
+                        <table style="width: 100%; margin-top: 6px;">
+                            <tr>
+                                <td style="vertical-align: top; font-size: 12px;">
+                                    <div><b t-out="card.member_name"/></div>
+                                    <div t-if="card.member_type == 'student' and card.student_id.class_id">
+                                        <t t-out="card.student_id.class_id.name"/> - <t t-out="card.student_id.section_id.name"/>
+                                    </div>
+                                    <div>Card No: <b t-out="card.name"/></div>
+                                    <div>Valid: <t t-out="card.start_date"/><t t-if="card.end_date"> - <t t-out="card.end_date"/></t></div>
+                                    <t t-set="bc" t-value="card._card_barcode()"/><img t-if="bc" t-att-src="bc" style="width: 200px; height: 36px; margin-top: 4px;" alt="Barcode"/>
+                                </td>
+                                <td style="width: 90px; text-align: right; vertical-align: top;">
+                                    <t t-set="qr" t-value="card._card_qr()"/><img t-if="qr" t-att-src="qr" style="width: 85px; height: 85px;" alt="QR code"/>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

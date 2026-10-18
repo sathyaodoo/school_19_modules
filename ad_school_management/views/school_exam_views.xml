@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
+
     <record id="view_school_exam_tree" model="ir.ui.view">
         <field name="name">school.exam.tree</field>
         <field name="model">school.exam</field>
@@ -10,20 +10,22 @@
                 <field name="academic_year_id"/>
                 <field name="term_id"/>
                 <field name="class_ids" widget="many2many_tags" optional="show"/>
+                <field name="schedule_progress" optional="show"/>
                 <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'completed'" decoration-warning="state == 'scheduled'" decoration-muted="state == 'cancelled'"/>
             </list>
         </field>
     </record>
 
+    <!-- Exam: one row per class, each scheduled separately -->
     <record id="view_school_exam_form" model="ir.ui.view">
         <field name="name">school.exam.form</field>
         <field name="model">school.exam</field>
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_schedule" type="object" string="Schedule Exam" class="oe_highlight" invisible="state != 'draft'"/>
-                    <button name="action_complete" type="object" string="Complete Exam" class="oe_highlight" invisible="state != 'scheduled'"/>
-                    <button name="action_cancel" type="object" string="Cancel Exam" invisible="state in ('completed', 'cancelled')"/>
+                    <button name="action_cancel" type="object" string="Cancel Exam"
+                            invisible="state in ('completed', 'cancelled') or not id"
+                            confirm="Cancel the schedule of every class that is not completed?"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,scheduled,completed"/>
                 </header>
                 <sheet>
@@ -36,19 +38,135 @@
                     <group>
                         <group>
                             <field name="academic_year_id"/>
+                            <field name="term_id" domain="[('academic_year_id', '=', academic_year_id)]"/>
                         </group>
                         <group>
-                            <field name="term_id" domain="[('academic_year_id', '=', academic_year_id)]"/>
                             <field name="class_ids" widget="many2many_tags" invisible="not class_ids"/>
+                            <field name="schedule_progress" invisible="not class_ids"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Exam Schedule" name="schedule">
-                            <field name="exam_subject_ids">
+                        <page string="Class-wise Schedule" name="class_schedules">
+                            <div class="text-muted small mb-2">
+                                Add one line per class, open it to enter that class's papers, then
+                                schedule each class on its own.
+                            </div>
+                            <field name="class_schedule_ids" context="{'default_exam_id': id, 'school_exam_dialog': True}">
+                                <list decoration-info="state == 'draft'" decoration-warning="state == 'scheduled'"
+                                      decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'">
+                                    <field name="class_id"/>
+                                    <field name="paper_count"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'draft'" decoration-warning="state == 'scheduled'"
+                                           decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'"/>
+                                    <button name="action_schedule" type="object" string="Schedule"
+                                            icon="fa-calendar-check-o" class="btn-link" invisible="state != 'draft'"/>
+                                    <button name="action_complete" type="object" string="Complete"
+                                            icon="fa-check" class="btn-link" invisible="state != 'scheduled'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <!-- Activity Marks: shown only when Settings > Exam Marks >
+                             "Allow Activity Marks in Exam Total" is ticked. The teacher picks
+                             the student and the subject and types the marks; nothing is added
+                             automatically. -->
+                        <page string="Activity Marks" name="activity_marks" invisible="not activity_marks_enabled">
+                            <field name="activity_marks_enabled" invisible="1"/>
+                            <div class="alert alert-info small mb-2" role="status"
+                                 style="white-space: normal; overflow-wrap: anywhere;">
+                                Pick the student and the subject, then type the activity marks.
+                                Teachers can pick only the subjects they teach. A student's activity marks in
+                                all subjects together cannot exceed the Maximum Activity Marks (Settings),
+                                and a subject can never go above its Max Marks.
+                            </div>
+                            <field name="activity_mark_ids" nolabel="1" class="w-100">
                                 <list editable="bottom">
-                                    <field name="class_id" options="{'no_create': True}"/>
+                                    <field name="available_subject_ids" column_invisible="1"/>
+                                    <field name="student_id" options="{'no_create': True}"
+                                           domain="[('class_id', 'in', parent.class_ids)]"/>
                                     <field name="subject_id" options="{'no_create': True}"
-                                           domain="['|', ('class_ids', 'in', class_id), ('class_ids', '=', False)] if class_id else []"/>
+                                           domain="[('id', 'in', available_subject_ids)]"/>
+                                    <field name="admission_no" optional="hide"/>
+                                    <field name="class_id" optional="hide" width="90px"/>
+                                    <field name="subject_marks" string="Subject" width="75px"/>
+                                    <field name="max_marks" string="Max" width="65px"/>
+                                    <field name="available_marks" string="Room Left" width="85px" optional="show"/>
+                                    <field name="has_limit" column_invisible="1"/>
+                                    <field name="limit_left" string="Limit Left" width="85px" optional="show"
+                                           invisible="not has_limit"/>
+                                    <field name="marks" string="Activity Marks" width="110px" sum="Total"/>
+                                    <field name="total_marks" string="Subject Total" width="100px" class="fw-bold"/>
+                                    <field name="added_by" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <!--
+                        <page string="All Papers" name="schedule">
+                            <field name="exam_subject_ids" readonly="1">
+                                <list default_group_by="class_id">
+                                    <field name="class_id"/>
+                                    <field name="subject_id"/>
+                                    <field name="date"/>
+                                    <field name="time_start" widget="float_time"/>
+                                    <field name="time_end" widget="float_time"/>
+                                    <field name="max_marks"/>
+                                    <field name="min_marks"/>
+                                    <field name="room"/>
+                                    <field name="exam_state" widget="badge" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        -->
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============ Class Exam Schedule (one class of one exam) ============ -->
+    <record id="view_school_exam_class_form" model="ir.ui.view">
+        <field name="name">school.exam.class.form</field>
+        <field name="model">school.exam.class</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_schedule" type="object" string="Schedule" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_complete" type="object" string="Complete" class="oe_highlight"
+                            invisible="state != 'scheduled'"/>
+                    <button name="action_reset_draft" type="object" string="Reset to Draft"
+                            invisible="state not in ('scheduled', 'cancelled')"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('completed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,scheduled,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title" invisible="not id">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <!-- Hidden when opened from the exam itself (set automatically there) -->
+                            <field name="exam_id" readonly="id" options="{'no_create': True}"
+                                   invisible="context.get('school_exam_dialog')"/>
+                            <field name="class_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="academic_year_id"/>
+                            <field name="term_id"/>
+                            <field name="date_start" invisible="not date_start"/>
+                            <field name="date_end" invisible="not date_end"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Papers" name="papers">
+                            <field name="exam_subject_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="subject_id" options="{'no_create': True}"
+                                           domain="['|', ('class_ids', 'in', parent.class_id), ('class_ids', '=', False)] if parent.class_id else []"/>
                                     <field name="date"/>
                                     <field name="time_start" widget="float_time"/>
                                     <field name="time_end" widget="float_time"/>
@@ -62,6 +180,58 @@
                 </sheet>
                 <chatter/>
             </form>
+        </field>
+    </record>
+
+    <record id="view_school_exam_class_list" model="ir.ui.view">
+        <field name="name">school.exam.class.list</field>
+        <field name="model">school.exam.class</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-warning="state == 'scheduled'"
+                  decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'">
+                <field name="exam_id"/>
+                <field name="class_id"/>
+                <field name="academic_year_id" optional="show"/>
+                <field name="term_id" optional="hide"/>
+                <field name="paper_count"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'" decoration-warning="state == 'scheduled'"
+                       decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_exam_class_search" model="ir.ui.view">
+        <field name="name">school.exam.class.search</field>
+        <field name="model">school.exam.class</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="exam_id"/>
+                <field name="class_id"/>
+                <field name="academic_year_id"/>
+                <filter string="Draft" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Scheduled" name="filter_scheduled" domain="[('state', '=', 'scheduled')]"/>
+                <filter string="Completed" name="filter_completed" domain="[('state', '=', 'completed')]"/>
+                <group>
+                    <filter string="Exam" name="group_exam" context="{'group_by': 'exam_id'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_exam_class" model="ir.actions.act_window">
+        <field name="name">Class Exam Schedules</field>
+        <field name="res_model">school.exam.class</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_exam_class_search"/>
+        <field name="context">{'search_default_group_exam': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No class exam schedules yet.</p>
+            <p>Create an Exam, then add one schedule per class in its Class-wise Schedule tab.</p>
         </field>
     </record>
 
@@ -88,8 +258,8 @@
                 <field name="admission_no"/>
                 <field name="exam_id"/>
                 <field name="subject_id"/>
-                <field name="marks_obtained" string="Marks"/>
-                <field name="max_marks" optional="show"/>
+                <field name="marks_obtained" string="Marks" sum="Total Marks"/>
+                <field name="max_marks" optional="show" sum="Total Max"/>
                 <field name="grade_id"/>
                 <field name="percentage" string="Percentage (%)"/>
                 <field name="class_id" optional="hide"/>

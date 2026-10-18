@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_wb_concern_wizard_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.concern.wizard.form</field>
+        <field name="model">school.wellbeing.concern.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Raise a Well-being Concern">
+                <field name="state" invisible="1"/>
+                <div invisible="state != 'draft'">
+                    <div class="alert alert-info" role="alert">
+                        Tell the school counsellor about a student you are worried about. Only the counsellors can read this.
+                        If a child is in danger right now, tell the principal or a safeguarding officer immediately.
+                    </div>
+                    <group>
+                        <field name="student_id" options="{'no_create': True}"/>
+                        <field name="area_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                        <field name="level" widget="radio"/>
+                        <field name="description" placeholder="What did you notice? When? What did the student say or do?"/>
+                    </group>
+                </div>
+                <div invisible="state != 'done'" class="text-center py-4">
+                    <h2>Thank you</h2>
+                    <p>The counsellor has been told. Reference: <b><field name="reference" class="oe_inline"/></b></p>
+                    <p class="text-muted">You will not see this case again: it is confidential.</p>
+                </div>
+                <footer>
+                    <button name="action_submit" string="Send to the Counsellor" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_wb_concern_wizard" model="ir.actions.act_window">
+        <field name="name">Raise a Concern</field>
+        <field name="res_model">school.wellbeing.concern.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

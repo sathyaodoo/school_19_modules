@@ -1,5 +1,6 @@
 import logging
 from odoo import models, fields, api, _
+from odoo.tools import format_date, format_datetime
 _logger = logging.getLogger(__name__)
 
 
@@ -110,14 +111,18 @@ class SchoolDashboard(models.TransientModel):
         paid_fees = sum(fees.filtered(lambda f: f.state == 'paid').mapped('net_amount'))
         total_outstanding = invoiced_fees
 
-        total_marked_today = self._safe_count('school.attendance', [('date', '=', today)])
-        present_today = self._safe_count('school.attendance', [
+        # Attendance is taken once a day (morning): Present / Absent.
+        total_marked_today = Attendance.search_count([('date', '=', today), ('session', '=', 'morning')])
+        present_today = Attendance.search_count([
             ('date', '=', today),
-            ('status', 'in', ('present', 'late'))
+            ('session', '=', 'morning'),
+            ('status', '=', 'present'),
         ])
         attendance_rate = round((present_today / total_marked_today) * 100, 1) if total_marked_today > 0 else 100.0
 
         return {
+            'early_warning': self.env['school.early.warning'].get_dashboard_stats(),
+            'championship': self.env['school.house.point'].get_championship(),
             'has_library': has_library,
             'has_hostel': has_hostel,
             'students': {
@@ -161,3 +166,60 @@ class SchoolDashboard(models.TransientModel):
                 'rate': attendance_rate,
             }
         }
+
+    @api.model
+    def get_leave_stats(self):
+        """Pending staff leave requests (Teacher Development > Growth Dashboard),
+        also called when a new leave request arrives (live refresh)."""
+        return self._get_leave_stats()
+
+    @api.model
+    def _get_leave_stats(self):
+        """Pending staff leave requests for the Leave Requests panel.
+
+        Only Admin, HR Manager and Principal see it (the same people who
+        approve leaves); for everybody else 'visible' is False.
+        """
+        user = self.env.user
+        visible = self.env.is_superuser() or any(
+            user.has_group(xmlid) for xmlid in (
+                'ad_school_management.group_school_admin',
+                'ad_school_management.group_school_hr_manager',
+                'ad_school_management.group_school_principal',
+            ))
+        result = {'visible': visible, 'pending_admin': 0, 'pending_hr': 0,
+                  'pending_principal': 0, 'total_pending': 0, 'recent': []}
+        if not visible:
+            return result
+
+        Leave = self.env['hr.leave'].sudo()
+        base_domain = [('holiday_status_id.school_approval_workflow', '=', True)]
+        if user.company_ids:
+            base_domain.append(('employee_company_id', 'in', user.company_ids.ids))
+        counts = dict(Leave._read_group(
+            base_domain + [('school_approval_stage', 'in', ('admin', 'hr', 'principal'))],
+            ['school_approval_stage'], ['__count']))
+        result.update({
+            'pending_admin': counts.get('admin', 0),
+            'pending_hr': counts.get('hr', 0),
+            'pending_principal': counts.get('principal', 0),
+        })
+        result['total_pending'] = result['pending_admin'] + result['pending_hr'] + result['pending_principal']
+
+        stage_labels = dict(Leave._fields['school_approval_stage']._description_selection(self.env))
+        recent = Leave.search(
+            base_domain + [('school_approval_stage', 'in', ('admin', 'hr', 'principal'))],
+            order='create_date desc, id desc', limit=6)
+        result['recent'] = [{
+            'id': leave.id,
+            'employee': leave.employee_id.name or '',
+            'leave_type': leave.holiday_status_id.name or '',
+            'date_from': format_date(self.env, leave.request_date_from) if leave.request_date_from else '',
+            'date_to': format_date(self.env, leave.request_date_to) if leave.request_date_to else '',
+            'days': round(leave.number_of_days, 2),
+            'reason': leave.private_name or '',
+            'stage': leave.school_approval_stage,
+            'stage_label': stage_labels.get(leave.school_approval_stage, ''),
+            'applied_on': format_datetime(self.env, leave.create_date, dt_format='short') if leave.create_date else '',
+        } for leave in recent]
+        return result

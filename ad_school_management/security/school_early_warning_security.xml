@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Counsellor: reviews early warnings for every student -->
+        <record id="group_school_counsellor" model="res.groups">
+            <field name="name">School Counsellor</field>
+            <field name="privilege_id" ref="res_groups_privilege_ad_school_management"/>
+            <field name="sequence">15</field>
+            <field name="implied_ids" eval="[(4, ref('base.group_user')), (4, ref('group_school_teacher'))]"/>
+        </record>
+
+        <!-- Counsellors see all students and attendance (teachers only their classes) -->
+        <record id="rule_counsellor_all_students" model="ir.rule">
+            <field name="name">Counsellor: all students</field>
+            <field name="model_id" ref="model_school_student"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor'))]"/>
+        </record>
+        <record id="rule_counsellor_all_attendance" model="ir.rule">
+            <field name="name">Counsellor: all attendance</field>
+            <field name="model_id" ref="model_school_attendance"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor'))]"/>
+        </record>
+
+        <!-- Early warnings and incidents: teachers -> their classes only -->
+        <record id="rule_early_warning_teacher" model="ir.rule">
+            <field name="name">Early warning: teacher's classes</field>
+            <field name="model_id" ref="model_school_early_warning"/>
+            <field name="domain_force">['|', ('class_id.teacher_ids.user_id', '=', user.id), ('class_id.class_teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_early_warning_signal_teacher" model="ir.rule">
+            <field name="name">Early warning signal: teacher's classes</field>
+            <field name="model_id" ref="model_school_early_warning_signal"/>
+            <field name="domain_force">['|', ('alert_id.class_id.teacher_ids.user_id', '=', user.id), ('alert_id.class_id.class_teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_incident_teacher" model="ir.rule">
+            <field name="name">Behaviour incident: teacher's classes</field>
+            <field name="model_id" ref="model_school_student_incident"/>
+            <field name="domain_force">['|', ('class_id.teacher_ids.user_id', '=', user.id), ('class_id.class_teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+
+        <!-- Counsellor / Principal / Admin: everything -->
+        <record id="rule_early_warning_all" model="ir.rule">
+            <field name="name">Early warning: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_early_warning"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+        <record id="rule_early_warning_signal_all" model="ir.rule">
+            <field name="name">Early warning signal: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_early_warning_signal"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+        <record id="rule_incident_all" model="ir.rule">
+            <field name="name">Behaviour incident: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_student_incident"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- In-app notification (Odoo inbox, never e-mail) sent to a back-end
+         teacher when their timetable changes. Portal teachers see an alert on
+         /my/timetable instead. Rendered by
+         school.teacher._school_notify_timetable_updated(). -->
+    <template id="teacher_timetable_notification_body" name="Teacher Timetable Notification">
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #222;">
+            <p style="margin: 0 0 12px 0;">Dear <t t-out="teacher.name"/>,</p>
+            <p style="margin: 0 0 12px 0;">
+                Your timetable has been updated. You now have
+                <strong><t t-out="grid['count']"/> period(s)</strong> per week:
+            </p>
+            <p t-if="not grid['rows']" style="margin: 0 0 12px 0; color: #666;">
+                You have no periods assigned at the moment.
+            </p>
+            <table t-if="grid['rows']" cellpadding="6"
+                   style="border-collapse: collapse; margin: 0 0 12px 0; font-size: 13px;">
+                <tr>
+                    <th style="border: 1px solid #ddd; background: #f6f6f6; text-align: left;">Time</th>
+                    <th t-foreach="grid['days']" t-as="day"
+                        style="border: 1px solid #ddd; background: #f6f6f6; text-align: left;">
+                        <t t-out="day[1]"/>
+                    </th>
+                </tr>
+                <tr t-foreach="grid['rows']" t-as="row">
+                    <td style="border: 1px solid #ddd; white-space: nowrap; background: #fafafa;">
+                        <strong t-out="row['label']"/>
+                    </td>
+                    <td t-foreach="row['cells']" t-as="cell" style="border: 1px solid #ddd; vertical-align: top;">
+                        <div t-foreach="cell" t-as="line">
+                            <strong t-out="line.subject_id.name"/><br/>
+                            <t t-out="line.timetable_id.class_id.name"/> - <t t-out="line.timetable_id.section_id.name"/><br/>
+                            <span style="color: #666;">Room <t t-out="line.classroom"/></span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <p style="margin: 0 0 12px 0;">
+                Open <a t-att-href="portal_url" style="color: #714B67;">My Timetable</a>
+                to view it.
+            </p>
+        </div>
+    </template>
+</odoo>

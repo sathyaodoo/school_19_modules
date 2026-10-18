@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_wb_share_wizard_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.share.wizard.form</field>
+        <field name="model">school.wellbeing.share.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Share with Safeguarding">
+                <field name="state" invisible="1"/>
+                <div invisible="state != 'draft'">
+                    <div class="alert alert-warning" role="alert">
+                        This tells the <b>Safeguarding team</b> about the student. They will see <b>only what you write below</b>.
+                        Your counselling notes, sessions and check-ins are <b>not</b> shared.
+                    </div>
+                    <group>
+                        <field name="case_id"/>
+                        <field name="student_id"/>
+                        <field name="category"/>
+                        <field name="severity"/>
+                        <field name="immediate_risk"/>
+                        <field name="description" placeholder="Facts only: what happened, who is involved, when."/>
+                    </group>
+                </div>
+                <div invisible="state != 'done'" class="text-center py-4">
+                    <h2>Shared with Safeguarding</h2>
+                    <p>Safeguarding reference: <b><field name="reference" class="oe_inline"/></b></p>
+                    <p class="text-muted">The Safeguarding team handles it from here. You will not see that case unless you are part of the team.</p>
+                </div>
+                <footer>
+                    <button name="action_submit" string="Share with Safeguarding" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

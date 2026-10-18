@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_alumni_event_list" model="ir.ui.view">
+        <field name="name">school.alumni.event.list</field>
+        <field name="model">school.alumni.event</field>
+        <field name="arch" type="xml">
+            <list string="Alumni Events" decoration-muted="state == 'cancelled'" decoration-success="state == 'done'">
+                <field name="date_start"/>
+                <field name="name"/>
+                <field name="event_type"/>
+                <field name="venue" optional="show"/>
+                <field name="invited_count" optional="show"/>
+                <field name="registered_count"/>
+                <field name="attended_count"/>
+                <field name="amount_raised" optional="hide"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'"
+                       decoration-warning="state == 'confirmed'" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_event_form" model="ir.ui.view">
+        <field name="name">school.alumni.event.form</field>
+        <field name="model">school.alumni.event</field>
+        <field name="arch" type="xml">
+            <form string="Alumni Event">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_done" type="object" string="Mark as Done" class="oe_highlight"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('done', 'cancelled')"/>
+                    <button name="action_reset" type="object" string="Reset to Draft"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_donations" type="object" class="oe_stat_button" icon="fa-heart">
+                            <field name="amount_raised" widget="statinfo" string="Raised"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Silver Jubilee Reunion"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="event_type"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="venue"/>
+                        </group>
+                        <group>
+                            <field name="batch_years"/>
+                            <field name="organizer_id"/>
+                            <field name="invited_count"/>
+                            <field name="registered_count"/>
+                            <field name="attended_count"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Participants" name="participants">
+                            <field name="attendee_ids">
+                                <list editable="bottom">
+                                    <field name="alumni_id" options="{'no_create': True}"/>
+                                    <field name="graduation_year" options="{'format': false}"/>
+                                    <field name="email" optional="show"/>
+                                    <field name="phone" optional="hide"/>
+                                    <field name="role"/>
+                                    <field name="status" widget="badge"
+                                           decoration-info="status == 'invited'" decoration-warning="status == 'registered'"
+                                           decoration-success="status == 'attended'" decoration-danger="status == 'absent'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Description" name="description">
+                            <field name="description"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_event_calendar" model="ir.ui.view">
+        <field name="name">school.alumni.event.calendar</field>
+        <field name="model">school.alumni.event</field>
+        <field name="arch" type="xml">
+            <calendar string="Alumni Events" date_start="date_start" date_stop="date_end" color="event_type" mode="month">
+                <field name="name"/>
+                <field name="venue"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_event_search" model="ir.ui.view">
+        <field name="name">school.alumni.event.search</field>
+        <field name="model">school.alumni.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="attendee_ids" string="Alumni" filter_domain="[('attendee_ids.alumni_id', 'ilike', self)]"/>
+                <filter string="Upcoming" name="upcoming" domain="[('state', 'in', ('draft', 'confirmed'))]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter string="Type" name="group_type" context="{'group_by': 'event_type'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date_start:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_event" model="ir.actions.act_window">
+        <field name="name">Alumni Events</field>
+        <field name="res_model">school.alumni.event</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="search_view_id" ref="view_school_alumni_event_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No alumni events yet.</p>
+            <p>Plan reunions, meet-ups, webinars and fund-raisers, and track who attends.</p>
+        </field>
+    </record>
+</odoo>

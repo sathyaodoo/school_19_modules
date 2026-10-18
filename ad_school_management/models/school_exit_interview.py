@@ -38,7 +38,7 @@ class SchoolExitInterview(models.Model):
     # res.groups.users, guessing a third internal field name isn't safe.
     # has_group() is core Odoo API used everywhere and won't be renamed.
     conducted_by = fields.Many2one(
-        'res.users', string='Conducted By', tracking=True,
+        'res.users', string='Conducted By', tracking=True, required=True,
         default=lambda self: self._default_conducted_by(),
         domain=lambda self: [('id', 'in', self._get_allowed_conducted_by_user_ids())],
     )
@@ -84,12 +84,7 @@ class SchoolExitInterview(models.Model):
     # --- Row 19: Improvement Suggestions ----------------------------------
     improvement_suggestions = fields.Text(string='Suggestions for School')
 
-    # --- Row 20: Confidential Notes — HR-only notes -----------------------
-    # Restricted at the FIELD level (view groups=) as well as the model
-    # level (ir.model.access.csv only grants Admin/HR Manager any access
-    # to this model at all), so this is doubly protected — even if the
-    # model's access were ever loosened, this one field stays HR-only.
-    confidential_notes = fields.Text(string='Confidential Notes (HR Only)')
+    confidential_notes = fields.Text(string='Confidential Notes (HR Only)', copy=False,groups='ad_school_management.group_school_hr_manager',)
 
     @api.model_create_multi
     def create(self, vals_list):

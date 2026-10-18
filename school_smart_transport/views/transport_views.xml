@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================== existing forms: coordinates of the stops, speed limit of the vehicle -->
+    <record id="view_stc_route_form_stops" model="ir.ui.view">
+        <field name="name">school.transport.route.form.smart</field>
+        <field name="model">school.transport.route</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_transport_route_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='stops']//field[@name='time']" position="after">
+                <field name="coordinates_text" placeholder="paste: 11.0168, 76.9558"/>
+                <field name="latitude"/>
+                <field name="longitude"/>
+                <field name="radius_m" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_stc_vehicle_form" model="ir.ui.view">
+        <field name="name">school.vehicle.form.smart</field>
+        <field name="model">school.vehicle</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_vehicle_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='capacity']" position="after">
+                <field name="speed_limit_kmh"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ======================== settings -->
+    <record id="view_stc_config_form" model="ir.ui.view">
+        <field name="name">school.transport.config.form</field>
+        <field name="model">school.transport.config</field>
+        <field name="arch" type="xml">
+            <form string="Transport Alert Settings">
+                <sheet>
+                    <div class="oe_title"><h1>Smart Transport Settings</h1></div>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group>
+                        <group string="School location (geofence)">
+                            <field name="campus_latitude"/>
+                            <field name="campus_longitude"/>
+                            <field name="campus_radius_m"/>
+                        </group>
+                        <group string="Stops">
+                            <field name="approach_distance_m"/>
+                            <field name="arrival_radius_m"/>
+                        </group>
+                        <group string="Speed">
+                            <field name="speed_limit_kmh"/>
+                            <field name="speed_alert_pings"/>
+                            <field name="speed_alert_cooldown_min"/>
+                        </group>
+                        <group string="Route and stops of the van">
+                            <field name="deviation_distance_m"/>
+                            <field name="deviation_pings"/>
+                            <field name="stationary_minutes"/>
+                        </group>
+                        <group string="Driver behaviour">
+                            <field name="harsh_brake_kmh_s"/>
+                            <field name="harsh_accel_kmh_s"/>
+                        </group>
+                        <group string="Estimated arrival time">
+                            <field name="eta_default_speed_kmh"/>
+                            <field name="road_factor"/>
+                        </group>
+                        <group string="Parents are told when">
+                            <field name="notify_parent_approach"/>
+                            <field name="notify_parent_board"/>
+                            <field name="notify_parent_reached"/>
+                            <field name="notify_parent_breakdown"/>
+                            <field name="notify_parent_sos"/>
+                        </group>
+                        <group string="School staff alerts">
+                            <div class="text-muted">School admin and principal are always alerted.</div>
+                            <field name="alert_user_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stc_settings" model="ir.actions.server">
+        <field name="name">Transport Alert Settings</field>
+        <field name="model_id" ref="model_school_transport_config"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_settings()</field>
+    </record>
+
+    <!-- ======================== trips -->
+    <record id="view_stc_trip_list" model="ir.ui.view">
+        <field name="name">school.transport.trip.list</field>
+        <field name="model">school.transport.trip</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'running'" decoration-muted="state in ('done', 'cancelled')"
+                  decoration-danger="open_alert_count &gt; 0">
+                <field name="date"/>
+                <field name="route_id"/>
+                <field name="trip_type"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="caretaker_id" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'running'" decoration-info="state == 'planned'"/>
+                <field name="boarded_count"/>
+                <field name="on_board_count"/>
+                <field name="next_stop_id" optional="show"/>
+                <field name="next_eta" optional="show"/>
+                <field name="open_alert_count" optional="show"/>
+                <field name="behaviour_score" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stc_trip_form" model="ir.ui.view">
+        <field name="name">school.transport.trip.form</field>
+        <field name="model">school.transport.trip</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" string="Start Trip" type="object" class="btn-primary" invisible="state != 'planned'"/>
+                    <button name="action_end" string="Finish Trip" type="object" invisible="state != 'running'"
+                            confirm="Finish this trip? Students still on board are reported."/>
+                    <button name="action_cancel" string="Cancel" type="object" invisible="state not in ('planned', 'running')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="planned,running,done"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="open_alert_count == 0">
+                        <b><field name="open_alert_count" class="oe_inline"/> alert(s) need attention.</b> See the Events &amp; Alerts tab.
+                    </div>
+                    <div class="oe_title"><h1><field name="display_name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="route_id" readonly="state != 'planned'"/>
+                            <field name="date" readonly="state != 'planned'"/>
+                            <field name="trip_type" readonly="state != 'planned'"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_id" readonly="state != 'planned'"/>
+                            <field name="driver_id" readonly="state != 'planned'"/>
+                            <field name="caretaker_id" readonly="state != 'planned'"/>
+                            <field name="started_at"/>
+                            <field name="ended_at"/>
+                        </group>
+                    </group>
+                    <group string="Live">
+                        <group>
+                            <field name="next_stop_id"/>
+                            <field name="next_eta"/>
+                            <field name="eta_campus"/>
+                            <field name="in_campus"/>
+                        </group>
+                        <group>
+                            <field name="last_speed"/>
+                            <field name="last_ping_at"/>
+                            <field name="expected_count"/>
+                            <field name="boarded_count"/>
+                            <field name="on_board_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Stops &amp; ETA" name="stops">
+                            <field name="stop_line_ids" readonly="1">
+                                <list decoration-success="state == 'arrived'" decoration-muted="state == 'left'">
+                                    <field name="sequence"/>
+                                    <field name="stop_id"/>
+                                    <field name="student_count"/>
+                                    <field name="eta"/>
+                                    <field name="arrived_at"/>
+                                    <field name="departed_at"/>
+                                    <field name="approach_notified"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Boarding Records" name="boarding">
+                            <field name="boarding_ids" readonly="1">
+                                <list>
+                                    <field name="event_at"/>
+                                    <field name="student_id"/>
+                                    <field name="event_type"/>
+                                    <field name="stop_id"/>
+                                    <field name="source"/>
+                                    <field name="confirmed_by"/>
+                                    <field name="parent_notified"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Events &amp; Alerts" name="events">
+                            <field name="event_ids" readonly="1">
+                                <list decoration-danger="severity == 'critical' and state == 'open'"
+                                      decoration-warning="severity == 'warning' and state == 'open'">
+                                    <field name="event_at"/>
+                                    <field name="severity" widget="badge" decoration-danger="severity == 'critical'"
+                                           decoration-warning="severity == 'warning'"/>
+                                    <field name="event_type"/>
+                                    <field name="message"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Driver Behaviour" name="behaviour">
+                            <group>
+                                <group>
+                                    <field name="behaviour_score"/>
+                                    <field name="speeding_count"/>
+                                    <field name="harsh_count"/>
+                                    <field name="deviation_count"/>
+                                </group>
+                                <group>
+                                    <field name="breakdown_count"/>
+                                    <field name="sos_count"/>
+                                    <field name="left_on_board_count"/>
+                                    <field name="max_speed"/>
+                                    <field name="distance_km"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stc_trip_search" model="ir.ui.view">
+        <field name="name">school.transport.trip.search</field>
+        <field name="model">school.transport.trip</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="route_id"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <filter name="running" string="Running now" domain="[('state', '=', 'running')]"/>
+                <filter name="today" string="Today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="done" string="Finished" domain="[('state', '=', 'done')]"/>
+                <filter name="alerts" string="With open alerts" domain="[('event_ids', 'any', [('severity', '!=', 'info'), ('state', '=', 'open')])]"/>
+                <group>
+                    <filter name="group_driver" string="Driver" context="{'group_by': 'driver_id'}"/>
+                    <filter name="group_route" string="Route" context="{'group_by': 'route_id'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date:day'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_stc_trip_pivot" model="ir.ui.view">
+        <field name="name">school.transport.trip.pivot</field>
+        <field name="model">school.transport.trip</field>
+        <field name="arch" type="xml">
+            <pivot string="Driver behaviour">
+                <field name="driver_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="behaviour_score" type="measure"/>
+                <field name="speeding_count" type="measure"/>
+                <field name="harsh_count" type="measure"/>
+                <field name="deviation_count" type="measure"/>
+                <field name="distance_km" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_stc_trip_graph" model="ir.ui.view">
+        <field name="name">school.transport.trip.graph</field>
+        <field name="model">school.transport.trip</field>
+        <field name="arch" type="xml">
+            <graph string="Behaviour score by driver" type="bar">
+                <field name="driver_id"/>
+                <field name="behaviour_score" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_stc_trip" model="ir.actions.act_window">
+        <field name="name">Live Trips</field>
+        <field name="res_model">school.transport.trip</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No trip today</p>
+            <p>Drivers start a trip from the driver page (My Trips &gt; Live Trip). You can also create and start one here.</p>
+        </field>
+    </record>
+
+    <record id="action_stc_behaviour" model="ir.actions.act_window">
+        <field name="name">Driver Behaviour</field>
+        <field name="res_model">school.transport.trip</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_done': 1}</field>
+    </record>
+
+    <!-- ======================== events & alerts -->
+    <record id="view_stc_event_list" model="ir.ui.view">
+        <field name="name">school.transport.event.list</field>
+        <field name="model">school.transport.event</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="severity == 'critical' and state == 'open'"
+                  decoration-warning="severity == 'warning' and state == 'open'" decoration-muted="state == 'resolved'">
+                <field name="event_at"/>
+                <field name="severity" widget="badge" decoration-danger="severity == 'critical'"
+                       decoration-warning="severity == 'warning'"/>
+                <field name="event_type"/>
+                <field name="vehicle_id"/>
+                <field name="route_id"/>
+                <field name="driver_id" optional="show"/>
+                <field name="message"/>
+                <field name="state" widget="badge" decoration-success="state == 'resolved'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stc_event_form" model="ir.ui.view">
+        <field name="name">school.transport.event.form</field>
+        <field name="model">school.transport.event</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <button name="action_acknowledge" string="Acknowledge" type="object" class="btn-primary"
+                            invisible="state != 'open' or severity == 'info'"/>
+                    <button name="action_resolve" string="Resolve" type="object" invisible="state == 'resolved' or severity == 'info'"/>
+                    <button name="action_inform_parents" string="Inform the Parents" type="object"
+                            invisible="event_type not in ('breakdown', 'sos') or parents_notified"
+                            confirm="Send this to the parents of the route?"/>
+                    <button name="action_open_route" string="Open Route (replace vehicle)" type="object"
+                            invisible="not route_id or event_type != 'breakdown'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,acknowledged,resolved"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="severity != 'critical' or state == 'resolved'">
+                        <b>Critical.</b> Act now and write what was done before resolving.
+                    </div>
+                    <div class="oe_title"><h1><field name="message"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="event_type"/>
+                            <field name="severity"/>
+                            <field name="event_at"/>
+                            <field name="vehicle_id"/>
+                            <field name="route_id"/>
+                            <field name="driver_id"/>
+                            <field name="trip_id"/>
+                            <field name="stop_id"/>
+                        </group>
+                        <group>
+                            <field name="speed"/>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                            <field name="map_url" widget="url" text="Open the map"/>
+                            <field name="staff_notified"/>
+                            <field name="parents_notified"/>
+                            <field name="handled_by"/>
+                            <field name="handled_at"/>
+                        </group>
+                    </group>
+                    <group><field name="note"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stc_event_search" model="ir.ui.view">
+        <field name="name">school.transport.event.search</field>
+        <field name="model">school.transport.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="vehicle_id"/>
+                <field name="route_id"/>
+                <field name="driver_id"/>
+                <field name="message"/>
+                <filter name="open" string="Needs attention" domain="[('state', '=', 'open'), ('severity', '!=', 'info')]"/>
+                <filter name="critical" string="Critical" domain="[('severity', '=', 'critical')]"/>
+                <filter name="warning" string="Warnings" domain="[('severity', '=', 'warning')]"/>
+                <filter name="today" string="Today" domain="[('event_at', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter name="alerts" string="Alerts only" domain="[('severity', '!=', 'info')]"/>
+                <group>
+                    <filter name="group_type" string="Event" context="{'group_by': 'event_type'}"/>
+                    <filter name="group_vehicle" string="Vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter name="group_driver" string="Driver" context="{'group_by': 'driver_id'}"/>
+                    <filter name="group_day" string="Day" context="{'group_by': 'event_at:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stc_alerts" model="ir.actions.act_window">
+        <field name="name">Transport Alerts</field>
+        <field name="res_model">school.transport.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No alert needs attention</p>
+            <p>Excessive speed, route deviation, stopped van, breakdown, SOS and students left on board appear here.</p>
+        </field>
+    </record>
+
+    <record id="action_stc_events" model="ir.actions.act_window">
+        <field name="name">All Trip Events</field>
+        <field name="res_model">school.transport.event</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ======================== boarding records -->
+    <record id="view_stc_boarding_list" model="ir.ui.view">
+        <field name="name">school.transport.boarding.list</field>
+        <field name="model">school.transport.boarding</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="event_at"/>
+                <field name="student_id"/>
+                <field name="event_type"/>
+                <field name="route_id"/>
+                <field name="trip_type"/>
+                <field name="stop_id"/>
+                <field name="source"/>
+                <field name="confirmed_by"/>
+                <field name="parent_notified"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stc_boarding_search" model="ir.ui.view">
+        <field name="name">school.transport.boarding.search</field>
+        <field name="model">school.transport.boarding</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="route_id"/>
+                <filter name="today" string="Today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="board" string="Boarded" domain="[('event_type', '=', 'board')]"/>
+                <filter name="offboard" string="Got off" domain="[('event_type', '=', 'offboard')]"/>
+                <group>
+                    <filter name="group_student" string="Student" context="{'group_by': 'student_id'}"/>
+                    <filter name="group_route" string="Route" context="{'group_by': 'route_id'}"/>
+                    <filter name="group_day" string="Day" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stc_boarding" model="ir.actions.act_window">
+        <field name="name">Boarding Records</field>
+        <field name="res_model">school.transport.boarding</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+
+    <!-- ======================== what the parents were told -->
+    <record id="view_stc_notification_list" model="ir.ui.view">
+        <field name="name">school.transport.notification.list</field>
+        <field name="model">school.transport.notification</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="sent_at"/>
+                <field name="student_id"/>
+                <field name="partner_id"/>
+                <field name="kind"/>
+                <field name="message"/>
+                <field name="inbox_sent"/>
+                <field name="whatsapp_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_stc_notification" model="ir.actions.act_window">
+        <field name="name">Parent Notifications</field>
+        <field name="res_model">school.transport.notification</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

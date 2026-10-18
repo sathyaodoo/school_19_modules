@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Teachers: students of their classes (or what they recorded themselves) -->
+        <record id="rule_student_competency_teacher" model="ir.rule">
+            <field name="name">Competency assessment: teacher's classes</field>
+            <field name="model_id" ref="model_school_student_competency"/>
+            <field name="domain_force">['|', '|', ('class_id.teacher_ids.user_id', '=', user.id), ('class_id.class_teacher_id.user_id', '=', user.id), ('assessed_by', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_student_record_teacher" model="ir.rule">
+            <field name="name">Development record: teacher's classes</field>
+            <field name="model_id" ref="model_school_student_record"/>
+            <field name="domain_force">['|', '|', ('class_ids.teacher_ids.user_id', '=', user.id), ('class_ids.class_teacher_id.user_id', '=', user.id), ('recorded_by', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_student_behaviour_teacher" model="ir.rule">
+            <field name="name">Behaviour review: teacher's classes</field>
+            <field name="model_id" ref="model_school_student_behaviour"/>
+            <field name="domain_force">['|', '|', ('class_ids.teacher_ids.user_id', '=', user.id), ('class_ids.class_teacher_id.user_id', '=', user.id), ('reviewed_by', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_student_behaviour_feedback_teacher" model="ir.rule">
+            <field name="name">Behaviour feedback: teacher's classes</field>
+            <field name="model_id" ref="model_school_student_behaviour_feedback"/>
+            <field name="domain_force">['|', '|', ('review_id.class_ids.teacher_ids.user_id', '=', user.id), ('review_id.class_ids.class_teacher_id.user_id', '=', user.id), ('review_id.reviewed_by', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_student_behaviour_feedback_all" model="ir.rule">
+            <field name="name">Behaviour feedback: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_student_behaviour_feedback"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+        <!-- Counsellor / Principal / Admin: all students -->
+        <record id="rule_student_behaviour_all" model="ir.rule">
+            <field name="name">Behaviour review: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_student_behaviour"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+        <record id="rule_student_competency_all" model="ir.rule">
+            <field name="name">Competency assessment: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_student_competency"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+        <record id="rule_student_record_all" model="ir.rule">
+            <field name="name">Development record: all (counsellor, principal, admin)</field>
+            <field name="model_id" ref="model_school_student_record"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_counsellor')), (4, ref('group_school_principal')), (4, ref('group_school_admin'))]"/>
+        </record>
+    </data>
+</odoo>

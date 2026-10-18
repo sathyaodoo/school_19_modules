@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sg_report_wizard_form" model="ir.ui.view">
+        <field name="name">school.safeguarding.report.wizard.form</field>
+        <field name="model">school.safeguarding.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Report a Concern">
+                <field name="state" invisible="1"/>
+                <div invisible="state != 'draft'">
+                    <div class="alert alert-danger" role="alert">
+                        <b>If a child is in danger right now,</b> tell the Safeguarding Officer or the Principal
+                        immediately. This form does not replace that.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category"/>
+                            <field name="immediate_risk"/>
+                            <field name="incident_date"/>
+                            <field name="location"/>
+                            <field name="is_online"/>
+                            <field name="platform" invisible="not is_online"/>
+                        </group>
+                        <group>
+                            <field name="affected_student_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="involved_student_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="involved_other"/>
+                            <field name="is_anonymous"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description" placeholder="What did you see or hear? Who, where, when..."/>
+                    </group>
+                    <p class="text-muted">
+                        Only the Safeguarding team can open the report. You will not be able to read it afterwards and
+                        nothing about it is shared with staff who are not authorised.
+                    </p>
+                </div>
+                <div invisible="state != 'done'">
+                    <div class="alert alert-success" role="alert">
+                        <h4 class="alert-heading">Thank you. Your concern has been sent to the Safeguarding team.</h4>
+                        <p class="mb-0">Please do not discuss it with others.</p>
+                    </div>
+                    <group>
+                        <field name="result_reference"/>
+                        <field name="result_code" invisible="not is_anonymous"/>
+                    </group>
+                    <p invisible="not is_anonymous" class="text-muted">
+                        Your report is anonymous. Write the code down: it is the only way to look at the status later.
+                    </p>
+                </div>
+                <footer>
+                    <button name="action_submit" string="Send to Safeguarding Team" type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" invisible="state != 'draft'"/>
+                    <button string="Close" class="btn-primary" special="cancel" invisible="state != 'done'"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sg_report_wizard" model="ir.actions.act_window">
+        <field name="name">Report a Concern</field>
+        <field name="res_model">school.safeguarding.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

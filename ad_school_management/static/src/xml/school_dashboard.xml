@@ -20,6 +20,58 @@
             </div>
 
             <div t-else="" class="dashboard_content">
+
+                <!-- Staff Leave Requests moved to Teacher Development > Growth Dashboard -->
+                <!-- ============ Early Warning System (teachers / counsellor / principal / admin) ============ -->
+                <div t-if="state.stats.early_warning and state.stats.early_warning.visible" class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded bg-white o_school_ews_panel">
+                            <div class="card-header border-0 bg-transparent py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="card-title font-weight-bold text-dark mb-0">
+                                    <i class="fa fa-heartbeat text-danger me-2"/>Early Warning System
+                                    <small class="text-muted ms-2">signals for review - not labels</small>
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openEarlyWarnings()">View all</button>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div class="row text-center">
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-3 rounded bg-light cursor-pointer" t-on-click="() => this.openEarlyWarnings('to_review')">
+                                            <div class="h3 mb-0 text-primary" t-out="state.stats.early_warning.to_review"/>
+                                            <small class="text-muted">To Review</small>
+                                            <div t-if="state.stats.early_warning.to_review_red" class="small text-danger"
+                                                 t-on-click.stop="() => this.openEarlyWarnings('to_review_red')">
+                                                <t t-out="state.stats.early_warning.to_review_red"/> suggested immediate
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-3 rounded bg-light cursor-pointer" t-on-click="() => this.openEarlyWarnings('red')">
+                                            <div class="h3 mb-0 text-danger">&#128308; <t t-out="state.stats.early_warning.red"/></div>
+                                            <small class="text-muted">Immediate Intervention</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-3 rounded bg-light cursor-pointer" t-on-click="() => this.openEarlyWarnings('amber')">
+                                            <div class="h3 mb-0 text-warning">&#128993; <t t-out="state.stats.early_warning.amber"/></div>
+                                            <small class="text-muted">Requires Attention</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-3 rounded bg-light cursor-pointer" t-on-click="() => this.openEarlyWarnings('follow_up_due')">
+                                            <div class="h3 mb-0 text-secondary" t-out="state.stats.early_warning.follow_up_due"/>
+                                            <small class="text-muted">Follow-ups Due</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    Levels count only after a teacher / counsellor has reviewed the signals
+                                    (&#128994; Normal, &#128993; Requires Attention, &#128308; Immediate Intervention).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="row mb-4">
                     <div class="col-xl-3 col-md-6 mb-4">
@@ -261,6 +313,88 @@
                                             <t t-out="state.stats.transport.vehicles"/> Vehicles
                                         </span>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ House Championship (live, all users) - below Hostel Occupancy & Beds ============ -->
+                <div t-if="state.stats.championship and state.stats.championship.boards.length" class="row mt-4 mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded bg-white o_school_house_panel">
+                            <div class="card-header border-0 bg-transparent py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="card-title font-weight-bold text-dark mb-0">
+                                    <i class="fa fa-trophy text-warning me-2"/>House Championship
+                                    <small class="text-muted ms-2" t-if="state.stats.championship.year">
+                                        <t t-out="state.stats.championship.year"/>
+                                    </small>
+                                    <span class="badge rounded-pill text-bg-success ms-2" title="Updates automatically">
+                                        <i class="fa fa-circle me-1"/>Live
+                                    </span>
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openHousePoints()">
+                                    All points
+                                </button>
+                            </div>
+                            <div class="card-body pt-0">
+                                <t t-foreach="state.stats.championship.boards" t-as="board" t-key="board.board">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 mb-2">
+                                        <h6 class="mb-0 fw-bold" t-out="board.label"/>
+                                        <div class="d-flex flex-wrap gap-2 small">
+                                            <span t-if="board.champion" class="badge text-bg-warning">
+                                                <i class="fa fa-trophy me-1"/>Leading: <t t-out="board.champion"/>
+                                            </span>
+                                            <span t-if="board.spirit_award" class="badge text-bg-info">
+                                                <i class="fa fa-handshake-o me-1"/>Team Spirit: <t t-out="board.spirit_award"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle mb-3">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 50px;">#</th>
+                                                    <th>House</th>
+                                                    <th class="text-end">Total</th>
+                                                    <th class="text-end">Achievement</th>
+                                                    <th class="text-end">Teamwork &amp; Cooperation</th>
+                                                    <th class="text-end">Community Contribution</th>
+                                                    <th class="text-end">Cooperation &amp; Community share</th>
+                                                    <th>Strongest Areas</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr t-foreach="board.rows" t-as="row" t-key="row.id"
+                                                    class="cursor-pointer" t-on-click="() => this.openHousePoints(row.id)">
+                                                    <td>
+                                                        <span t-if="row.rank == 1 and row.total" class="fa fa-trophy text-warning" title="Leading"/>
+                                                        <span t-else="" t-out="row.rank"/>
+                                                    </td>
+                                                    <td class="fw-bold">
+                                                        <span t-attf-class="o_school_house_dot me-2 o_colorlist_item_color_#{row.color or 0}"/>
+                                                        <t t-out="row.name"/>
+                                                    </td>
+                                                    <td class="text-end fw-bold" t-out="row.total"/>
+                                                    <td class="text-end" t-out="row.achievement"/>
+                                                    <td class="text-end" t-out="row.cooperation"/>
+                                                    <td class="text-end" t-out="row.community"/>
+                                                    <td class="text-end" style="min-width: 140px;">
+                                                        <div class="progress" style="height: 6px;" t-att-title="row.spirit_share + '%'">
+                                                            <div class="progress-bar bg-info" t-attf-style="width: #{row.spirit_share}%"/>
+                                                        </div>
+                                                        <small class="text-muted"><t t-out="row.spirit_share"/>%</small>
+                                                    </td>
+                                                    <td class="small text-muted" t-out="row.top_categories or '-'"/>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </t>
+                                <div class="small text-muted">
+                                    Points reward achievement <b>and</b> teamwork, cooperation and community
+                                    contribution. The Team Spirit award goes to the house with the most
+                                    cooperation and community points.
                                 </div>
                             </div>
                         </div>

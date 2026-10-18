@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_resignation_handover_exception_form" model="ir.ui.view">
+        <field name="name">school.resignation.handover.exception.form</field>
+        <field name="model">school.resignation.handover.exception</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="alert alert-warning" role="alert">
+                    These handover items are not ticked. Give a reason for <b>each</b> one
+                    (for example <b>non-teaching staff</b> have no study materials or student
+                    register). The handover is then verified and the resignation can go to
+                    <b>Final Settlement</b>.
+                </div>
+                <group>
+                    <group>
+                        <field name="resignation_id" invisible="1"/>
+                        <field name="employee_id"/>
+                    </group>
+                    <group>
+                        <field name="is_teaching_staff" widget="boolean_toggle" readonly="1"/>
+                    </group>
+                </group>
+                <field name="line_ids">
+                    <list editable="bottom" create="0" delete="0">
+                        <field name="item_field" column_invisible="1" force_save="1"/>
+                        <field name="item_label" force_save="1" class="fw-bold text-danger"/>
+                        <field name="reason" required="1" placeholder="Why was this not handed over?"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_confirm" type="object" string="Verify Handover" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

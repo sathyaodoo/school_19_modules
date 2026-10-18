@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================================================================
+         The 360° profile body: used by the "360° Profile" tab on the student
+         record AND by the printed PDF (same content in both places).
+         Expects "p" = school.student._get_360_profile() and "year_name".
+         =================================================================== -->
+    <template id="student_360_profile_body">
+        <div class="o_student_360_body">
+            <t t-set="a" t-value="p['academic']"/>
+            <t t-set="lvl_cls" t-value="{1: 'text-bg-danger', 2: 'text-bg-warning', 3: 'text-bg-info', 4: 'text-bg-success'}"/>
+            <t t-set="arrow" t-value="{'up': '&#9650;', 'down': '&#9660;', 'steady': '&#9654;'}"/>
+
+            <!-- identity + key figures -->
+            <table class="table table-sm table-borderless mb-2">
+                <tr>
+                    <td>
+                        <h3 class="mb-0" t-out="p['student']['name']"/>
+                        <div class="text-muted">
+                            <t t-out="p['student']['admission_no']"/> · <t t-out="p['student']['class']"/>
+                            <t t-if="p['student']['house']"> · House <t t-out="p['student']['house']"/></t>
+                            <t t-if="p['student']['leader_role']"> · &#9733; <t t-out="p['student']['leader_role']"/></t>
+                            <t t-if="year_name"> · Academic Year <t t-out="year_name"/></t>
+                        </div>
+                    </td>
+                    <td class="text-center"><div class="h4 mb-0"><t t-out="(str(a['overall']) + ' %') if a['overall'] is not None else '-'"/>
+                        <span t-if="a['trend']" t-attf-class="small #{'text-success' if a['trend'] == 'up' else 'text-danger' if a['trend'] == 'down' else 'text-muted'}" t-out="arrow[a['trend']]"/></div>
+                        <small class="text-muted">Academic average</small></td>
+                    <td class="text-center"><div class="h4 mb-0" t-out="(str(a['attendance']['percent']) + ' %') if a['attendance']['percent'] is not None else '-'"/><small class="text-muted">Attendance</small></td>
+                    <td class="text-center"><div class="h4 mb-0" t-out="p['reading']['books_read']"/><small class="text-muted">Books read</small></td>
+                    <td class="text-center"><div class="h4 mb-0" t-out="len(p['achievements'])"/><small class="text-muted">Achievements</small></td>
+                </tr>
+            </table>
+
+            <!-- holistic profile -->
+            <div class="alert alert-info mb-3">
+                <b>Holistic Profile:</b>&#160;
+                <t t-foreach="p['summary']" t-as="line"><t t-out="line"/> </t>
+            </div>
+
+            <!-- strengths / gaps / support -->
+            <table class="table table-sm table-bordered mb-3">
+                <thead><tr>
+                    <th class="text-success" style="width: 33%;">&#10004; Strengths</th>
+                    <th class="text-warning" style="width: 33%;">&#9888; Learning Gaps</th>
+                    <th class="text-danger">&#10010; Areas Requiring Support</th>
+                </tr></thead>
+                <tr>
+                    <td><div t-foreach="p['strengths']" t-as="s">• <t t-out="s"/></div><span t-if="not p['strengths']" class="text-muted">Not enough data yet.</span></td>
+                    <td><div t-foreach="p['gaps']" t-as="s">• <t t-out="s"/></div><span t-if="not p['gaps']" class="text-muted">No gaps detected.</span></td>
+                    <td><div t-foreach="p['support']" t-as="s">• <t t-out="s"/></div><span t-if="not p['support']" class="text-muted">None at the moment.</span></td>
+                </tr>
+            </table>
+
+            <!-- ACADEMIC -->
+            <h4 class="mt-3">Academic</h4>
+            <table class="table table-sm mb-2">
+                <thead class="table-light"><tr><th>Subject</th><th class="text-end">Average</th><th class="text-end">Latest</th><th>History</th><th>Status</th></tr></thead>
+                <tr t-foreach="a['subjects']" t-as="s">
+                    <td t-out="s['name']"/>
+                    <td class="text-end"><t t-out="s['avg']"/> %</td>
+                    <td class="text-end"><t t-out="s['last']"/> %
+                        <span t-if="s['trend']" t-attf-class="#{'text-success' if s['trend'] == 'up' else 'text-danger' if s['trend'] == 'down' else 'text-muted'}" t-out="arrow[s['trend']]"/></td>
+                    <td class="text-muted" t-out="' → '.join(str(v) for v in s['history'])"/>
+                    <td><span t-if="s['status'] == 'strength'" class="badge text-bg-success">Strength</span>
+                        <span t-if="s['status'] == 'support'" class="badge text-bg-danger">Needs support</span></td>
+                </tr>
+                <tr t-if="not a['subjects']"><td colspan="5" class="text-muted">No exam results yet.</td></tr>
+            </table>
+            <p class="mb-1"><b>Academic performance:</b>
+                <t t-foreach="a['exams']" t-as="e"><t t-out="e['name']"/> <t t-out="e['avg']"/> %<t t-if="e['failed']"> (<t t-out="e['failed']"/> failed)</t><t t-if="not e_last"> → </t></t>
+                <span t-if="not a['exams']" class="text-muted">No exams yet.</span></p>
+            <p class="mb-2"><b>Attendance:</b>
+                <t t-if="a['attendance']['percent'] is not None"><t t-out="a['attendance']['percent']"/> % – <t t-out="a['attendance']['present']"/> present, <t t-out="a['attendance']['absent']"/> absent of <t t-out="a['attendance']['days']"/> school days</t>
+                <span t-else="" class="text-muted">No attendance recorded.</span></p>
+            <table class="table table-sm mb-3">
+                <thead class="table-light"><tr><th>Learning Outcomes &amp; Competencies</th><th>Type</th><th>Level</th></tr></thead>
+                <t t-foreach="['learning_outcome', 'competency', 'skill']" t-as="cat">
+                    <tr t-foreach="p['competencies'][cat]['items']" t-as="c">
+                        <td><t t-out="c['name']"/><span t-if="c['subject']" class="text-muted"> (<t t-out="c['subject']"/>)</span></td>
+                        <td t-out="p['competencies'][cat]['label']"/>
+                        <td><span t-attf-class="badge #{lvl_cls.get(c['level'], '')}" t-out="c['label']"/></td>
+                    </tr>
+                </t>
+                <tr t-if="not any(p['competencies'][c]['items'] for c in ('learning_outcome', 'competency', 'skill'))">
+                    <td colspan="3" class="text-muted">Not assessed yet.</td></tr>
+            </table>
+
+            <!-- STUDENT DEVELOPMENT -->
+            <h4 class="mt-3">Student Development</h4>
+            <table class="table table-sm mb-3">
+                <tr t-foreach="['sports', 'arts', 'cultural', 'academic']" t-as="k">
+                    <t t-set="act" t-value="p['activities'][k]"/>
+                    <td style="width: 22%;"><b t-out="act['label']"/></td>
+                    <td><t t-out="act['count']"/> activity(ies)<t t-if="act['wins']">, <t t-out="act['wins']"/> place(s)</t>
+                        <span class="text-muted" t-if="act['items']"> – <t t-out="', '.join(i['name'] + (' (' + i['place'] + ')' if i['place'] else '') for i in act['items'])"/></span></td>
+                </tr>
+                <tr><td><b>Clubs</b></td><td t-out="', '.join('%s (%s%s)' % (c['name'], c['role'], '' if c['current'] else ', past') for c in p['clubs']) or '-'"/></tr>
+                <tr t-foreach="[('Competitions', 'competitions'), ('Leadership', 'leadership'), ('Projects', 'projects'), ('Skills Acquired', 'skills'), ('Certifications', 'certifications'), ('Achievements', 'achievements')]" t-as="sec">
+                    <td><b t-out="sec[0]"/></td>
+                    <td t-out="'; '.join(x['name'] + (' – ' + x['result'] if x['result'] else '') + (' (' + x['level'] + ')' if x['level'] else '') for x in p[sec[1]]) or '-'"/>
+                </tr>
+            </table>
+
+            <!-- READING & CREATIVITY -->
+            <h4 class="mt-3">Reading &amp; Creativity</h4>
+            <table class="table table-sm mb-3">
+                <tr><td style="width: 22%;"><b>Reading habits</b></td>
+                    <td><t t-out="p['reading']['books_read']"/> books read, <t t-out="p['reading']['last_12_months']"/> in the last 12 months, <t t-out="p['reading']['per_month']"/> per month · <t t-out="p['reading']['reviews']"/> review(s)</td></tr>
+                <tr><td><b>Reading profile</b></td>
+                    <td><t t-if="p['reading']['level']">Level <t t-out="p['reading']['level']"/></t><t t-if="p['reading']['genres']"> · favourite genres: <t t-out="', '.join(p['reading']['genres'])"/></t><t t-if="not p['reading']['level'] and not p['reading']['genres']">-</t></td></tr>
+                <tr t-foreach="[('Creativity', 'creativity'), ('Communication skills', 'communication')]" t-as="cat">
+                    <td><b t-out="cat[0]"/></td>
+                    <td><t t-foreach="p['competencies'][cat[1]]['items']" t-as="c"><span t-attf-class="badge #{lvl_cls.get(c['level'], '')} me-1" t-out="c['label']"/><t t-out="c['name']"/><t t-if="not c_last">, </t></t>
+                        <t t-if="not p['competencies'][cat[1]]['items']">Not assessed yet.</t>
+                        <span t-if="cat[1] == 'creativity' and (p['activities']['arts']['count'] or p['activities']['cultural']['count'])" class="text-muted"> · <t t-out="p['activities']['arts']['count']"/> arts, <t t-out="p['activities']['cultural']['count']"/> cultural activity(ies)</span></td>
+                </tr>
+            </table>
+
+            <!-- SOCIAL RESPONSIBILITY -->
+            <h4 class="mt-3">Social Responsibility</h4>
+            <table class="table table-sm mb-1">
+                <tr t-foreach="['community_service', 'environmental', 'volunteering', 'service_achievement']" t-as="k">
+                    <t t-set="soc" t-value="p['social'][k]"/>
+                    <td style="width: 22%;"><b t-out="soc['label']"/></td>
+                    <td><t t-out="soc['count']"/> record(s)<t t-if="soc['hours']">, <t t-out="soc['hours']"/> hour(s)</t>
+                        <span class="text-muted" t-if="soc['items']"> – <t t-out="', '.join(x['name'] for x in soc['items'])"/></span></td>
+                </tr>
+            </table>
+            <p t-if="p['community_points']" class="text-muted small">Also earned <t t-out="p['community_points']"/> community-contribution house point(s).</p>
+        </div>
+    </template>
+
+    <!-- Printed Student 360° Profile -->
+    <record id="action_report_student_360" model="ir.actions.report">
+        <field name="name">Student 360° Profile</field>
+        <field name="model">school.student</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_student_360</field>
+        <field name="report_file">ad_school_management.report_student_360</field>
+        <field name="print_report_name">'360 Profile - %s' % object.name</field>
+        <field name="binding_model_id" ref="model_school_student"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_student_360">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="student">
+                <t t-call="web.external_layout">
+                    <t t-set="p" t-value="student._report_360_values()"/>
+                    <t t-set="year_name" t-value="p['year_name']"/>
+                    <div class="page">
+                        <h2>Student 360° Profile</h2>
+                        <t t-call="ad_school_management.student_360_profile_body"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

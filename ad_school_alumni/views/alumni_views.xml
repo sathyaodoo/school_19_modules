@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================== Alumni ===================== -->
+    <record id="view_school_alumni_list" model="ir.ui.view">
+        <field name="name">school.alumni.list</field>
+        <field name="model">school.alumni</field>
+        <field name="arch" type="xml">
+            <list string="Alumni">
+                <field name="code" optional="show"/>
+                <field name="name"/>
+                <field name="graduation_year" options="{'format': false}"/>
+                <field name="last_class_id" optional="show"/>
+                <field name="highest_qualification" optional="show"/>
+                <field name="profession" optional="show"/>
+                <field name="organization" optional="show"/>
+                <field name="industry_id" optional="hide"/>
+                <field name="email" optional="show"/>
+                <field name="phone" optional="hide"/>
+                <field name="current_city" optional="hide"/>
+                <field name="stage" widget="badge"
+                       decoration-muted="stage == 'graduate'" decoration-info="stage == 'alumni'"
+                       decoration-success="stage == 'mentor'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_kanban" model="ir.ui.view">
+        <field name="name">school.alumni.kanban</field>
+        <field name="model">school.alumni</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage" class="o_kanban_mobile">
+                <field name="stage"/>
+                <templates>
+                    <t t-name="card" class="flex-row">
+                        <aside class="o_kanban_aside_full">
+                            <field name="image_128" widget="image" class="d-block"
+                                   options="{'img_class': 'object-fit-cover w-100 h-100'}"/>
+                        </aside>
+                        <main class="ps-2 ps-md-3">
+                            <field name="name" class="fw-bold fs-5"/>
+                            <field name="batch" class="text-muted"/>
+                            <field name="profession"/>
+                            <field name="organization" class="text-muted"/>
+                            <field name="expertise_ids" widget="many2many_tags"
+                                   options="{'color_field': 'color'}"/>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_form" model="ir.ui.view">
+        <field name="name">school.alumni.form</field>
+        <field name="model">school.alumni</field>
+        <field name="arch" type="xml">
+            <form string="Alumni">
+                <header>
+                    <button name="action_register_alumni" type="object" string="Register as Alumni"
+                            class="oe_highlight" invisible="stage != 'graduate'"/>
+                    <button name="action_make_mentor" type="object" string="Make Mentor"
+                            class="oe_highlight" invisible="stage != 'alumni'"/>
+                    <button name="action_stop_mentoring" type="object" string="Stop Mentoring"
+                            invisible="stage != 'mentor'"/>
+                    <button name="action_back_to_graduate" type="object" string="Back to Graduate"
+                            invisible="stage != 'alumni'" groups="ad_school_alumni.group_alumni_manager"/>
+                    <field name="stage" widget="statusbar" statusbar_visible="graduate,alumni,mentor"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_student" type="object" class="oe_stat_button"
+                                icon="fa-graduation-cap" string="Student Record" invisible="not student_id"/>
+                        <button name="action_view_mentorships" type="object" class="oe_stat_button" icon="fa-handshake-o">
+                            <field name="mentorship_count" widget="statinfo" string="Mentorships"/>
+                        </button>
+                        <button name="action_view_guidance" type="object" class="oe_stat_button" icon="fa-compass">
+                            <field name="guidance_count" widget="statinfo" string="Guidance"/>
+                        </button>
+                        <button name="action_view_events" type="object" class="oe_stat_button" icon="fa-calendar">
+                            <field name="event_count" widget="statinfo" string="Events"/>
+                        </button>
+                        <button name="action_view_donations" type="object" class="oe_stat_button" icon="fa-heart">
+                            <field name="donation_total" widget="statinfo" string="Donated"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Full name" readonly="student_id"/></h1>
+                        <h4 class="text-muted"><field name="code" readonly="1"/> · <field name="batch"/></h4>
+                    </div>
+                    <group>
+                        <group string="Alumni Details">
+                            <field name="email" widget="email"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="gender"/>
+                            <field name="current_city"/>
+                            <field name="current_country_id"/>
+                            <field name="linkedin_url" widget="url"/>
+                        </group>
+                        <group string="Graduation">
+                            <field name="graduation_year" options="{'format': false}"/>
+                            <field name="graduation_date"/>
+                            <field name="graduation_academic_year_id"/>
+                            <field name="student_id" readonly="1" invisible="not student_id"/>
+                            <field name="admission_no"/>
+                            <field name="last_class_id"/>
+                            <field name="last_section_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Higher Education" name="education">
+                            <field name="highest_qualification" invisible="1"/>
+                            <field name="education_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="level"/>
+                                    <field name="degree"/>
+                                    <field name="field_of_study" optional="show"/>
+                                    <field name="institution"/>
+                                    <field name="start_year" options="{'format': false}"/>
+                                    <field name="end_year" options="{'format': false}"/>
+                                    <field name="status"/>
+                                    <field name="score" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Profession" name="profession">
+                            <group>
+                                <group>
+                                    <field name="employment_status"/>
+                                    <field name="profession"/>
+                                    <field name="organization"/>
+                                    <field name="industry_id" options="{'no_create': True}"/>
+                                </group>
+                            </group>
+                            <separator string="Career History"/>
+                            <div class="text-muted small mb-1">Ticking "Current Job" also fills the profession above.</div>
+                            <field name="career_ids">
+                                <list editable="bottom">
+                                    <field name="designation"/>
+                                    <field name="organization"/>
+                                    <field name="industry_id" options="{'no_create': True}" optional="show"/>
+                                    <field name="location" optional="hide"/>
+                                    <field name="date_start"/>
+                                    <field name="date_end"/>
+                                    <field name="is_current"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Achievements" name="achievements">
+                            <field name="achievement_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="category"/>
+                                    <field name="level"/>
+                                    <field name="date"/>
+                                    <field name="featured"/>
+                                    <field name="description" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Mentorship" name="mentorship">
+                            <group>
+                                <group>
+                                    <field name="expertise_ids" widget="many2many_tags"
+                                           options="{'color_field': 'color'}"/>
+                                    <field name="mentor_available"/>
+                                    <field name="max_mentees"/>
+                                </group>
+                                <group>
+                                    <field name="active_mentee_count"/>
+                                </group>
+                            </group>
+                            <field name="mentorship_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="student_id"/>
+                                    <field name="class_id"/>
+                                    <field name="area"/>
+                                    <field name="start_date"/>
+                                    <field name="end_date"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Donations" name="donations">
+                            <field name="donation_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="purpose"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_search" model="ir.ui.view">
+        <field name="name">school.alumni.search</field>
+        <field name="model">school.alumni</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="graduation_year"/>
+                <field name="profession"/>
+                <field name="organization"/>
+                <field name="industry_id"/>
+                <field name="expertise_ids"/>
+                <field name="highest_qualification"/>
+                <filter string="Graduates" name="graduates" domain="[('stage', '=', 'graduate')]"/>
+                <filter string="Alumni" name="alumni" domain="[('stage', '=', 'alumni')]"/>
+                <filter string="Mentors" name="mentors" domain="[('stage', '=', 'mentor')]"/>
+                <separator/>
+                <filter string="Available to Mentor" name="available" domain="[('stage', '=', 'mentor'), ('mentor_available', '=', True)]"/>
+                <filter string="Higher Studies" name="studying" domain="[('employment_status', '=', 'studying')]"/>
+                <filter string="Employed" name="employed" domain="[('employment_status', 'in', ('employed', 'self_employed'))]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Graduation Year" name="group_year" context="{'group_by': 'graduation_year'}"/>
+                    <filter string="Stage" name="group_stage" context="{'group_by': 'stage'}"/>
+                    <filter string="Industry" name="group_industry" context="{'group_by': 'industry_id'}"/>
+                    <filter string="Current Status" name="group_status" context="{'group_by': 'employment_status'}"/>
+                    <filter string="Last Class" name="group_class" context="{'group_by': 'last_class_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_graph" model="ir.ui.view">
+        <field name="name">school.alumni.graph</field>
+        <field name="model">school.alumni</field>
+        <field name="arch" type="xml">
+            <graph string="Alumni" type="bar" stacked="1">
+                <field name="graduation_year"/>
+                <field name="stage"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_pivot" model="ir.ui.view">
+        <field name="name">school.alumni.pivot</field>
+        <field name="model">school.alumni</field>
+        <field name="arch" type="xml">
+            <pivot string="Alumni">
+                <field name="graduation_year" type="row"/>
+                <field name="stage" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_alumni" model="ir.actions.act_window">
+        <field name="name">Alumni Directory</field>
+        <field name="res_model">school.alumni</field>
+        <field name="view_mode">kanban,list,form,graph,pivot</field>
+        <field name="search_view_id" ref="view_school_alumni_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No alumni yet.</p>
+            <p>Graduate students from School Management (Alumni > Graduate Students),
+               or add older alumni here by hand.</p>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_mentors" model="ir.actions.act_window">
+        <field name="name">Mentors</field>
+        <field name="res_model">school.alumni</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_school_alumni_search"/>
+        <field name="domain">[('stage', '=', 'mentor')]</field>
+        <field name="context">{'default_stage': 'mentor', 'search_default_available': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No mentors yet.</p>
+            <p>Open an alumni, add Expertise Areas in the Mentorship tab and click "Make Mentor".</p>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_achievements" model="ir.actions.act_window">
+        <field name="name">Achievements</field>
+        <field name="res_model">school.alumni.achievement</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_school_alumni_achievement_list" model="ir.ui.view">
+        <field name="name">school.alumni.achievement.list</field>
+        <field name="model">school.alumni.achievement</field>
+        <field name="arch" type="xml">
+            <list string="Achievements" editable="bottom">
+                <field name="alumni_id"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="level"/>
+                <field name="date"/>
+                <field name="featured"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_achievement_search" model="ir.ui.view">
+        <field name="name">school.alumni.achievement.search</field>
+        <field name="model">school.alumni.achievement</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="alumni_id"/>
+                <filter string="Featured" name="featured" domain="[('featured', '=', True)]"/>
+                <group>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
+                    <filter string="Level" name="group_level" context="{'group_by': 'level'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

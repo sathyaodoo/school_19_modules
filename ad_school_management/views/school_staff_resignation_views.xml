@@ -30,6 +30,11 @@
                     <!-- Step 5: Handover -->
                     <button name="action_start_handover" type="object" string="Start Handover"
                             class="oe_highlight" invisible="state != 'notice_period'"/>
+                    <!-- Skip Notice Period: the employee cannot serve the notice period -->
+                    <button name="action_open_emergency_exit" type="object" string="Skip Notice Period"
+                            icon="fa-fast-forward" class="btn-warning"
+                            invisible="state != 'notice_period'"
+                            groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager,ad_school_management.group_school_principal"/>
 
                     <!-- Step 6: Manager verification -->
                     <button name="action_verify_handover" type="object" string="Verify Handover"
@@ -52,7 +57,10 @@
                             class="oe_highlight" invisible="state != 'settled' or not exit_done or exit_interview_count &gt; 0"
                             groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager"/>
 
-                    <field name="state" widget="statusbar"
+                    <!-- Clickable: jump to any stage, forward or backward.
+                         Forward runs every step's checks; backward resets the
+                         later stages (see SchoolStaffResignation.write). -->
+                    <field name="state" widget="statusbar" options="{'clickable': '1'}"
                            statusbar_visible="draft,submitted,approved,notice_period,handover,settled"/>
                 </header>
                 <sheet>
@@ -94,9 +102,6 @@
                                readonly="state != 'draft'"/>
                         <field name="reason_details" readonly="state != 'draft'"
                                placeholder="Additional comments or explanation..."/>
-                        <field name="last_working_day" readonly="state != 'draft'"/>
-                        <field name="minimum_notice_date" readonly="1"/>
-                        <field name="notice_period_met" readonly="1"/>
                         <field name="letter_attachment" string="Scanned Letter (optional)"
                                filename="letter_attachment_filename"
                                readonly="state != 'draft'"/>
@@ -119,9 +124,24 @@
                     <group string="Notice Period (Minimum 3 Months — Mandatory)"
                            invisible="state in ('draft', 'submitted')">
                         <group>
-                            <field name="notice_period_start" readonly="1"/>
-                            <field name="notice_period_end" readonly="1"/>
+                            <!-- Editable while the notice period / handover is running.
+                                 Changing the start proposes start + 3 months as the end;
+                                 the end can be moved later but not below 3 months. -->
+                            <field name="notice_period_start"
+                                   readonly="state not in ('notice_period', 'handover')"
+                                   required="state in ('notice_period', 'handover')"/>
+                            <field name="notice_period_end"
+                                   readonly="state not in ('notice_period', 'handover')"
+                                   required="state in ('notice_period', 'handover')"/>
                         </group>
+                        <group invisible="not notice_waived">
+                            <field name="notice_waived" widget="boolean_toggle"/>
+                            <field name="notice_waived_by"/>
+                            <field name="notice_waived_date"/>
+                        </group>
+                    </group>
+                    <group string="Notice Period Skipped — Reason" invisible="not notice_waived">
+                        <field name="notice_waiver_reason" nolabel="1" colspan="2"/>
                     </group>
 
                     <group string="Handover Checklist" invisible="state not in ('handover', 'settled')">
@@ -135,7 +155,17 @@
                             <field name="handover_verified" readonly="1"/>
                             <field name="handover_verified_by" readonly="1"/>
                             <field name="handover_verified_date" readonly="1"/>
+                            <field name="is_teaching_staff" readonly="1"/>
                         </group>
+                    </group>
+                    <group string="Items Not Handed Over (Accepted)" invisible="not handover_not_applicable">
+                        <field name="handover_student_register_reason" string="Student Register" invisible="not handover_student_register_reason"/>
+                        <field name="handover_study_materials_reason" string="Study Materials" invisible="not handover_study_materials_reason"/>
+                        <field name="handover_reports_reason" string="Reports" invisible="not handover_reports_reason"/>
+                        <field name="handover_id_card_reason" string="ID Card" invisible="not handover_id_card_reason"/>
+                        <!-- Handovers verified before per-item reasons: one combined reason -->
+                        <field name="handover_exception_reason" string="Reason"
+                               invisible="handover_student_register_reason or handover_study_materials_reason or handover_reports_reason or handover_id_card_reason"/>
                     </group>
 
                     <group string="Final Settlement" invisible="state not in ('handover', 'settled')">
@@ -155,6 +185,92 @@
         </field>
     </record>
 
+    <!-- ============ Pipeline (Kanban) ============
+         One column per stage. Cards can be dragged to any stage, forward or
+         backward, with the same rules as clicking the status bar in the form
+         (see SchoolStaffResignation.write()). -->
+    <record id="view_school_staff_resignation_kanban" model="ir.ui.view">
+        <field name="name">school.staff.resignation.kanban</field>
+        <field name="model">school.staff.resignation</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" highlight_color="color" sample="1"
+                    quick_create="false" group_create="false" group_delete="false" group_edit="false"
+                    class="o_school_resignation_kanban">
+                <field name="state"/>
+                <field name="principal_approved"/>
+                <field name="hr_approved"/>
+                <field name="handover_verified"/>
+                <field name="settlement_processed"/>
+                <field name="exit_done"/>
+                <field name="notice_waived"/>
+                <field name="notice_period_end"/>
+                <field name="currency_id"/>
+                <progressbar field="activity_state"
+                             colors='{"planned": "success", "today": "warning", "overdue": "danger"}'/>
+                <templates>
+                    <t t-name="menu">
+                        <a role="menuitem" type="open" class="dropdown-item">Open</a>
+                        <t t-if="widget.deletable"><a role="menuitem" type="delete" class="dropdown-item">Delete</a></t>
+                        <field name="color" widget="kanban_color_picker"/>
+                    </t>
+                    <t t-name="card" class="flex-row">
+                        <widget name="web_ribbon" title="Exited" bg_color="text-bg-success" invisible="not exit_done"/>
+                        <aside class="me-2">
+                            <field name="employee_image" widget="image" class="o_school_resignation_avatar"
+                                   options="{'size': [48, 48], 'img_class': 'rounded-circle object-fit-cover'}"/>
+                        </aside>
+                        <main class="flex-grow-1">
+                            <field name="employee_id" class="fw-bold fs-5"/>
+                            <div class="text-muted small">
+                                <field name="job_id"/>
+                                <t t-if="record.job_id.raw_value and record.department_id.raw_value"> · </t>
+                                <field name="department_id"/>
+                            </div>
+
+                            <div class="small mt-1" t-if="record.notice_period_end.raw_value">
+                                <i class="fa fa-hourglass-half me-1" title="Notice Period End (Last Working Day)"/>
+                                Last day: <field name="notice_period_end"/>
+                            </div>
+                            <div class="small" t-if="record.reason_for_resignation.raw_value">
+                                <i class="fa fa-info-circle me-1" title="Reason"/>
+                                <field name="reason_for_resignation"/>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-1 mt-2" t-if="record.state.raw_value != 'draft'">
+                                <span t-attf-class="badge rounded-pill #{record.principal_approved.raw_value ? 'text-bg-success' : 'text-bg-light border'}">
+                                    <i t-attf-class="fa #{record.principal_approved.raw_value ? 'fa-check' : 'fa-clock-o'} me-1"/>Principal
+                                </span>
+                                <span t-attf-class="badge rounded-pill #{record.hr_approved.raw_value ? 'text-bg-success' : 'text-bg-light border'}">
+                                    <i t-attf-class="fa #{record.hr_approved.raw_value ? 'fa-check' : 'fa-clock-o'} me-1"/>HR
+                                </span>
+                                <span t-if="['handover', 'settled'].includes(record.state.raw_value)"
+                                      t-attf-class="badge rounded-pill #{record.handover_verified.raw_value ? 'text-bg-success' : 'text-bg-light border'}">
+                                    <i t-attf-class="fa #{record.handover_verified.raw_value ? 'fa-check' : 'fa-clock-o'} me-1"/>Handover
+                                </span>
+                                <span t-if="record.notice_waived.raw_value" class="badge rounded-pill text-bg-warning">
+                                    <i class="fa fa-fast-forward me-1" title="Notice Period Skipped"/>Notice Skipped
+                                </span>
+                                <span t-if="record.settlement_processed.raw_value" class="badge rounded-pill text-bg-success">
+                                    <i class="fa fa-money me-1" title="Final Settlement"/><field name="settlement_amount" widget="monetary"/>
+                                </span>
+                            </div>
+
+                            <div class="small text-primary mt-2">
+                                <i class="fa fa-arrow-right me-1" title="Next Step"/><field name="pipeline_next_step"/>
+                            </div>
+                            <footer class="pt-1">
+                                <field name="activity_ids" widget="kanban_activity"/>
+                                <span class="ms-auto text-muted small" t-if="record.submitted_date.raw_value">
+                                    Submitted <field name="submitted_date"/>
+                                </span>
+                            </footer>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <record id="view_school_staff_resignation_list" model="ir.ui.view">
         <field name="name">school.staff.resignation.list</field>
         <field name="model">school.staff.resignation</field>
@@ -163,8 +279,7 @@
                 <field name="employee_id"/>
                 <field name="department_id"/>
                 <field name="submitted_date"/>
-                <field name="last_working_day"/>
-                <field name="notice_period_met" widget="boolean_toggle" readonly="1"/>
+                <field name="notice_period_start"/>
                 <field name="notice_period_end"/>
                 <field name="state" widget="badge"
                        decoration-info="state in ('draft', 'submitted')"
@@ -185,6 +300,13 @@
                 <filter string="In Progress" name="filter_in_progress"
                         domain="[('state', 'in', ('approved', 'notice_period', 'handover'))]"/>
                 <filter string="Settled" name="filter_settled" domain="[('state', '=', 'settled')]"/>
+                <separator/>
+                <filter string="My Activities" name="my_activities" domain="[('activity_user_id', '=', uid)]"/>
+                <field name="department_id"/>
+                <group>
+                    <filter string="Stage" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Department" name="group_department" context="{'group_by': 'department_id'}"/>
+                </group>
             </search>
         </field>
     </record>
@@ -192,11 +314,17 @@
     <record id="action_school_staff_resignation" model="ir.actions.act_window">
         <field name="name">Staff Resignation</field>
         <field name="res_model">school.staff.resignation</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_school_staff_resignation_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No resignation letters yet.
+            </p>
+            <p>
+                Resignations move through the pipeline: Draft → Submitted → Approved →
+                Notice Period → Handover → Settled. Drag a card or click a stage in the form's
+                status bar to move it forward or back; forward moves keep every approval and
+                checklist rule, backward moves undo the later stages.
             </p>
         </field>
     </record>

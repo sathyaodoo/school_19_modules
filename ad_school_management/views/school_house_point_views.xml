@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================= House Championship: House Points ================= -->
+    <record id="view_school_house_point_list" model="ir.ui.view">
+        <field name="name">school.house.point.list</field>
+        <field name="model">school.house.point</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancelled'" decoration-info="nature != 'achievement'">
+                <field name="date"/>
+                <field name="house_id"/>
+                <field name="category_id"/>
+                <field name="nature" widget="badge"
+                       decoration-success="nature == 'community'" decoration-info="nature == 'cooperation'"
+                       decoration-warning="nature == 'achievement'"/>
+                <field name="points" sum="Total"/>
+                <field name="name"/>
+                <field name="student_ids" widget="many2many_tags" optional="show"/>
+                <field name="class_ids" widget="many2many_tags" optional="hide"/>
+                <field name="source" optional="show"/>
+                <field name="event_id" optional="hide"/>
+                <field name="awarded_by" optional="hide"/>
+                <field name="academic_year_id" optional="hide"/>
+                <field name="state" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_house_point_form" model="ir.ui.view">
+        <field name="name">school.house.point.form</field>
+        <field name="model">school.house.point</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_cancel" type="object" string="Cancel Points"
+                            invisible="state != 'confirmed' or source != 'manual'"/>
+                    <button name="action_restore" type="object" string="Count Again"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-info" role="alert" invisible="source != 'activity'">
+                        These points come from the activity <field name="event_id" readonly="1" class="d-inline"/>
+                        and are updated automatically when its participants or winners change.
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Cleanest classroom of the week"
+                                   readonly="source != 'manual'"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="house_id" options="{'no_create': True}" readonly="source != 'manual'"/>
+                            <!-- Category: pick one of the list or type a new name and
+                                 click "Create" (or "Create and edit..." to set its
+                                 default nature) -->
+                            <field name="category_id" required="1" readonly="source != 'manual'"/>
+                            <field name="nature" widget="radio" readonly="source != 'manual'"/>
+                            <field name="points" readonly="source != 'manual'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="source != 'manual'"/>
+                            <field name="academic_year_id"/>
+                            <field name="student_ids" widget="many2many_tags" options="{'no_create': True}"
+                                   readonly="source != 'manual'"
+                                   domain="[('house_id', '=', house_id)] if house_id else []"/>
+                            <field name="class_ids" widget="many2many_tags" options="{'no_create': True}"
+                                   readonly="source != 'manual'"/>
+                            <field name="awarded_by"/>
+                            <field name="source"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_house_point_search" model="ir.ui.view">
+        <field name="name">school.house.point.search</field>
+        <field name="model">school.house.point</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="house_id"/>
+                <field name="student_ids" string="Student"/>
+                <field name="class_ids" string="Class"/>
+                <field name="event_id"/>
+                <filter string="Counted" name="counted" domain="[('state', '=', 'confirmed')]"/>
+                <separator/>
+                <filter string="Achievement" name="achievement" domain="[('nature', '=', 'achievement')]"/>
+                <filter string="Teamwork &amp; Cooperation" name="cooperation" domain="[('nature', '=', 'cooperation')]"/>
+                <filter string="Community Contribution" name="community" domain="[('nature', '=', 'community')]"/>
+                <separator/>
+                <filter string="CBSE" name="cbse" domain="[('board', '=', 'cbse')]"/>
+                <filter string="State Board" name="state_board" domain="[('board', '=', 'state')]"/>
+                <separator/>
+                <filter string="Date" name="filter_date" date="date"/>
+                <group>
+                    <filter string="House" name="group_house" context="{'group_by': 'house_id'}"/>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Nature" name="group_nature" context="{'group_by': 'nature'}"/>
+                    <filter string="Academic Year" name="group_year" context="{'group_by': 'academic_year_id'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_school_house_point_pivot" model="ir.ui.view">
+        <field name="name">school.house.point.pivot</field>
+        <field name="model">school.house.point</field>
+        <field name="arch" type="xml">
+            <pivot string="House Championship" sample="1">
+                <field name="house_id" type="row"/>
+                <field name="category_id" type="col"/>
+                <field name="points" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_school_house_point_graph" model="ir.ui.view">
+        <field name="name">school.house.point.graph</field>
+        <field name="model">school.house.point</field>
+        <field name="arch" type="xml">
+            <graph string="House Championship" type="bar" stacked="1" sample="1">
+                <field name="house_id"/>
+                <field name="nature"/>
+                <field name="points" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_school_house_point" model="ir.actions.act_window">
+        <field name="name">House Points</field>
+        <field name="res_model">school.house.point</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_school_house_point_search"/>
+        <field name="context">{'search_default_counted': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Award house points</p>
+            <p>Give points for academics, sports, arts, discipline, attendance, reading,
+               environment, innovation, community service, leadership, cleanliness and cultural
+               activities. Choose the <b>nature</b>: achievement, teamwork &amp; cooperation or
+               community contribution. Points from Activities are added automatically.</p>
+        </field>
+    </record>
+
+    <!-- House x category table (pivot) and points by nature (chart) -->
+    <record id="action_school_house_championship_table" model="ir.actions.act_window">
+        <field name="name">Championship Table</field>
+        <field name="res_model">school.house.point</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_school_house_point_search"/>
+        <field name="context">{'search_default_counted': 1}</field>
+    </record>
+
+    <!-- ================= House Point Categories ================= -->
+    <record id="view_school_house_point_category_list" model="ir.ui.view">
+        <field name="name">school.house.point.category.list</field>
+        <field name="model">school.house.point.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="default_nature"/>
+                <field name="description" optional="show"/>
+                <field name="code" optional="hide"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_house_point_category_form" model="ir.ui.view">
+        <field name="name">school.house.point.category.form</field>
+        <field name="model">school.house.point.category</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <field name="name"/>
+                        <field name="default_nature" widget="radio"/>
+                        <field name="description"/>
+                        <field name="code" invisible="not code"/>
+                        <field name="active" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_house_point_category_search" model="ir.ui.view">
+        <field name="name">school.house.point.category.search</field>
+        <field name="model">school.house.point.category</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_house_point_category" model="ir.actions.act_window">
+        <field name="name">House Point Categories</field>
+        <field name="res_model">school.house.point.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a house point category</p>
+            <p>Academics, Sports, Arts ... are created automatically. Add your own, e.g. "Music"
+               or "Debate", with the nature suggested when it is chosen.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_school_house_championship" name="House Championship"
+              parent="menu_school_activities_root" sequence="15"/>
+    <menuitem id="menu_school_house_point" name="House Points"
+              parent="menu_school_house_championship" action="action_school_house_point" sequence="10"/>
+    <menuitem id="menu_school_house_championship_table" name="Championship Table"
+              parent="menu_school_house_championship" action="action_school_house_championship_table" sequence="20"/>
+    <menuitem id="menu_school_house_point_category" name="Categories"
+              parent="menu_school_house_championship" action="action_school_house_point_category" sequence="30"/>
+</odoo>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="module_category_alumni" model="ir.module.category">
+            <field name="name">Alumni Management</field>
+            <field name="description">Access rights for the Alumni Management app.</field>
+            <field name="sequence">21</field>
+        </record>
+
+        <record model="res.groups.privilege" id="res_groups_privilege_alumni">
+            <field name="name">Alumni Management</field>
+            <field name="category_id" ref="module_category_alumni"/>
+            <field name="sequence">10</field>
+        </record>
+
+        <!-- Officer: works with alumni, mentorships, guidance and events;
+             can see donations but not change them. -->
+        <record id="group_alumni_user" model="res.groups">
+            <field name="name">Alumni Officer</field>
+            <field name="privilege_id" ref="res_groups_privilege_alumni"/>
+            <field name="sequence">10</field>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <!-- Manager: everything, including donations, deleting and settings. -->
+        <record id="group_alumni_manager" model="res.groups">
+            <field name="name">Alumni Manager</field>
+            <field name="privilege_id" ref="res_groups_privilege_alumni"/>
+            <field name="sequence">20</field>
+            <field name="implied_ids" eval="[(4, ref('group_alumni_user'))]"/>
+            <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+
+        <!-- School roles get alumni access automatically -->
+        <record id="ad_school_management.group_school_teacher" model="res.groups">
+            <field name="implied_ids" eval="[(4, ref('group_alumni_user'))]"/>
+        </record>
+        <record id="ad_school_management.group_school_principal" model="res.groups">
+            <field name="implied_ids" eval="[(4, ref('group_alumni_manager'))]"/>
+        </record>
+        <record id="ad_school_management.group_school_admin" model="res.groups">
+            <field name="implied_ids" eval="[(4, ref('group_alumni_manager'))]"/>
+        </record>
+
+        <!-- Multi-company -->
+        <record id="rule_alumni_company" model="ir.rule">
+            <field name="name">Alumni: multi-company</field>
+            <field name="model_id" ref="model_school_alumni"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+        <record id="rule_alumni_donation_company" model="ir.rule">
+            <field name="name">Alumni Donation: multi-company</field>
+            <field name="model_id" ref="model_school_alumni_donation"/>
+            <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+    </data>
+</odoo>

@@ -31,6 +31,10 @@ class SchoolCustomerPortal(CustomerPortal):
             employee = self._school_get_employee()
             values['leave_count'] = request.env['hr.leave'].sudo().search_count(
                 self._school_leave_domain(employee)) if employee else 0
+
+        if 'timetable_count' in counters:
+            teacher = self._school_get_teacher()
+            values['timetable_count'] = teacher.weekly_period_count if teacher else 0
         return values
 
     @http.route(['/my/school/students'], type='http', auth="user", website=True)
@@ -54,7 +58,10 @@ class SchoolCustomerPortal(CustomerPortal):
         if not student.exists() or (student.partner_id.id != partner.id and partner.id not in student.parent_ids.partner_id.ids):
             return request.redirect('/my')
 
-        attendances = request.env['school.attendance'].sudo().search([('student_id', '=', student.id)], order='date desc', limit=15)
+        attendances = request.env['school.attendance'].sudo().search(
+            [('student_id', '=', student.id), ('session', '=', 'morning')], order='date desc', limit=30)
+        # One row per day: Present / Absent (last 15 days).
+        attendance_days = request.env['school.attendance']._get_daily_summary(student, days=15)
         results = request.env['school.exam.result'].sudo().search([('student_id', '=', student.id)])
         
         timetable = request.env['school.timetable'].sudo().search([
@@ -68,16 +75,134 @@ class SchoolCustomerPortal(CustomerPortal):
             ('move_type', '=', 'out_invoice')
         ])
 
+        # Library: books out, reading profile, challenges, "Recommended for you"
+        library_loans = request.env['school.book.issue'].sudo().search(
+            [('student_id', '=', student.id), ('state', 'in', ('issued', 'overdue'))], order='due_date')
+        reading_challenges = request.env['school.reading.challenge.participant'].sudo().search(
+            [('student_id', '=', student.id), ('challenge_id.state', '=', 'running')])
+        recommendations = student._get_recommended_books(limit=6)
+
+        # Books read (returned) and the student's own reviews. Only the
+        # STUDENT may write / edit a review; parents see them read-only.
+        returned = request.env['school.book.issue'].sudo().search(
+            [('student_id', '=', student.id), ('state', '=', 'returned')], order='return_date desc')
+        reviews = request.env['school.book.review'].sudo().with_context(active_test=False).search(
+            [('student_id', '=', student.id)])
+        review_by_book = {r.book_id.id: r for r in reviews}
+        books_read = []
+        for issue in returned:
+            if issue.book_id.id not in [b['book'].id for b in books_read]:
+                books_read.append({'book': issue.book_id, 'returned_on': issue.return_date,
+                                   'review': review_by_book.get(issue.book_id.id)})
+
+        # Behaviour & participation reviews (published ones only)
+        Behaviour = request.env['school.student.behaviour']
+        behaviour_reviews = Behaviour.sudo().search(
+            [('student_ids', 'in', student.id), ('portal_published', '=', True)],
+            order='date desc, id desc')
+        # this student's OWN self-reflection / parent-feedback line for each review
+        behaviour_feedback = {f.review_id.id: f for f in request.env['school.student.behaviour.feedback'].sudo().search(
+            [('student_id', '=', student.id), ('review_id', 'in', behaviour_reviews.ids)])}
+        is_student = student.partner_id == partner
+        is_parent = partner in student.parent_ids.partner_id
+
         values = self._prepare_portal_layout_values()
         values.update({
             'student': student,
+            'behaviour_reviews': behaviour_reviews,
+            'behaviour_feedback': behaviour_feedback,
+            'behaviour_rating_labels': dict(Behaviour._fields['behaviour'].selection),
+            'behaviour_period_labels': dict(Behaviour._fields['period'].selection),
+            'behaviour_is_student': is_student,
+            'behaviour_is_parent': is_parent,
+            'behaviour_saved': kw.get('behaviour_saved'),
+            'behaviour_error': kw.get('behaviour_error'),
             'attendances': attendances,
+            'attendance_days': attendance_days,
             'results': results,
             'timetable': timetable,
             'invoices': invoices,
+            'library_loans': library_loans,
+            'reading_challenges': reading_challenges,
+            'recommendations': recommendations,
+            'books_read': books_read,
+            'can_review': student.partner_id == partner,
+            'active_tab': kw.get('tab') or 'profile',
+            'review_saved': kw.get('review_saved'),
+            'review_error': kw.get('review_error'),
             'page_name': 'school_student_profile',
         })
         return request.render("ad_school_management.portal_my_student_profile", values)
+    
+    @http.route(['/my/school/student/<int:student_id>/review'], type='http', auth="user",
+                methods=['POST'], website=True)
+    def portal_save_book_review(self, student_id, book_id=None, rating=None, review=None, **kw):
+        """Save the student's own review. Only the student (not a parent or
+        staff) may do this, and only for a book they have returned."""
+        partner = request.env.user.partner_id
+        student = request.env['school.student'].sudo().browse(student_id)
+        if not student.exists() or student.partner_id != partner:
+            return request.redirect('/my')
+        url = '/my/school/student/%s?tab=library' % student.id
+        try:
+            book = request.env['school.book'].sudo().browse(int(book_id or 0))
+            returned = request.env['school.book.issue'].sudo().search_count(
+                [('student_id', '=', student.id), ('book_id', '=', book.id), ('state', '=', 'returned')])
+            if not book.exists() or not returned:
+                return request.redirect(url + '&review_error=not_returned')
+            request.env['school.book.review']._portal_save_review(student, book, rating, review)
+        except (ValueError, UserError, ValidationError):
+            return request.redirect(url + '&review_error=invalid')
+        return request.redirect(url + '&review_saved=1')
+
+    @http.route(['/my/school/student/<int:student_id>/behaviour/<int:review_id>/feedback'],
+                type='http', auth="user", methods=['POST'], website=True)
+    def portal_save_behaviour_feedback(self, student_id, review_id, kind=None, feedback=None, **kw):
+        """The student writes the self-reflection, a parent writes the feedback.
+        Nothing else on the review can be changed from the portal."""
+        partner = request.env.user.partner_id
+        student = request.env['school.student'].sudo().browse(student_id)
+        if not student.exists() or (student.partner_id != partner
+                                    and partner not in student.parent_ids.partner_id):
+            return request.redirect('/my')
+        url = '/my/school/student/%s?tab=behaviour' % student.id
+        review = request.env['school.student.behaviour'].sudo().browse(review_id)
+        if not review.exists() or student not in review.student_ids:
+            return request.redirect(url + '&behaviour_error=invalid')
+        try:
+            request.env['school.student.behaviour']._portal_save_feedback(review, student, partner, kind, feedback)
+        except (AccessError, ValidationError, UserError):
+            return request.redirect(url + '&behaviour_error=denied')
+        return request.redirect(url + '&behaviour_saved=1')
+
+    # ------------------------------------------------------------------
+    # My Timetable (teachers)
+    # ------------------------------------------------------------------
+    def _school_get_teacher(self):
+        return request.env['school.teacher'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)
+
+    @http.route(['/my/timetable'], type='http', auth="user", website=True)
+    def portal_my_timetable(self, **kw):
+        teacher = self._school_get_teacher()
+        Teacher = request.env['school.teacher']
+        values = self._prepare_portal_layout_values()
+        # "Your timetable was updated" alert: shown once, then marked as seen.
+        has_update = bool(teacher) and teacher.timetable_has_update
+        updated_on = teacher.timetable_updated_on if teacher else False
+        if has_update:
+            teacher._school_mark_timetable_seen()
+        values.update({
+            'teacher': teacher,
+            'has_update': has_update,
+            'updated_on': updated_on,
+            'grid': teacher._school_timetable_grid() if teacher else {'rows': [], 'days': [], 'count': 0, 'today': False},
+            'today_periods': teacher._school_today_periods() if teacher else [],
+            'substitutions': teacher._school_upcoming_substitutions() if teacher else [],
+            'fmt': Teacher._school_format_time,
+            'page_name': 'school_my_timetable',
+        })
+        return request.render("ad_school_management.portal_my_timetable", values)
+
 
 
     # ------------------------------------------------------------------

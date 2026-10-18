@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { registry } from "@web/core/registry";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
 function emptyStats() {
@@ -26,20 +26,77 @@ export class SchoolDashboard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.state = useState({
-            stats: emptyStats(),
+            stats: {},
             loading: true
         });
 
         onWillStart(async () => {
             await this.loadStats();
         });
+
+        // (Staff Leave Requests moved to Teacher Development > Growth Dashboard)
+        // Live House Championship: reload the standings every 30 seconds.
+        this.championshipTimer = setInterval(() => this.loadChampionship(), 30000);
+        onWillUnmount(() => {
+            clearInterval(this.championshipTimer);
+        });
     }
+
+    async loadChampionship() {
+        try {
+            this.state.stats.championship = await this.orm.call("school.house.point", "get_championship", []);
+        } catch (error) {
+            console.error("Failed to refresh the house championship:", error);
+        }
+    }
+
+    openHousePoints(houseId = null) {
+        // Only the boards currently shown on the dashboard (follows the company switcher).
+        const boards = ((this.state.stats.championship || {}).boards || []).map((b) => b.board);
+        let domain = [["state", "=", "confirmed"]];
+        if (houseId) {
+            domain.push(["house_id", "=", houseId]);
+        } else if (boards.length) {
+            domain.push(["board", "in", boards]);
+        }
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "House Points",
+            res_model: "school.house.point",
+            views: [[false, "list"], [false, "form"], [false, "pivot"], [false, "graph"]],
+            domain: domain,
+            context: houseId ? { default_house_id: houseId } : {},
+            target: "current",
+        });
+    }
+
+
+    openEarlyWarnings(filter = null) {
+        // Early warning alerts (only staff who may see them get this panel).
+        const domains = {
+            to_review: [["state", "=", "to_review"]],
+            to_review_red: [["state", "=", "to_review"], ["suggested_level", "=", "red"]],
+            red: [["state", "=", "in_progress"], ["confirmed_level", "=", "red"]],
+            amber: [["state", "=", "in_progress"], ["confirmed_level", "=", "amber"]],
+            follow_up_due: [["state", "=", "in_progress"], ["follow_up_date", "<=", luxon.DateTime.now().toISODate()]],
+        };
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Early Warnings",
+            res_model: "school.early.warning",
+            views: [[false, "list"], [false, "form"]],
+            domain: domains[filter] || [["state", "in", ["to_review", "in_progress"]]],
+            target: "current",
+        });
+    }
+
+
 
     async loadStats() {
         this.state.loading = true;
         try {
             const result = await this.orm.call("school.dashboard", "get_dashboard_stats", []);
-            this.state.stats = Object.assign(emptyStats(), result);
+            this.state.stats = result;
         } catch (error) {
             console.error("Failed to load school dashboard statistics:", error);
         } finally {

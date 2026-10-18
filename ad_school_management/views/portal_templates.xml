@@ -85,7 +85,7 @@
 
                 <ul class="nav nav-tabs mb-4" id="studentTab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">Profile Details</button>
+                        <button t-attf-class="nav-link #{'active' if active_tab not in ('library', 'behaviour') else ''}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">Profile Details</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab" aria-controls="attendance" aria-selected="false">Attendance</button>
@@ -99,11 +99,17 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button" role="tab" aria-controls="invoices" aria-selected="false">Invoices/Fees</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'library' else ''}" id="library-tab" data-bs-toggle="tab" data-bs-target="#library" type="button" role="tab" aria-controls="library" aria-selected="false">Library</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'behaviour' else ''}" id="behaviour-tab" data-bs-toggle="tab" data-bs-target="#behaviour" type="button" role="tab" aria-controls="behaviour" aria-selected="false">Behaviour</button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="studentTabContent">
                     
-                    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab not in ('library', 'behaviour') else ''}" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                         <div class="card shadow-sm border-0 p-4">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -126,31 +132,27 @@
                     <div class="tab-pane fade" id="attendance" role="tabpanel" aria-labelledby="attendance-tab">
                         <div class="card shadow-sm border-0 p-4">
                             <h5 class="text-secondary mb-3">Recent Attendance (last 15 days)</h5>
-                            <t t-set="att_labels" t-value="{'present': 'Present', 'absent': 'Absent', 'late': 'Late', 'leave': 'Leave'}"/>
-                            <t t-set="att_colors" t-value="{'present': 'success', 'absent': 'danger', 'late': 'warning', 'leave': 'info'}"/>
+                            <t t-set="att_labels" t-value="{'present': 'Present', 'absent': 'Absent'}"/>
+                            <t t-set="att_colors" t-value="{'present': 'success', 'absent': 'danger'}"/>
                             <div class="table-responsive" t-if="attendance_days">
                                 <table class="table table-hover">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Date</th>
                                             <th>Class / Section</th>
-                                            <th>Morning</th>
-                                            <th>Afternoon</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-foreach="attendance_days" t-as="day">
                                             <tr>
-                                                <td><t t-out="day['date']"/></td>
+                                                <td><span t-out="day['date']" t-options="{'widget': 'date'}"/></td>
                                                 <td><t t-out="day['class_id'].name"/> - <t t-out="day['section_id'].name"/></td>
-                                                <t t-foreach="('morning', 'afternoon')" t-as="sess">
-                                                    <td>
-                                                        <span t-if="day[sess]" t-attf-class="badge bg-#{att_colors.get(day[sess], 'secondary')}">
-                                                            <t t-out="att_labels.get(day[sess], day[sess])"/>
-                                                        </span>
-                                                        <span t-else="" class="text-muted">Not marked</span>
-                                                    </td>
-                                                </t>
+                                                <td>
+                                                    <span t-attf-class="badge bg-#{att_colors.get(day['status'], 'secondary')}">
+                                                        <t t-out="att_labels.get(day['status'], day['status'])"/>
+                                                    </span>
+                                                </td>
                                             </tr>
                                         </t>
                                     </tbody>
@@ -232,6 +234,211 @@
                             </div>
                             <div t-else="" class="alert alert-info mb-0">
                                 No timetable schedule configured for this class.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Library: books out, reading profile, challenges, "Recommended for you" -->
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab == 'library' else ''}" id="library" role="tabpanel" aria-labelledby="library-tab">
+                        <div class="p-3">
+                            <div t-if="review_saved" class="alert alert-success">Thank you! Your review has been saved.</div>
+                            <div t-if="review_error == 'not_returned'" class="alert alert-warning">You can review a book once you have returned it.</div>
+                            <div t-if="review_error == 'invalid'" class="alert alert-warning">Please choose a rating from 1 to 5 stars.</div>
+                            <div class="row text-center mb-4">
+                                <div class="col-6 col-md-3 mb-2"><div class="border rounded p-2">
+                                    <div class="h4 mb-0" t-out="student.books_read_count"/><small class="text-muted">Books Read</small></div></div>
+                                <div class="col-6 col-md-3 mb-2"><div class="border rounded p-2">
+                                    <div class="h4 mb-0" t-out="student.books_read_this_year"/><small class="text-muted">Last 12 Months</small></div></div>
+                                <div class="col-6 col-md-3 mb-2"><div class="border rounded p-2">
+                                    <div class="h4 mb-0" t-out="student.reading_frequency"/><small class="text-muted">Books / Month</small></div></div>
+                                <div class="col-6 col-md-3 mb-2"><div class="border rounded p-2">
+                                    <div class="h6 mb-0 pt-1" t-out="dict(student._fields['reading_level'].selection).get(student.reading_level or student.suggested_reading_level) or '-'"/>
+                                    <small class="text-muted">Reading Level</small></div></div>
+                            </div>
+                            <p t-if="student.favourite_genre_ids" class="mb-4">Favourite genres:
+                                <t t-foreach="student.favourite_genre_ids" t-as="g"><span class="badge text-bg-light border me-1" t-out="g.name"/></t>
+                            </p>
+
+                            <h5 class="text-secondary mb-3">Books Borrowed Now</h5>
+                            <div class="table-responsive mb-4" t-if="library_loans">
+                                <table class="table table-sm">
+                                    <thead class="table-light"><tr><th>Book</th><th>Due Date</th><th>Status</th><th class="text-end">Fine</th></tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="library_loans" t-as="loan">
+                                            <td t-out="loan.book_id.name"/>
+                                            <td><span t-out="loan.due_date" t-options="{'widget': 'date'}"/></td>
+                                            <td><span t-attf-class="badge bg-#{'danger' if loan.state == 'overdue' else 'info'}" t-out="'Overdue' if loan.state == 'overdue' else 'Issued'"/></td>
+                                            <td class="text-end" t-out="loan.total_fine or ''"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p t-else="" class="text-muted mb-4">No books borrowed at the moment.</p>
+
+                            <t t-if="reading_challenges">
+                                <h5 class="text-secondary mb-3">Reading Challenges</h5>
+                                <div class="mb-4" t-foreach="reading_challenges" t-as="part">
+                                    <div class="d-flex justify-content-between"><span t-out="part.challenge_id.name"/>
+                                        <small><t t-out="part.books_read"/> / <t t-out="part.challenge_id.target_books"/> books</small></div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div t-attf-class="progress-bar #{'bg-success' if part.completed else ''}" t-attf-style="width: #{int(part.progress)}%"/>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!-- Books read and the student's own reviews (only the student can write) -->
+                            <h5 class="text-secondary mb-3">Books I've Read &amp; My Reviews</h5>
+                            <div t-if="books_read" class="table-responsive mb-4">
+                                <table class="table table-sm align-middle">
+                                    <thead class="table-light"><tr><th>Book</th><th>Returned</th><th>Review</th></tr></thead>
+                                    <tbody>
+                                        <t t-foreach="books_read" t-as="row">
+                                            <t t-set="rv" t-value="row['review']"/>
+                                            <tr>
+                                                <td><b t-out="row['book'].name"/><div class="small text-muted" t-out="row['book'].author or ''"/></td>
+                                                <td><span t-out="row['returned_on']" t-options="{'widget': 'date'}"/></td>
+                                                <td>
+                                                    <t t-if="rv">
+                                                        <span class="text-warning" t-out="'&#9733;' * int(rv.rating or 0) + '&#9734;' * (5 - int(rv.rating or 0))"/>
+                                                        <span t-if="not rv.active" class="badge text-bg-secondary ms-1">Hidden by the library</span>
+                                                        <div class="small" t-out="rv.review or ''"/>
+                                                    </t>
+                                                    <span t-elif="not can_review" class="text-muted small">No review yet</span>
+                                                    <button t-if="can_review" type="button" class="btn btn-sm btn-outline-primary mt-1"
+                                                            data-bs-toggle="collapse" t-attf-data-bs-target="#review-form-#{row['book'].id}"
+                                                            t-out="'Edit my review' if rv else 'Write a review'"/>
+                                                </td>
+                                            </tr>
+                                            <tr t-if="can_review" class="collapse" t-attf-id="review-form-#{row['book'].id}">
+                                                <td colspan="3" class="bg-light">
+                                                    <form t-attf-action="/my/school/student/#{student.id}/review" method="post" class="p-2">
+                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                        <input type="hidden" name="book_id" t-att-value="row['book'].id"/>
+                                                        <div class="mb-2">
+                                                            <span class="me-2">Rating:</span>
+                                                            <t t-foreach="['1', '2', '3', '4', '5']" t-as="star">
+                                                                <div class="form-check form-check-inline">
+                                                                    <input class="form-check-input" type="radio" name="rating" required="required"
+                                                                           t-att-id="'rating-%s-%s' % (row['book'].id, star)" t-att-value="star"
+                                                                           t-att-checked="rv and rv.rating == star or None"/>
+                                                                    <label class="form-check-label" t-att-for="'rating-%s-%s' % (row['book'].id, star)"
+                                                                           t-out="'%s &#9733;' % star"/>
+                                                                </div>
+                                                            </t>
+                                                        </div>
+                                                        <textarea name="review" class="form-control mb-2" rows="3" maxlength="2000"
+                                                                  placeholder="What did you like or not like about this book?" t-out="rv and rv.review or ''"/>
+                                                        <button type="submit" class="btn btn-primary btn-sm">Save Review</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p t-else="" class="text-muted mb-4">No books returned yet.</p>
+
+                            <h5 class="text-secondary mb-3">Recommended for You</h5>
+                            <div class="row" t-if="recommendations">
+                                <div class="col-md-6 col-lg-4 mb-3" t-foreach="recommendations" t-as="reco">
+                                    <t t-set="book" t-value="reco[0]"/>
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title mb-1" t-out="book.name"/>
+                                            <div class="small text-muted mb-2" t-out="book.author or ''"/>
+                                            <div class="mb-2">
+                                                <t t-foreach="book.genre_ids" t-as="g"><span class="badge text-bg-light border me-1" t-out="g.name"/></t>
+                                            </div>
+                                            <div class="small fst-italic mb-2" t-out="reco[1]"/>
+                                            <div class="small">
+                                                <span t-if="book.avg_rating">&#9733; <t t-out="'%.1f' % book.avg_rating"/> &#183; </span>
+                                                <t t-if="book.is_digital">
+                                                    <a t-if="book.digital_url" t-att-href="book.digital_url" target="_blank">Open digital resource</a>
+                                                    <span t-else="">Digital resource</span>
+                                                </t>
+                                                <span t-elif="book.qty_available" class="text-success">Available in the library</span>
+                                                <span t-else="" class="text-muted">All copies out – ask to reserve</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p t-else="" class="text-muted">Borrow a few books to get personal recommendations.</p>
+                        </div>
+                    </div>
+
+                    <!-- Behaviour & Participation reviews (student + parent portal) -->
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab == 'behaviour' else ''}" id="behaviour" role="tabpanel" aria-labelledby="behaviour-tab">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h5 class="text-secondary mb-3">Behaviour &amp; Participation Reviews</h5>
+                            <div t-if="behaviour_saved" class="alert alert-success">Thank you! Your comment has been saved.</div>
+                            <div t-if="behaviour_error" class="alert alert-warning">Sorry, that comment could not be saved.</div>
+                            <t t-set="rating_colors" t-value="{'4': 'success', '3': 'info', '2': 'warning', '1': 'danger'}"/>
+                            <t t-foreach="behaviour_reviews" t-as="rev">
+                                <t t-set="fb" t-value="behaviour_feedback.get(rev.id)"/>
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+                                        <strong>
+                                            <t t-out="behaviour_period_labels.get(rev.period)"/>
+                                            - <t t-out="rev.academic_year_id.name"/>
+                                        </strong>
+                                        <span class="text-muted small">
+                                            Reviewed on <t t-out="rev.date"/>
+                                            <t t-if="rev.reviewed_by"> by <t t-out="rev.reviewed_by.name"/></t>
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center mb-3">
+                                            <div class="col-6 col-md-3 mb-2">
+                                                <div class="text-muted small">Behaviour</div>
+                                                <span t-attf-class="badge bg-#{rating_colors.get(rev.behaviour, 'secondary')}"><t t-out="behaviour_rating_labels.get(rev.behaviour)"/></span>
+                                            </div>
+                                            <div class="col-6 col-md-3 mb-2">
+                                                <div class="text-muted small">Discipline</div>
+                                                <span t-attf-class="badge bg-#{rating_colors.get(rev.discipline, 'secondary')}"><t t-out="behaviour_rating_labels.get(rev.discipline)"/></span>
+                                            </div>
+                                            <div class="col-6 col-md-3 mb-2">
+                                                <div class="text-muted small">Participation</div>
+                                                <span t-attf-class="badge bg-#{rating_colors.get(rev.participation, 'secondary')}"><t t-out="behaviour_rating_labels.get(rev.participation)"/></span>
+                                            </div>
+                                            <div class="col-6 col-md-3 mb-2">
+                                                <div class="text-muted small">Average (out of 4)</div>
+                                                <strong><t t-out="'%.1f' % rev.average_rating"/></strong>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3" t-if="rev.teacher_observation">
+                                            <div class="text-muted small">Teacher's Observations</div>
+                                            <div style="white-space: pre-wrap;"><t t-out="rev.teacher_observation"/></div>
+                                        </div>
+                                        <div class="mb-3" t-if="fb and fb.self_reflection and not behaviour_is_student">
+                                            <div class="text-muted small">Student's Self-Reflection</div>
+                                            <div style="white-space: pre-wrap;"><t t-out="fb.self_reflection"/></div>
+                                        </div>
+                                        <div class="mb-3" t-if="fb and fb.parent_feedback and not behaviour_is_parent">
+                                            <div class="text-muted small">Parent's Feedback</div>
+                                            <div style="white-space: pre-wrap;"><t t-out="fb.parent_feedback"/></div>
+                                        </div>
+                                        <form t-if="behaviour_is_student" t-attf-action="/my/school/student/#{student.id}/behaviour/#{rev.id}/feedback" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="kind" value="student"/>
+                                            <label class="form-label text-muted small">My Self-Reflection</label>
+                                            <textarea name="feedback" rows="3" maxlength="2000" class="form-control mb-2"
+                                                      placeholder="How did this period go for you?"><t t-out="(fb and fb.self_reflection) or ''"/></textarea>
+                                            <button type="submit" class="btn btn-sm btn-primary">Save Reflection</button>
+                                        </form>
+                                        <form t-if="behaviour_is_parent and not behaviour_is_student" t-attf-action="/my/school/student/#{student.id}/behaviour/#{rev.id}/feedback" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="kind" value="parent"/>
+                                            <label class="form-label text-muted small">Parent / Guardian Feedback</label>
+                                            <textarea name="feedback" rows="3" maxlength="2000" class="form-control mb-2"
+                                                      placeholder="Your feedback for the school"><t t-out="(fb and fb.parent_feedback) or ''"/></textarea>
+                                            <button type="submit" class="btn btn-sm btn-primary">Save Feedback</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </t>
+                            <div t-if="not behaviour_reviews" class="alert alert-info mb-0">
+                                No behaviour reviews have been shared yet.
                             </div>
                         </div>
                     </div>

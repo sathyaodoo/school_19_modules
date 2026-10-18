@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================================= CASES -->
+    <record id="view_sg_case_list" model="ir.ui.view">
+        <field name="name">school.safeguarding.case.list</field>
+        <field name="model">school.safeguarding.case</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="severity == 'critical' and state != 'closed'"
+                  decoration-warning="severity == 'high' and state != 'closed'" decoration-muted="state == 'closed'">
+                <field name="name"/>
+                <field name="reported_datetime"/>
+                <field name="category"/>
+                <field name="severity" widget="badge" decoration-danger="severity == 'critical'"
+                       decoration-warning="severity == 'high'" decoration-info="severity == 'medium'"/>
+                <field name="state" widget="badge" decoration-success="state == 'closed'"
+                       decoration-info="state == 'new'"/>
+                <field name="reporter_label" optional="show"/>
+                <field name="assigned_officer_id" optional="show"/>
+                <field name="escalated" optional="show"/>
+                <field name="action_overdue_count" optional="show"/>
+                <field name="days_open" optional="show"/>
+                <field name="retention_until" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sg_case_form" model="ir.ui.view">
+        <field name="name">school.safeguarding.case.form</field>
+        <field name="model">school.safeguarding.case</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start_triage" string="Start Assessment" type="object" class="btn-primary"
+                            invisible="state != 'new'"/>
+                    <button name="action_start_investigation" string="Start Investigation" type="object"
+                            class="btn-primary" invisible="state != 'triage'"/>
+                    <button name="action_to_follow_up" string="Move to Follow-up" type="object" class="btn-primary"
+                            invisible="state != 'investigation'"/>
+                    <button name="action_close" string="Close Case" type="object"
+                            invisible="state not in ('triage', 'investigation', 'follow_up')"
+                            confirm="Close this case? Make sure the outcome, closure notes and follow-up actions are complete."/>
+                    <button name="action_escalate" string="Escalate" type="object" invisible="state == 'closed'"/>
+                    <button name="action_reopen" string="Reopen" type="object" invisible="state != 'closed'"
+                            groups="school_safeguarding.group_sg_lead"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,triage,investigation,follow_up,closed"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-secondary" role="alert">
+                        <i class="fa fa-lock"/> <b>Confidential.</b> Do not discuss this case with anyone who is not
+                        authorised. Opening it is recorded.
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="not immediate_risk or state == 'closed'">
+                        <b>Someone may be in danger right now.</b> Protect the child first, then record what was done.
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not escalated">
+                        Escalated: <field name="escalation_level" readonly="1" class="d-inline"/>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="state != 'closed'">
+                        Closed. Only the Safeguarding Lead can change a closed case. Keep until
+                        <field name="retention_until" readonly="1" class="d-inline"/> (then review for archiving).
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category"/>
+                            <field name="severity"/>
+                            <field name="immediate_risk"/>
+                            <field name="assigned_officer_id" options="{'no_create': True}"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="reported_datetime"/>
+                            <field name="source"/>
+                            <field name="reporter_label"/>
+                            <field name="is_anonymous" invisible="1"/>
+                            <field name="days_open"/>
+                            <field name="action_open_count"/>
+                            <field name="action_overdue_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Concern" name="concern">
+                            <group>
+                                <group>
+                                    <field name="incident_date"/>
+                                    <field name="location"/>
+                                    <field name="is_online"/>
+                                    <field name="platform" invisible="not is_online"/>
+                                </group>
+                                <group>
+                                    <field name="affected_student_ids" widget="many2many_tags"
+                                           options="{'no_create': True}"/>
+                                    <field name="involved_student_ids" widget="many2many_tags"
+                                           options="{'no_create': True}"/>
+                                    <field name="involved_other"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="description"/>
+                            </group>
+                        </page>
+                        <page string="Assessment" name="assessment">
+                            <group>
+                                <field name="triage_notes"/>
+                                <field name="triage_datetime"/>
+                                <field name="triage_by"/>
+                            </group>
+                        </page>
+                        <page string="Investigation" name="investigation">
+                            <group>
+                                <group>
+                                    <field name="investigator_id" options="{'no_create': True}"/>
+                                    <field name="investigation_start"/>
+                                </group>
+                                <group>
+                                    <field name="outcome"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="findings"/>
+                            </group>
+                            <separator string="Case Log (interviews, calls, meetings, notes)"/>
+                            <field name="log_ids">
+                                <list editable="top">
+                                    <field name="log_datetime"/>
+                                    <field name="log_type"/>
+                                    <field name="text"/>
+                                    <field name="author_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Follow-up" name="follow_up">
+                            <field name="action_ids">
+                                <list editable="bottom" decoration-danger="overdue" decoration-muted="state != 'todo'">
+                                    <field name="action_type"/>
+                                    <field name="description"/>
+                                    <field name="responsible_id" options="{'no_create': True}"/>
+                                    <field name="due_date"/>
+                                    <field name="state" readonly="1" widget="badge"
+                                           decoration-success="state == 'done'" decoration-info="state == 'todo'"/>
+                                    <field name="overdue" column_invisible="1"/>
+                                    <button name="action_done" type="object" icon="fa-check" string="Done"
+                                            invisible="state != 'todo'" title="Mark as done"/>
+                                    <button name="action_cancel" type="object" icon="fa-times" string="Cancel"
+                                            invisible="state != 'todo'" title="Cancel this action"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Escalation" name="escalation">
+                            <field name="escalation_ids">
+                                <list>
+                                    <field name="escalated_datetime"/>
+                                    <field name="level"/>
+                                    <field name="escalated_to"/>
+                                    <field name="reason"/>
+                                    <field name="external_reference"/>
+                                    <field name="escalated_by"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Closure &amp; Reporter" name="closure">
+                            <group>
+                                <group string="Closure">
+                                    <field name="closure_notes"/>
+                                    <field name="closed_datetime"/>
+                                    <field name="closed_by"/>
+                                    <field name="retention_until"/>
+                                </group>
+                                <group string="Reporter">
+                                    <field name="public_status"/>
+                                    <field name="public_update"
+                                           placeholder="A short message the reporter sees on the status page (no details)..."/>
+                                    <field name="access_code"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Evidence" name="evidence">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Who Opened This Case" name="access_log"
+                              groups="school_safeguarding.group_sg_lead">
+                            <field name="access_log_ids">
+                                <list create="0" edit="0" delete="0">
+                                    <field name="viewed_datetime"/>
+                                    <field name="user_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sg_case_search" model="ir.ui.view">
+        <field name="name">school.safeguarding.case.search</field>
+        <field name="model">school.safeguarding.case</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="affected_student_ids"/>
+                <field name="involved_student_ids"/>
+                <field name="assigned_officer_id"/>
+                <filter name="mine" string="My cases" domain="['|', ('assigned_officer_id', '=', uid), ('investigator_id', '=', uid)]"/>
+                <filter name="to_review" string="Waiting for review" domain="[('state', '=', 'new')]"/>
+                <filter name="open" string="Open" domain="[('state', '!=', 'closed')]"/>
+                <filter name="urgent" string="High / Critical" domain="[('severity', 'in', ('high', 'critical')), ('state', '!=', 'closed')]"/>
+                <filter name="escalated" string="Escalated" domain="[('escalated', '=', True)]"/>
+                <filter name="overdue" string="Overdue actions"
+                        domain="[('action_ids', 'any', [('state', '=', 'todo'), ('due_date', '&lt;', context_today().strftime('%Y-%m-%d'))])]"/>
+                <filter name="anonymous" string="Anonymous" domain="[('is_anonymous', '=', True)]"/>
+                <filter name="closed" string="Closed" domain="[('state', '=', 'closed')]"/>
+                <filter name="retention" string="Due for retention review"
+                        domain="[('retention_until', '&lt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_category" string="Type" context="{'group_by': 'category'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_severity" string="Severity" context="{'group_by': 'severity'}"/>
+                    <filter name="group_officer" string="Case Officer" context="{'group_by': 'assigned_officer_id'}"/>
+                    <filter name="group_month" string="Reported (month)" context="{'group_by': 'reported_datetime:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_sg_case_pivot" model="ir.ui.view">
+        <field name="name">school.safeguarding.case.pivot</field>
+        <field name="model">school.safeguarding.case</field>
+        <field name="arch" type="xml">
+            <pivot string="Safeguarding analysis">
+                <field name="category" type="row"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_sg_case_graph" model="ir.ui.view">
+        <field name="name">school.safeguarding.case.graph</field>
+        <field name="model">school.safeguarding.case</field>
+        <field name="arch" type="xml">
+            <graph string="Cases by type" type="bar">
+                <field name="category"/>
+                <field name="severity"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_sg_case" model="ir.actions.act_window">
+        <field name="name">Safeguarding Cases</field>
+        <field name="res_model">school.safeguarding.case</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No open safeguarding case</p>
+            <p>Concerns reported by staff, students and parents appear here. Only the Safeguarding team can see them.</p>
+        </field>
+    </record>
+
+    <record id="action_sg_analysis" model="ir.actions.act_window">
+        <field name="name">Safeguarding Analysis</field>
+        <field name="res_model">school.safeguarding.case</field>
+        <field name="view_mode">pivot,graph,list</field>
+    </record>
+
+    <!-- ======================================================= FOLLOW-UP ACTIONS -->
+    <record id="view_sg_action_list" model="ir.ui.view">
+        <field name="name">school.safeguarding.action.list</field>
+        <field name="model">school.safeguarding.action</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="overdue" decoration-muted="state != 'todo'">
+                <field name="case_id"/>
+                <field name="action_type"/>
+                <field name="description"/>
+                <field name="responsible_id"/>
+                <field name="due_date"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+                <field name="overdue" column_invisible="1"/>
+                <button name="action_done" type="object" icon="fa-check" string="Done" invisible="state != 'todo'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sg_action_search" model="ir.ui.view">
+        <field name="name">school.safeguarding.action.search</field>
+        <field name="model">school.safeguarding.action</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="case_id"/>
+                <field name="description"/>
+                <field name="responsible_id"/>
+                <filter name="mine" string="Mine" domain="[('responsible_id', '=', uid)]"/>
+                <filter name="todo" string="To do" domain="[('state', '=', 'todo')]"/>
+                <filter name="overdue" string="Overdue" domain="[('state', '=', 'todo'), ('due_date', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_responsible" string="Responsible" context="{'group_by': 'responsible_id'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'action_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sg_action" model="ir.actions.act_window">
+        <field name="name">Follow-up Actions</field>
+        <field name="res_model">school.safeguarding.action</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_todo': 1}</field>
+    </record>
+
+    <!-- ======================================================= ESCALATION (popup) -->
+    <record id="view_sg_escalation_form" model="ir.ui.view">
+        <field name="name">school.safeguarding.escalation.form</field>
+        <field name="model">school.safeguarding.escalation</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="case_id" readonly="1"/>
+                    <field name="level"/>
+                    <field name="escalated_to"/>
+                    <field name="reason"/>
+                    <field name="external_reference" invisible="level != 'external'"/>
+                </group>
+            </form>
+        </field>
+    </record>
+</odoo>

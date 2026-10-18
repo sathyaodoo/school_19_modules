@@ -36,12 +36,16 @@
                         <field name="improvement_suggestions" placeholder="Suggestions for the school..."/>
                     </group>
 
-                    <!-- HR-only: hidden from the view entirely for anyone
-                         outside Admin/HR Manager, on top of the model-level
-                         access restriction already in ir.model.access.csv -->
+                    <!-- HR-only: visible to the School HR Manager group ONLY.
+                         The field itself also has groups= in the model, so
+                         the ORM hides it everywhere else (exports, API...). -->
                     <group string="Confidential (HR Only)"
-                           groups="ad_school_management.group_school_admin,ad_school_management.group_school_hr_manager">
-                        <field name="confidential_notes" nolabel="1" placeholder="HR-only notes..."/>
+                           groups="ad_school_management.group_school_hr_manager">
+                        <!-- colspan="2": a nolabel field in a group only gets ONE of the
+                             group's 2 columns (~150px); span both so the notes
+                             use the full width of the sheet. -->
+                        <field name="confidential_notes" nolabel="1" colspan="2"
+                               placeholder="HR-only notes..."/>
                     </group>
                 </sheet>
                 <chatter/>

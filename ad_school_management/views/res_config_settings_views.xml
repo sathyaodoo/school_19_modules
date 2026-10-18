@@ -22,8 +22,168 @@
                                 </div>
                             </div>
                         </setting>
+                    
+                        <setting id="library_circulation" company_dependent="1" string="Circulation Rules"
+                                 help="Loan period, renewals and how many books a member may have at a time.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="library_loan_days" string="Loan Period (days)" class="col-lg-5 o_light_label"/>
+                                    <field name="library_loan_days" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="library_max_renewals" string="Max Renewals" class="col-lg-5 o_light_label"/>
+                                    <field name="library_max_renewals" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="library_max_books" string="Max Books per Member" class="col-lg-5 o_light_label"/>
+                                    <field name="library_max_books" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="library_reservations" company_dependent="1" string="Reservations &amp; Membership"
+                                 help="How long a returned copy is held for the student who reserved it, and whether a library card is needed to borrow.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="library_reservation_hold_days" string="Hold Reserved Copy (days)" class="col-lg-5 o_light_label"/>
+                                    <field name="library_reservation_hold_days" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="library_membership_required" string="Library Card Required" class="col-lg-5 o_light_label"/>
+                                    <field name="library_membership_required" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+                    <!-- House Championship: points given automatically from Activities -->
+                    <block title="Teacher Development" name="school_pd_settings">
+                        <setting id="pd_cpd_target" company_dependent="1" string="Annual CPD Hours Target"
+                                 help="Hours of professional development each teacher should complete per academic year (CBSE: 50). Only submitted activities count.">
+                            <div class="content-group">
+                                <div class="row mt8"><label for="pd_annual_hours_target" string="Hours per Year" class="col-lg-6 o_light_label"/><field name="pd_annual_hours_target" class="oe_inline"/></div>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Early Warning System" name="school_ews_settings">
+                        <setting id="ews_academic_attendance" company_dependent="1" string="Academic &amp; Attendance Signals"
+                                 help="When a signal is raised. Marks are checked on the average and on every subject. 0 switches that check off.">
+                            <div class="content-group">
+                                <div class="row mt8"><label for="ews_marks_drop" string="Fall in Marks (% points)" class="col-lg-6 o_light_label"/><field name="ews_marks_drop" class="oe_inline"/></div>
+                                <div class="row"><label for="ews_decline_total" string="Decline over 3 Exams (% points)" class="col-lg-6 o_light_label"/><field name="ews_decline_total" class="oe_inline"/></div>
+                                <div class="row"><label for="ews_failures" string="Failed Papers (last 2 exams)" class="col-lg-6 o_light_label"/><field name="ews_failures" class="oe_inline"/></div>
+                                <div class="row"><label for="ews_absence_days" string="Absences in 30 Days" class="col-lg-6 o_light_label"/><field name="ews_absence_days" class="oe_inline"/></div>
+                                <div class="row"><label for="ews_monfri_absences" string="Mon/Fri Absences in 8 Weeks" class="col-lg-6 o_light_label"/><field name="ews_monfri_absences" class="oe_inline"/></div>
+                                <div class="row"><label for="ews_attendance_drop" string="Attendance Drop (% points)" class="col-lg-6 o_light_label"/><field name="ews_attendance_drop" class="oe_inline"/></div>
+                            </div>
+                        </setting>
+                        <setting id="ews_behaviour_level" company_dependent="1" string="Behaviour &amp; Alert Level"
+                                 help="Each signal adds points (1-3). A total at or above this score, a serious incident or signals in 3+ areas suggest Immediate Intervention; otherwise Requires Attention. A teacher / counsellor always reviews and decides.">
+                            <div class="content-group">
+                                <div class="row mt8"><label for="ews_incidents" string="Disciplinary Incidents in 60 Days" class="col-lg-6 o_light_label"/><field name="ews_incidents" class="oe_inline"/></div>
+                                <div class="row"><label for="ews_red_score" string="Immediate Intervention Score" class="col-lg-6 o_light_label"/><field name="ews_red_score" class="oe_inline"/></div>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="House Championship" name="school_house_points_settings">
+                        <setting id="house_points_places" company_dependent="1"
+                                 string="Winning Places"
+                                 help="Achievement points for the student's house (individual activities) or for the house itself (group events).">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="house_points_first" string="First Place" class="col-lg-5 o_light_label"/>
+                                    <field name="house_points_first" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="house_points_second" string="Second Place" class="col-lg-5 o_light_label"/>
+                                    <field name="house_points_second" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="house_points_third" string="Third Place" class="col-lg-5 o_light_label"/>
+                                    <field name="house_points_third" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="house_points_participation" company_dependent="1"
+                                 string="Taking Part"
+                                 help="Teamwork &amp; Cooperation points: taking part counts, not only winning. Use 0 to give no points.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="house_points_participation" string="Per Student" class="col-lg-5 o_light_label"/>
+                                    <field name="house_points_participation" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="house_points_group_participation" string="Per House (group events)" class="col-lg-5 o_light_label"/>
+                                    <field name="house_points_group_participation" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="house_points_recalculate" string="Apply to Existing Activities"
+                                 help="When you Save changed values, all existing activities are recalculated automatically. Use this button to recalculate again at any time. Points awarded by staff are never changed.">
+                            <button name="action_recalculate_house_points" type="object"
+                                    string="Recalculate Activity Points" icon="fa-refresh" class="btn-link"/>
+                        </setting>
+                    </block>
+                    <block title="Exam Marks" name="school_exam_marks_settings">
+                        <setting id="exam_include_activity_score" company_dependent="1"
+                                 string="Allow Activity Marks in Exam Total"
+                                 help="When ticked, each exam gets an Activity Marks tab where teachers pick a student and a subject (teachers: only their own subjects) and type the activity marks. Nothing is added automatically. A subject never goes above its max marks.">
+                            <field name="exam_include_activity_score"/>
+                            <div class="content-group" invisible="not exam_include_activity_score">
+                                <div class="row mt8">
+                                    <label for="exam_activity_score_max" string="Maximum Activity Marks" class="col-lg-5 o_light_label"/>
+                                    <field name="exam_activity_score_max" class="oe_inline"/>
+                                </div>
+                                <div class="text-muted small">Per student, per exam (all subjects together). 0 = no limit</div>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Student Activity Score" name="school_student_score_settings">
+                        <setting id="student_score_participation" company_dependent="1"
+                                 string="Student Points: Taking Part"
+                                 help="Every student earns these points for each activity they take part in. The points of a month are added to the student's monthly score and total score. Use 0 to give no points. An activity can override these values (Custom Points on the activity).">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="student_score_participation" string="Per Activity" class="col-lg-5 o_light_label"/>
+                                    <field name="student_score_participation" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="student_score_places" company_dependent="1"
+                                 string="Student Points: Winning Places (bonus)"
+                                 help="Added on top of the participation points when the student wins a place.">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="student_score_first" string="First Place" class="col-lg-5 o_light_label"/>
+                                    <field name="student_score_first" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="student_score_second" string="Second Place" class="col-lg-5 o_light_label"/>
+                                    <field name="student_score_second" class="oe_inline"/>
+                                </div>
+                                <div class="row">
+                                    <label for="student_score_third" string="Third Place" class="col-lg-5 o_light_label"/>
+                                    <field name="student_score_third" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="student_score_recalculate" string="Apply to Existing Activities"
+                                 help="Saved values are applied to every existing participant automatically. Use this button to recalculate again at any time.">
+                            <button name="action_recalculate_student_scores" type="object"
+                                    string="Recalculate Student Scores" icon="fa-refresh" class="btn-link"/>
+                        </setting>
                     </block>
                 </app>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Company / branch form: which board the branch runs -->
+    <record id="view_company_form_school_board" model="ir.ui.view">
+        <field name="name">res.company.form.school.board</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='currency_id']" position="after">
+                <field name="school_board" placeholder="All boards (main school)"/>
             </xpath>
         </field>
     </record>

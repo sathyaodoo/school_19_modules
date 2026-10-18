@@ -9,7 +9,7 @@
     <menuitem id="menu_school_operations" name="Operations &amp; Exams" parent="menu_school_root" sequence="20"/>
     <menuitem id="menu_school_financials" name="Fees" parent="menu_school_root" sequence="30"/>
     <menuitem id="menu_school_facilities" name="Facilities" parent="menu_school_root" sequence="40"/>
-    <menuitem id="menu_school_wizards" name="Actions &amp; Wizards" parent="menu_school_root" sequence="50"/>
+    <menuitem id="menu_school_wizards" name="Bulk Records" parent="menu_school_root" sequence="50"/>
 
     <menuitem id="menu_school_admission" name="Admissions" parent="menu_school_personnel" action="action_school_admission" sequence="10"/>
     <menuitem id="menu_school_student" name="Students" parent="menu_school_personnel" action="action_school_student" sequence="20"/>
@@ -29,9 +29,16 @@
     </record>
     <menuitem id="menu_school_student_birthdays_this_month" name="This Month's Birthdays" parent="menu_school_personnel" action="action_school_student_birthdays_this_month" sequence="60" groups="group_school_teacher,group_school_admin"/>
 
-    <menuitem id="menu_school_timetable" name="Timetables" parent="menu_school_operations" action="action_school_timetable" sequence="5"/>
+    <!-- Class timetables: Administrators and Principal only (teachers use My Timetable) -->
+    <menuitem id="menu_school_timetable" name="Timetables" parent="menu_school_operations" action="action_school_timetable" sequence="5"
+              groups="group_school_admin,group_school_principal"/>
+    <menuitem id="menu_school_my_timetable" name="My Timetable" parent="menu_school_operations"
+              action="action_school_my_timetable" sequence="4" groups="group_school_teacher"/>
     <menuitem id="menu_school_attendance" name="Student Attendance" parent="menu_school_operations" action="action_school_attendance" sequence="10"/>
     <menuitem id="menu_school_exam" name="Exams Schedule" parent="menu_school_operations" action="action_school_exam" sequence="20"/>
+    <!-- "Class Exam Schedules" menu removed: class schedules are managed from
+         each exam's "Class-wise Schedule" tab (Exams Schedule menu). -->
+    <!-- <menuitem id="menu_school_exam_class" name="Class Exam Schedules" parent="menu_school_operations" action="action_school_exam_class" sequence="21"/> -->
     <menuitem id="menu_school_exam_result" name="Exam Results" parent="menu_school_operations" action="action_school_exam_result" sequence="30"/>
 
     <menuitem id="menu_school_fee_structure" name="Fee Structures" parent="menu_school_financials" action="action_school_fee_structure" sequence="10"/>
@@ -49,7 +56,7 @@
     <menuitem id="menu_school_bulk_admission" name="Bulk Admissions" parent="menu_school_wizards" action="action_school_bulk_admission" sequence="10"/>
     <menuitem id="menu_school_bulk_student_import" name="Bulk Student Import" parent="menu_school_wizards" action="action_school_bulk_student_import" sequence="20"/>
     <menuitem id="menu_school_bulk_attendance" name="Bulk Mark Attendance" parent="menu_school_wizards" action="action_school_bulk_attendance" sequence="30"/>
-    <menuitem id="menu_school_exam_result_entry" name="Exam Result Entry" parent="menu_school_wizards" action="action_school_exam_result_entry" sequence="40"/>
+    <menuitem id="menu_school_exam_result_entry" name="Bulk Exam Result Entry" parent="menu_school_wizards" action="action_school_exam_result_entry" sequence="40"/>
     <menuitem id="menu_school_student_promotion" name="Bulk Student Promotion" parent="menu_school_wizards" action="action_school_student_promotion" sequence="50"/>
 
     <menuitem id="menu_school_configuration" name="Configuration" parent="menu_school_root" sequence="100" groups="ad_school_management.group_school_admin"/>
