@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_alumni_graduate_wizard_form" model="ir.ui.view">
+        <field name="name">school.alumni.graduate.wizard.form</field>
+        <field name="model">school.alumni.graduate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Graduate Students">
+                <div class="alert alert-info small mb-2" role="status" style="white-space: normal;">
+                    Student → Graduate: each student gets an alumni profile (stage Graduate) and their
+                    status becomes Alumni. Choose a class to load its students, or pick students directly.
+                </div>
+                <group>
+                    <group>
+                        <field name="class_id"/>
+                        <field name="section_id"/>
+                        <field name="academic_year_id"/>
+                    </group>
+                    <group>
+                        <field name="graduation_year" options="{'format': false}"/>
+                        <field name="graduation_date"/>
+                    </group>
+                </group>
+                <field name="student_ids">
+                    <list>
+                        <field name="name"/>
+                        <field name="admission_no"/>
+                        <field name="class_id"/>
+                        <field name="section_id"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_graduate" type="object" string="Graduate" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_graduate_wizard" model="ir.actions.act_window">
+        <field name="name">Graduate Students</field>
+        <field name="res_model">school.alumni.graduate.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Students list / form > Actions > Graduate Students -->
+    <record id="action_school_alumni_graduate_wizard_students" model="ir.actions.act_window">
+        <field name="name">Graduate Students</field>
+        <field name="res_model">school.alumni.graduate.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="ad_school_management.model_school_student"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="context">{'default_student_ids': active_ids}</field>
+    </record>
+</odoo>

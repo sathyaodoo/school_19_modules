@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- The BRS professional-development activity types (add more in
+             Configuration > PD Activity Types) -->
+        <record id="pd_type_training" model="school.pd.activity.type">
+            <field name="name">Training Attended</field><field name="code">training</field>
+            <field name="sequence">10</field><field name="icon">fa-graduation-cap</field>
+        </record>
+        <record id="pd_type_certification" model="school.pd.activity.type">
+            <field name="name">Certification</field><field name="code">certification</field>
+            <field name="sequence">20</field><field name="icon">fa-certificate</field>
+        </record>
+        <record id="pd_type_workshop" model="school.pd.activity.type">
+            <field name="name">Workshop</field><field name="code">workshop</field>
+            <field name="sequence">30</field><field name="icon">fa-wrench</field>
+        </record>
+        <record id="pd_type_webinar" model="school.pd.activity.type">
+            <field name="name">Webinar</field><field name="code">webinar</field>
+            <field name="sequence">40</field><field name="icon">fa-laptop</field>
+        </record>
+        <record id="pd_type_demo_class" model="school.pd.activity.type">
+            <field name="name">Demonstration Class</field><field name="code">demo_class</field>
+            <field name="sequence">50</field><field name="icon">fa-desktop</field>
+        </record>
+        <record id="pd_type_peer_observation" model="school.pd.activity.type">
+            <field name="name">Peer Observation</field><field name="code">peer_observation</field>
+            <field name="sequence">60</field><field name="icon">fa-eye</field>
+        </record>
+        <record id="pd_type_lesson_study" model="school.pd.activity.type">
+            <field name="name">Lesson-Study Participation</field><field name="code">lesson_study</field>
+            <field name="sequence">70</field><field name="icon">fa-users</field>
+        </record>
+        <record id="pd_type_research" model="school.pd.activity.type">
+            <field name="name">Research</field><field name="code">research</field>
+            <field name="sequence">80</field><field name="icon">fa-flask</field>
+        </record>
+        <record id="pd_type_publication" model="school.pd.activity.type">
+            <field name="name">Publication</field><field name="code">publication</field>
+            <field name="sequence">90</field><field name="icon">fa-book</field><field name="counts_hours" eval="False"/>
+        </record>
+        <record id="pd_type_innovation" model="school.pd.activity.type">
+            <field name="name">Innovation Implemented</field><field name="code">innovation</field>
+            <field name="sequence">100</field><field name="icon">fa-lightbulb-o</field><field name="counts_hours" eval="False"/>
+        </record>
+    </data>
+</odoo>

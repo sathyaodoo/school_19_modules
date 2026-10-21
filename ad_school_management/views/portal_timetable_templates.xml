@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Portal home card: only for users linked to a teacher -->
+    <template id="portal_my_home_school_timetable" inherit_id="portal.portal_my_home" priority="32">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-set="my_teacher" t-value="request.env['school.teacher'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)"/>
+            <t t-if="my_teacher">
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="title">My Timetable</t>
+                    <t t-if="my_teacher.timetable_has_update" t-set="text">🔔 Updated – your timetable has changed, please check it</t>
+                    <t t-else="" t-set="text">Your weekly periods, today's classes and substitution duties</t>
+                    <t t-set="url" t-value="'/my/timetable'"/>
+                    <t t-set="placeholder_count" t-value="'timetable_count'"/>
+                    <t t-set="config_card" t-value="True"/>
+                </t>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_breadcrumbs_school_timetable" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'school_my_timetable'" class="breadcrumb-item active">My Timetable</li>
+        </xpath>
+    </template>
+
+    <template id="portal_my_timetable" name="My Timetable">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <div class="container mt-3 mb-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h3 class="mb-0">My Timetable</h3>
+                        <div t-if="teacher" class="text-muted">
+                            <t t-out="teacher.name"/> ·
+                            <t t-out="grid['count']"/> period(s) per week
+                        </div>
+                    </div>
+                    <!-- "Download PDF" removed (printing not required) -->
+                    <!--
+                    <a t-if="teacher and grid['count']" href="/my/timetable/pdf" class="btn btn-primary">
+                        <i class="fa fa-download me-1"/>Download PDF
+                    </a>
+                    -->
+                </div>
+
+                <div t-if="has_update" class="alert alert-info d-flex align-items-center" role="alert">
+                    <i class="fa fa-bell fa-lg me-2"/>
+                    <div>
+                        <strong>Your timetable has been updated</strong>
+                        <t t-if="updated_on"> on <span t-out="updated_on" t-options="{'widget': 'datetime'}"/></t>.
+                        Please check your periods below.
+                    </div>
+                </div>
+
+                <div t-if="not teacher" class="alert alert-warning">
+                    Your user is not linked to a teacher record. Please contact the school office.
+                </div>
+
+                <t t-if="teacher">
+                    <!-- Today -->
+                    <div class="card mb-4">
+                        <div class="card-header fw-bold">
+                            <i class="fa fa-sun-o me-1"/>Today's Periods
+                        </div>
+                        <div class="card-body p-0">
+                            <div t-if="not today_periods" class="p-3 text-muted">No periods today.</div>
+                            <table t-else="" class="table table-sm mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr><th>Time</th><th>Subject</th><th>Class</th><th>Room</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="today_periods" t-as="line">
+                                        <td class="text-nowrap">
+                                            <t t-out="fmt(line.start_time)"/> - <t t-out="fmt(line.end_time)"/>
+                                        </td>
+                                        <td class="fw-bold" t-out="line.subject_id.name"/>
+                                        <td>
+                                            <t t-out="line.timetable_id.class_id.name"/> -
+                                            <t t-out="line.timetable_id.section_id.name"/>
+                                        </td>
+                                        <td t-out="line.classroom"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Week -->
+                    <h5 class="mb-2">Weekly Timetable</h5>
+                    <div class="mb-4">
+                        <t t-call="ad_school_management.teacher_timetable_grid">
+                            <t t-set="highlight_today" t-value="True"/>
+                        </t>
+                    </div>
+
+                    <!-- Substitution duties -->
+                    <h5 class="mb-2">Upcoming Substitution Duties</h5>
+                    <div t-if="not substitutions" class="alert alert-light border">
+                        You have no substitution duties.
+                    </div>
+                    <div t-else="" class="table-responsive">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th><th>Time</th><th>Subject</th><th>Class</th>
+                                    <th>Room</th><th>Covering For</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="substitutions" t-as="sub">
+                                    <td t-out="sub.date" t-options="{'widget': 'date'}"/>
+                                    <td class="text-nowrap">
+                                        <t t-out="fmt(sub.start_time)"/> - <t t-out="fmt(sub.end_time)"/>
+                                    </td>
+                                    <td t-out="sub.subject_id.name"/>
+                                    <td><t t-out="sub.class_id.name"/> - <t t-out="sub.section_id.name"/></td>
+                                    <td t-out="sub.classroom"/>
+                                    <td t-out="sub.absent_teacher_id.name"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

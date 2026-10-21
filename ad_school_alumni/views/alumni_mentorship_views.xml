@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_alumni_mentorship_list" model="ir.ui.view">
+        <field name="name">school.alumni.mentorship.list</field>
+        <field name="model">school.alumni.mentorship</field>
+        <field name="arch" type="xml">
+            <list string="Mentorships" decoration-muted="state == 'cancelled'" decoration-success="state == 'completed'">
+                <field name="name"/>
+                <field name="mentor_id"/>
+                <field name="student_id"/>
+                <field name="class_id" optional="show"/>
+                <field name="area"/>
+                <field name="start_date"/>
+                <field name="end_date" optional="show"/>
+                <field name="session_count" optional="show"/>
+                <field name="total_hours" widget="float_time" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'"
+                       decoration-warning="state == 'active'" decoration-success="state == 'completed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_mentorship_kanban" model="ir.ui.view">
+        <field name="name">school.alumni.mentorship.kanban</field>
+        <field name="model">school.alumni.mentorship</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_mobile">
+                <templates>
+                    <t t-name="card">
+                        <strong><field name="student_id"/></strong>
+                        <div class="text-muted">Mentor: <field name="mentor_id"/></div>
+                        <div><field name="area"/></div>
+                        <div class="small text-muted"><field name="session_count"/> session(s)</div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_mentorship_form" model="ir.ui.view">
+        <field name="name">school.alumni.mentorship.form</field>
+        <field name="model">school.alumni.mentorship</field>
+        <field name="arch" type="xml">
+            <form string="Mentorship">
+                <header>
+                    <button name="action_start" type="object" string="Start" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_complete" type="object" string="Complete" class="oe_highlight"
+                            invisible="state != 'active'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('completed', 'cancelled')"/>
+                    <button name="action_reset_draft" type="object" string="Reset to Draft"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Mentor">
+                            <field name="mentor_id" options="{'no_create': True}" readonly="state != 'draft'"/>
+                            <field name="mentor_expertise_ids" widget="many2many_tags" invisible="not mentor_id"/>
+                            <field name="expertise_id" options="{'no_create': True}"/>
+                            <field name="coordinator_id"/>
+                        </group>
+                        <group string="Student">
+                            <field name="student_id" options="{'no_create': True}" readonly="state != 'draft'"/>
+                            <field name="class_id"/>
+                            <field name="section_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="area"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                        <group>
+                            <field name="session_count"/>
+                            <field name="total_hours" widget="float_time"/>
+                            <field name="student_feedback" widget="priority" invisible="state not in ('active', 'completed')"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Sessions" name="sessions">
+                            <field name="session_ids" readonly="state in ('completed', 'cancelled')">
+                                <list editable="bottom">
+                                    <field name="date"/>
+                                    <field name="topic"/>
+                                    <field name="mode"/>
+                                    <field name="duration" widget="float_time" sum="Total"/>
+                                    <field name="notes" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Goals &amp; Outcome" name="goals">
+                            <group>
+                                <field name="goals"/>
+                                <field name="outcome"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_mentorship_search" model="ir.ui.view">
+        <field name="name">school.alumni.mentorship.search</field>
+        <field name="model">school.alumni.mentorship</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="mentor_id"/>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <filter string="Active" name="active_state" domain="[('state', '=', 'active')]"/>
+                <filter string="Completed" name="completed" domain="[('state', '=', 'completed')]"/>
+                <group>
+                    <filter string="Mentor" name="group_mentor" context="{'group_by': 'mentor_id'}"/>
+                    <filter string="Area" name="group_area" context="{'group_by': 'area'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_mentorship" model="ir.actions.act_window">
+        <field name="name">Mentorships</field>
+        <field name="res_model">school.alumni.mentorship</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_school_alumni_mentorship_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No mentorships yet.</p>
+            <p>Pair an alumni Mentor with a current student, then log each session.</p>
+        </field>
+    </record>
+</odoo>

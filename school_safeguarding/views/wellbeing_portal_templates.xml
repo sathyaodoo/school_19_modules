@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_wellbeing" inherit_id="portal.portal_my_home" priority="52">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Well-being</t>
+                <t t-set="text">How are you feeling? Talk to the school counsellor, or share a concern about your child</t>
+                <t t-set="url" t-value="'/my/wellbeing'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_wellbeing" name="Well-being">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5" style="max-width: 760px;">
+                <h3>Well-being</h3>
+                <p class="text-muted">
+                    <i class="fa fa-lock me-1"/>Private. Only the school counsellors can read what you write here.
+                    Teachers and the principal cannot.
+                </p>
+
+                <div t-if="error" class="alert alert-warning" t-out="error"/>
+                <div t-if="done == 'checkin'" class="alert alert-success">
+                    <b>Thank you for checking in.</b>
+                    <t t-if="today_checkin.status == 'need_help'"> A counsellor has been told and will reach out to you.</t>
+                    <t t-elif="today_checkin.status == 'struggling'"> If you would like to talk to someone, use the box "I would like to talk" below.</t>
+                </div>
+                <div t-if="done == 'talk'" class="alert alert-success"><b>Your request was sent to the school counsellor.</b> They will reach out to you.</div>
+                <div t-if="done == 'concern'" class="alert alert-success">
+                    <b>Your message was sent to the school counsellor.</b> Only the counsellor can read it.
+                </div>
+
+                <t t-if="own">
+                    <div t-if="due" class="alert alert-info">It is time for your check-in. It takes a few seconds.</div>
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">How are you feeling today?</h5>
+                            <div t-if="today_checkin" class="small text-muted mb-2">
+                                You already checked in today. You can change it.
+                            </div>
+                            <form action="/my/wellbeing/checkin" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="row g-2 mb-3">
+                                    <t t-foreach="states" t-as="st">
+                                        <div class="col-6 col-md-3">
+                                            <input type="radio" class="btn-check" name="status" t-att-id="'st_' + st[0]" t-att-value="st[0]"
+                                                   required="required" t-att-checked="'checked' if today_checkin.status == st[0] else None"/>
+                                            <label t-attf-class="btn btn-outline-#{'success' if st[0] == 'good' else 'info' if st[0] == 'okay' else 'warning' if st[0] == 'struggling' else 'danger'} w-100 py-3"
+                                                   t-att-for="'st_' + st[0]">
+                                                <i t-attf-class="fa fa-2x #{'fa-smile-o' if st[0] == 'good' else 'fa-meh-o' if st[0] == 'okay' else 'fa-frown-o' if st[0] == 'struggling' else 'fa-life-ring'}"/><br/>
+                                                <t t-out="st[1]"/>
+                                            </label>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" for="note">Anything on your mind? (optional)</label>
+                                    <textarea name="note" id="note" class="form-control" rows="3" maxlength="1000"><t t-out="today_checkin.note or ''"/></textarea>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" name="wants_to_talk" id="wants_to_talk"
+                                           t-att-checked="'checked' if today_checkin.wants_to_talk else None"/>
+                                    <label class="form-check-label" for="wants_to_talk">I would like to talk to the counsellor</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save my check-in</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary"><t t-out="cfg.helpline_text"/></div>
+
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">I would like to talk</h5>
+                            <p class="text-muted small mb-2">The counsellor will reach out to you. You do not have to say why.</p>
+                            <form action="/my/wellbeing/talk" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <textarea name="reason" class="form-control mb-2" rows="2" maxlength="500" placeholder="Anything you want the counsellor to know (optional)"/>
+                                <button type="submit" class="btn btn-outline-primary">Ask the counsellor to meet me</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <h5>My last check-ins</h5>
+                    <div t-if="not history" class="text-muted mb-3">None yet.</div>
+                    <table t-if="history" class="table table-sm mb-4">
+                        <tbody>
+                            <tr t-foreach="history" t-as="h">
+                                <td t-out="h.checkin_date"/>
+                                <td><span t-out="dict(h._fields['status'].selection).get(h.status)"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </t>
+
+                <t t-if="children">
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Share a concern about your child</h5>
+                            <p class="text-muted small">This goes to the school counsellor only. You cannot see your child's own check-ins:
+                                they are private to the child and the counsellor.</p>
+                            <form action="/my/wellbeing/concern" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="mb-2">
+                                    <label class="form-label" for="child_id">Child</label>
+                                    <select name="child_id" id="child_id" class="form-select" required="required">
+                                        <t t-foreach="children" t-as="child"><option t-att-value="child.id" t-out="child.name"/></t>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" for="area_id">What is it about?</label>
+                                    <select name="area_id" id="area_id" class="form-select">
+                                        <option value="">Choose...</option>
+                                        <t t-foreach="areas" t-as="area"><option t-att-value="area.id" t-out="area.name"/></t>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" for="level">How worried are you?</label>
+                                    <select name="level" id="level" class="form-select">
+                                        <option value="low">A little</option>
+                                        <option value="medium" selected="selected">Quite worried</option>
+                                        <option value="high">Very worried, please contact me soon</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="description">Tell us what you have noticed</label>
+                                    <textarea name="description" id="description" class="form-control" rows="4" maxlength="3000" required="required"/>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Send to the counsellor</button>
+                            </form>
+                        </div>
+                    </div>
+                </t>
+
+                <div t-if="not own and not children" class="alert alert-info">
+                    This page is for students and for parents. You are not linked to a student.
+                </div>
+                <a href="/my" class="btn btn-link px-0"><i class="fa fa-arrow-left me-1"/>Back</a>
+            </div>
+        </t>
+    </template>
+</odoo>

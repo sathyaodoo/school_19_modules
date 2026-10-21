@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Starter competencies (edit / add in Configuration > Learning Outcomes & Competencies).
+             Subject learning outcomes (e.g. CBSE codes) are added per subject by the school. -->
+        <record id="competency_critical_thinking" model="school.competency"><field name="name">Critical thinking</field><field name="category">competency</field><field name="sequence">10</field></record>
+        <record id="competency_problem_solving" model="school.competency"><field name="name">Problem solving</field><field name="category">competency</field><field name="sequence">20</field></record>
+        <record id="competency_collaboration" model="school.competency"><field name="name">Collaboration / teamwork</field><field name="category">competency</field><field name="sequence">30</field></record>
+        <record id="competency_digital_literacy" model="school.competency"><field name="name">Digital literacy</field><field name="category">competency</field><field name="sequence">40</field></record>
+        <record id="competency_self_management" model="school.competency"><field name="name">Self-management / time management</field><field name="category">skill</field><field name="sequence">10</field></record>
+        <record id="competency_empathy" model="school.competency"><field name="name">Empathy and respect</field><field name="category">skill</field><field name="sequence">20</field></record>
+        <record id="competency_decision_making" model="school.competency"><field name="name">Decision making</field><field name="category">skill</field><field name="sequence">30</field></record>
+        <record id="competency_oral" model="school.competency"><field name="name">Oral communication / public speaking</field><field name="category">communication</field><field name="sequence">10</field></record>
+        <record id="competency_written" model="school.competency"><field name="name">Written expression</field><field name="category">communication</field><field name="sequence">20</field></record>
+        <record id="competency_listening" model="school.competency"><field name="name">Listening and comprehension</field><field name="category">communication</field><field name="sequence">30</field></record>
+        <record id="competency_creative_expression" model="school.competency"><field name="name">Creative expression</field><field name="category">creativity</field><field name="sequence">10</field></record>
+        <record id="competency_original_ideas" model="school.competency"><field name="name">Original ideas / innovation</field><field name="category">creativity</field><field name="sequence">20</field></record>
+    </data>
+</odoo>

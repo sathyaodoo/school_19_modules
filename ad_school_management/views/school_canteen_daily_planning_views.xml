@@ -70,10 +70,94 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <!-- ============ Meal Bookings (day scholars) ============ -->
+    <record id="view_school_canteen_meal_booking_list" model="ir.ui.view">
+        <field name="name">school.canteen.meal.booking.list</field>
+        <field name="model">school.canteen.meal.booking</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="booking_date &lt; current_date"
+                  decoration-bf="booking_date == current_date">
+                <field name="booking_date"/>
+                <field name="booking_day"/>
+                <field name="meal_id"/>
+                <field name="meal_start_time" widget="float_time"/>
+                <field name="meal_end_time" widget="float_time"/>
+                <field name="student_id"/>
+                <field name="admission_no"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <field name="created_by_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_canteen_meal_booking_form" model="ir.ui.view">
+        <field name="name">school.canteen.meal.booking.form</field>
+        <field name="model">school.canteen.meal.booking</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Student">
+                            <field name="student_id" options="{'no_create': True}"/>
+                            <field name="admission_no"/>
+                            <field name="class_id"/>
+                            <field name="section_id"/>
+                        </group>
+                        <group string="Meal">
+                            <field name="booking_date"/>
+                            <field name="booking_day"/>
+                            <field name="meal_id" options="{'no_create': True}"/>
+                            <label for="meal_start_time" string="Meal Time"/>
+                            <div class="o_row">
+                                <field name="meal_start_time" widget="float_time" nolabel="1"/>
+                                <span>to</span>
+                                <field name="meal_end_time" widget="float_time" nolabel="1"/>
+                            </div>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_canteen_meal_booking_search" model="ir.ui.view">
+        <field name="name">school.canteen.meal.booking.search</field>
+        <field name="model">school.canteen.meal.booking</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="admission_no"/>
+                <field name="meal_id"/>
+                <field name="class_id"/>
+                <field name="section_id"/>
+                <filter string="Today" name="today"
+                        domain="[('booking_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Tomorrow" name="tomorrow"
+                        domain="[('booking_date', '=', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="Upcoming" name="upcoming"
+                        domain="[('booking_date', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter string="Booking Date" name="filter_booking_date" date="booking_date"/>
+                <group>
+                    <filter string="Date" name="group_date" context="{'group_by': 'booking_date:day'}"/>
+                    <filter string="Meal" name="group_meal" context="{'group_by': 'meal_id'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Section" name="group_section" context="{'group_by': 'section_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="action_school_canteen_meal_booking" model="ir.actions.act_window">
         <field name="name">Meal Bookings</field>
         <field name="res_model">school.canteen.meal.booking</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="search_view_id" ref="view_school_canteen_meal_booking_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Book a meal for a day scholar</p>
+            <p>Bookings are counted in the Daily Meal Planning of that day.</p>
+        </field>
     </record>
 
 </odoo>

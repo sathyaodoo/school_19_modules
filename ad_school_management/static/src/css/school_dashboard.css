@@ -1,7 +1,11 @@
 .o_school_dashboard {
     padding: 24px;
     background-color: #f8f9fa;
-    min-height: 100%;
+    /* Odoo 19 clips every action (overflow: hidden), so a client action must
+       scroll itself: take the full action height and scroll vertically. */
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .o_school_dashboard .kpi_card {
@@ -95,3 +99,44 @@
 .o_school_dashboard .badge-pill {
     border-radius: 50rem !important;
 }
+
+/* Staff Leave Requests panel */
+.o_school_dashboard .o_school_leave_panel {
+    border-left: 4px solid #f6c23e !important;
+}
+.o_school_dashboard .o_school_leave_stage {
+    background-color: #f8f9fc;
+    transition: background-color 0.2s;
+}
+.o_school_dashboard .o_school_leave_stage:hover {
+    background-color: #eaecf4;
+}
+.o_school_dashboard .cursor-pointer {
+    cursor: pointer;
+}
+
+/* House Championship panel */
+.o_school_dashboard .o_school_house_panel {
+    border-left: 4px solid #36b9cc !important;
+}
+.o_school_dashboard .o_school_house_dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+/* Early Warning System panel */
+.o_school_dashboard .o_school_ews_panel {
+    border-left: 4px solid #e74a3b !important;
+}
+/* Teacher Growth dashboard */
+.o_teacher_growth .o_growth_kpi { border-left: 4px solid #4e73df !important; }
+.o_teacher_growth .o_growth_type:hover,
+.o_teacher_growth .o_growth_kpi.cursor-pointer:hover { box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .12) !important; }
+/* Student 360 */
+.o_student_360 .o_360_identity { border-left: 4px solid #4e73df !important; }
+.o_student_360 .o_360_summary { border-left: 4px solid #36b9cc !important; background: #f8fcfd; }
+.o_student_360 .o_360_strength { border-top: 3px solid #1cc88a !important; }
+.o_student_360 .o_360_gap { border-top: 3px solid #f6c23e !important; }
+.o_student_360 .o_360_support { border-top: 3px solid #e74a3b !important; }

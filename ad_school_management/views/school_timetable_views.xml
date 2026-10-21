@@ -9,6 +9,7 @@
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="academic_year_id"/>
+                <field name="classroom"/>
             </list>
         </field>
     </record>
@@ -32,6 +33,7 @@
                         </group>
                         <group>
                             <field name="academic_year_id"/>
+                            <field name="classroom" placeholder="e.g. R-101"/>
                         </group>
                     </group>
                     <notebook>
@@ -41,7 +43,6 @@
                                     <field name="day_of_week"/>
                                     <field name="subject_id" domain="[('class_ids', 'in', parent.class_id)]"/>
                                     <field name="teacher_id"/>
-                                    <field name="classroom"/>
                                     <field name="start_time" widget="float_time"/>
                                     <field name="end_time" widget="float_time"/>
                                 </list>
@@ -62,6 +63,7 @@
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="academic_year_id"/>
+                <field name="classroom"/>
                 <group>
                     <filter string="Class" name="group_by_class" context="{'group_by': 'class_id'}"/>
                     <filter string="Academic Year" name="group_by_year" context="{'group_by': 'academic_year_id'}"/>
@@ -79,6 +81,44 @@
             <p class="o_view_nocontent_smiling_face">
                 Create a Class Timetable!
             </p>
+        </field>
+    </record>
+    <!-- ============ My Timetable (logged-in teacher) ============ -->
+    <record id="view_school_my_timetable_list" model="ir.ui.view">
+        <field name="name">school.timetable.line.my.list</field>
+        <field name="model">school.timetable.line</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" default_group_by="day_of_week">
+                <!-- "Print My Timetable" button removed (not required) -->
+                <!--
+                <header>
+                    <button name="action_print_my_timetable" type="object" string="Print My Timetable"
+                            icon="fa-print" display="always"/>
+                </header>
+                -->
+                <field name="day_of_week" column_invisible="1"/>
+                <!-- Subject first: the day name of each group ("Monday (2)") is
+                     shown in the first column, which must be wide enough. -->
+                <field name="subject_id"/>
+                <field name="start_time" widget="float_time"/>
+                <field name="end_time" widget="float_time"/>
+                <field name="class_name"/>
+                <field name="classroom"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_my_timetable" model="ir.actions.act_window">
+        <field name="name">My Timetable</field>
+        <field name="res_model">school.timetable.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_school_my_timetable_list"/>
+        <field name="domain">[('teacher_id.user_id', '=', uid)]</field>
+        <field name="context">{'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No periods are assigned to you yet.</p>
+            <p>When the office adds you to a class timetable, your periods appear here and you get a notification in Odoo.</p>
         </field>
     </record>
 </odoo>

@@ -4,13 +4,40 @@ from odoo import models, fields, api, _
 class SchoolCanteenMealBooking(models.Model):
     _name = 'school.canteen.meal.booking'
     _description = 'Canteen Meal Booking (Day Scholars)'
-    _order = 'booking_date desc'
+    _order = 'booking_date desc, meal_start_time, student_id'
 
     student_id = fields.Many2one('school.student', string='Student', required=True)
     meal_id = fields.Many2one('school.canteen.meal', string='Meal', required=True)
     booking_date = fields.Date(
         string='Booking Date', required=True, default=fields.Date.context_today,
     )
+
+    # Shown in the list so the kitchen sees who / which class / which meal
+    # time (stored, so they can be searched, filtered and grouped).
+    admission_no = fields.Char(related='student_id.admission_no', string='Admission No.', store=True)
+    class_id = fields.Many2one(related='student_id.class_id', string='Class', store=True)
+    section_id = fields.Many2one(related='student_id.section_id', string='Section', store=True)
+    meal_start_time = fields.Float(related='meal_id.start_time', string='From', store=True)
+    meal_end_time = fields.Float(related='meal_id.end_time', string='To', store=True)
+    booking_day = fields.Char(string='Day', compute='_compute_booking_day')
+    created_by_id = fields.Many2one('res.users', string='Booked By', related='create_uid', readonly=True)
+
+    _student_meal_date_uniq = models.Constraint(
+        'unique(student_id, meal_id, booking_date)',
+        'This student has already booked this meal for that day!',
+    )
+
+    @api.depends('booking_date')
+    def _compute_booking_day(self):
+        for booking in self:
+            booking.booking_day = booking.booking_date.strftime('%A') if booking.booking_date else False
+
+    @api.depends('student_id', 'meal_id', 'booking_date')
+    def _compute_display_name(self):
+        for booking in self:
+            booking.display_name = '%s – %s – %s' % (
+                booking.student_id.name or '', booking.meal_id.name or '',
+                fields.Date.to_string(booking.booking_date) if booking.booking_date else '')
 
 
 class SchoolCanteenDailyPlanning(models.Model):

@@ -34,7 +34,12 @@
                         <list editable="bottom">
                             <field name="day"/>
                             <field name="meal_id"/>
-                            <field name="food_item_ids" widget="many2many_tags"/>
+                            <!-- Dishes = standard products "Can be Sold" (Sales app) -->
+                            <field name="food_item_ids" string="Dishes" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                            <field name="dish_prices" string="Price of Each Dish"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="menu_price" string="Price (all dishes)" sum="Total"/>
                             <field name="remarks"/>
                         </list>
                     </field>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_resignation_emergency_exit_form" model="ir.ui.view">
+        <field name="name">school.resignation.emergency.exit.form</field>
+        <field name="model">school.resignation.emergency.exit</field>
+        <field name="arch" type="xml">
+            <form>
+                <div class="alert alert-warning" role="alert">
+                    The employee will <b>not serve the rest of the 3-month notice period</b>.
+                    Give the reason and the last working day: they are recorded on the
+                    resignation, which then moves straight to <b>Handover</b>.
+                </div>
+                <group>
+                    <group>
+                        <field name="resignation_id" invisible="1"/>
+                        <field name="employee_id"/>
+                        <field name="notice_period_start"/>
+                        <field name="normal_last_day"/>
+                    </group>
+                    <group>
+                        <field name="last_working_day"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="reason" placeholder="e.g. Family medical emergency; relocating immediately ..."/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Skip Notice Period &amp; Start Handover"
+                            class="btn-primary" confirm="Skip the remaining notice period and move to Handover?"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

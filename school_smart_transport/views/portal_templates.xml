@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Live Trip buttons on the driver's "My Trips" page -->
+    <template id="portal_driver_home_live" inherit_id="ad_school_management.portal_driver_home">
+        <xpath expr="//div[hasclass('d-grid')]" position="inside">
+            <t t-foreach="[('morning', 'Morning Live Trip'), ('evening', 'Evening Live Trip')]" t-as="live">
+                <a t-attf-href="/my/driver/live/#{route.id}/#{live[0]}" class="btn btn-lg btn-primary">
+                    <i class="fa fa-location-arrow me-1"/> <t t-out="live[1]"/>
+                </a>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- the card of the portal home: the caretaker uses it too -->
+    <template id="portal_my_home_trips_label" inherit_id="portal.portal_my_home" priority="60">
+        <xpath expr="//t[@t-set='title'][normalize-space(.)='My Trips (Driver)']" position="replace">
+            <t t-set="title">My Trips (Driver / Caretaker)</t>
+        </xpath>
+    </template>
+
+    <!-- Link from the parent's bus page -->
+    <template id="portal_student_bus_link" inherit_id="ad_school_management.portal_student_bus">
+        <xpath expr="//a[contains(@t-if, 'gps_tracking_url')]" position="after">
+            <a t-attf-href="/my/school/student/#{student.id}/transport" class="btn btn-outline-primary mb-4 ms-2">
+                <i class="fa fa-bus me-1"/> Today's trip and alerts
+            </a>
+        </xpath>
+    </template>
+
+    <template id="portal_driver_live" name="Driver - live trip">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5" style="max-width: 760px;">
+                <h3 class="mb-0"><i class="fa fa-location-arrow me-2"/><t t-out="route.name"/></h3>
+                <div class="text-muted mb-2">
+                    <t t-if="trip.trip_type == 'morning'">Morning Pickup</t><t t-else="">Evening Drop</t>
+                    &#8226; <t t-out="vehicle.name or '-'"/> (<t t-out="vehicle.vehicle_number or '-'"/>)
+                    &#8226; <span t-attf-class="badge #{'bg-success' if trip.state == 'running' else 'bg-secondary'}">
+                        <t t-if="trip.state == 'planned'">Not started</t>
+                        <t t-elif="trip.state == 'running'">Running</t>
+                        <t t-elif="trip.state == 'done'">Finished</t>
+                        <t t-else="">Cancelled</t>
+                    </span>
+                </div>
+
+                <div class="small mb-2">
+                    <i class="fa fa-user me-1"/>Driver: <b t-out="driver.name or '-'"/>
+                    &#8226; Caretaker: <b t-out="caretaker.name or '-'"/>
+                    &#8226; You are the <b t-out="role"/>
+                </div>
+                <div t-if="msg" class="alert alert-success">
+                    <t t-if="msg == 'started'">Trip started. Start sharing your location below.</t>
+                    <t t-elif="msg == 'ended'">Trip finished. Thank you.</t>
+                    <t t-elif="msg == 'sos_sent'">SOS sent. The school has been alerted.</t>
+                    <t t-elif="msg == 'breakdown_sent'">Breakdown reported. The school has been alerted.</t>
+                    <t t-else="">Saved.</t>
+                </div>
+                <div t-if="err" class="alert alert-warning">
+                    <t t-if="err == 'students_on_board'">
+                        <b>Students are still on board:</b> <t t-out="', '.join(on_board.mapped('name'))"/>.
+                        <form t-attf-action="/my/driver/trip-action/#{trip.id}/end" method="post" class="mt-2">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="confirm" value="1"/>
+                            <button type="submit" class="btn btn-warning">Finish the trip anyway</button>
+                        </form>
+                    </t>
+                    <t t-else=""><t t-out="err.replace('_', ' ')"/></t>
+                </div>
+
+                <!-- not started -->
+                <form t-if="trip.state == 'planned'" t-attf-action="/my/driver/trip-action/#{trip.id}/start" method="post" class="mb-3">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button type="submit" class="btn btn-success btn-lg w-100">Start Trip</button>
+                </form>
+
+                <t t-if="trip.state == 'running'">
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body">
+                            <button id="o_live_gps_btn" type="button" class="btn btn-warning w-100 mb-1"
+                                    t-att-data-csrf="request.csrf_token()" t-att-data-route-id="route.id">Start Sharing Location</button>
+                            <div id="o_live_gps_status" class="small text-muted text-center"/>
+                            <div class="mt-2 small" t-if="trip.next_stop_id">
+                                Next stop: <b t-out="trip.next_stop_id.name"/>
+                                <t t-if="trip.next_eta">- expected <span t-out="trip.next_eta" t-options="{'widget': 'datetime'}"/></t>
+                            </div>
+                            <div class="small" t-if="trip.eta_campus and trip.trip_type == 'morning'">
+                                School: <span t-out="trip.eta_campus" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                            <div class="small text-muted">On board: <b t-out="len(on_board)"/> of <b t-out="len(route.student_ids)"/>
+                                <a t-attf-href="/my/driver/live/#{route.id}/#{trip.trip_type}" class="ms-2">Refresh</a></div>
+                        </div>
+                    </div>
+                </t>
+
+                <!-- stops and students -->
+                <t t-foreach="stops" t-as="item">
+                    <div class="card shadow-sm border-0 mb-2">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between">
+                                <b><t t-out="item['stop'].name"/></b>
+                                <span class="small text-muted">
+                                    <t t-if="item['line'] and item['line'].arrived_at"><i class="fa fa-check text-success"/> reached</t>
+                                    <t t-elif="item['line'] and item['line'].eta">ETA <span t-out="item['line'].eta" t-options="{'widget': 'datetime'}"/></t>
+                                </span>
+                            </div>
+                            <div t-foreach="item['students']" t-as="student" class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
+                                <span>
+                                    <t t-out="student.name"/>
+                                    <span t-if="student in on_board" class="badge bg-success ms-1">On board</span>
+                                    <span t-elif="student in boarded" class="badge bg-secondary ms-1">Dropped</span>
+                                </span>
+                                <t t-if="trip.state == 'running'">
+                                    <form t-if="student in on_board" method="post"
+                                          t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/offboard">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            <t t-if="trip.trip_type == 'morning'">Reached school</t><t t-else="">Dropped</t>
+                                        </button>
+                                    </form>
+                                    <form t-elif="student not in boarded" method="post"
+                                          t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/board">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-success">Boarded</button>
+                                    </form>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <div t-if="no_stop" class="small text-muted mb-2">
+                    Students without a boarding point: <t t-out="', '.join(no_stop.mapped('name'))"/>
+                </div>
+
+                <t t-if="trip.state == 'running'">
+                    <form t-attf-action="/my/driver/trip-action/#{trip.id}/breakdown" method="post" class="card border-0 shadow-sm mb-2">
+                        <div class="card-body">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="text" name="note" maxlength="200" class="form-control mb-2" placeholder="What is wrong? (optional)"/>
+                            <button type="submit" class="btn btn-warning w-100">Report Vehicle Breakdown</button>
+                        </div>
+                    </form>
+                    <form t-attf-action="/my/driver/trip-action/#{trip.id}/sos" method="post" class="mb-2"
+                          onsubmit="return confirm('Send an emergency SOS to the school now?');">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-danger btn-lg w-100"><i class="fa fa-exclamation-triangle me-1"/> EMERGENCY SOS</button>
+                    </form>
+                    <form t-attf-action="/my/driver/trip-action/#{trip.id}/end" method="post" class="mb-3">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-outline-dark w-100">Finish Trip</button>
+                    </form>
+                </t>
+                <a href="/my/driver" class="btn btn-link px-0"><i class="fa fa-arrow-left me-1"/>Back to My Trips</a>
+            </div>
+            <script>
+                (function () {
+                    var btn = document.getElementById('o_live_gps_btn');
+                    var statusEl = document.getElementById('o_live_gps_status');
+                    if (!btn) { return; }
+                    var watchId = null, waiting = false;
+                    function setStatus(text) { statusEl.textContent = text; }
+                    function send(pos) {
+                        if (waiting) { return; }
+                        waiting = true;
+                        setTimeout(function () { waiting = false; }, 15000);
+                        var fd = new FormData();
+                        fd.append('csrf_token', btn.dataset.csrf);
+                        fd.append('route_id', btn.dataset.routeId);
+                        fd.append('lat', pos.coords.latitude);
+                        fd.append('lon', pos.coords.longitude);
+                        fd.append('speed', (pos.coords.speed || 0) * 3.6);
+                        fetch('/my/driver/location', {method: 'POST', body: fd, credentials: 'same-origin'})
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) { setStatus(d.ok ? 'Location sent at ' + new Date().toLocaleTimeString() : 'Error: ' + d.error); })
+                            .catch(function () { setStatus('Network error. Will retry.'); waiting = false; });
+                    }
+                    btn.addEventListener('click', function () {
+                        if (!navigator.geolocation) { setStatus('GPS is not supported on this device.'); return; }
+                        if (watchId !== null) {
+                            navigator.geolocation.clearWatch(watchId); watchId = null;
+                            btn.textContent = 'Start Sharing Location'; btn.classList.replace('btn-danger', 'btn-warning');
+                            setStatus('Location sharing stopped.'); return;
+                        }
+                        watchId = navigator.geolocation.watchPosition(send, function (err) { setStatus('GPS error: ' + err.message); },
+                                                                      {enableHighAccuracy: true, maximumAge: 5000, timeout: 20000});
+                        btn.textContent = 'Stop Sharing Location'; btn.classList.replace('btn-warning', 'btn-danger');
+                        setStatus('Waiting for GPS...');
+                    });
+                })();
+            </script>
+        </t>
+    </template>
+
+    <template id="portal_student_transport" name="Parent - today's trip and alerts">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5" style="max-width: 760px;">
+                <h3 class="mb-0">Transport - <t t-out="student.name"/></h3>
+                <div class="text-muted mb-3">
+                    <t t-out="student.transport_route_id.name or 'No route'"/>
+                    <t t-if="student.van_boarding_point_id"> &#8226; Stop: <t t-out="student.van_boarding_point_id.name"/></t>
+                </div>
+                <div t-if="not rows" class="alert alert-info">No trip has started today.</div>
+                <t t-foreach="rows" t-as="row">
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <b><t t-if="row['trip'].trip_type == 'morning'">Morning Pickup</t><t t-else="">Evening Drop</t></b>
+                                <span t-attf-class="badge #{'bg-success' if row['trip'].state == 'running' else 'bg-secondary'}">
+                                    <t t-if="row['trip'].state == 'planned'">Not started</t>
+                                    <t t-elif="row['trip'].state == 'running'">On the way</t>
+                                    <t t-elif="row['trip'].state == 'done'">Finished</t>
+                                    <t t-else="">Cancelled</t>
+                                </span>
+                            </div>
+                            <div class="small mt-1" t-if="row['trip'].vehicle_id">
+                                Van <t t-out="row['trip'].vehicle_id.name"/> (<t t-out="row['trip'].vehicle_id.vehicle_number"/>)
+                            </div>
+                            <div class="mt-2" t-if="row['minutes'] is not None">
+                                <i class="fa fa-clock-o"/> The van is expected at <b t-out="student.van_boarding_point_id.name"/>
+                                at <b t-out="row['line'].eta" t-options="{'widget': 'datetime'}"/> (about <b t-out="row['minutes']"/> min).
+                            </div>
+                            <div class="mt-2 text-success" t-if="row['line'] and row['line'].arrived_at and row['trip'].state == 'running'">
+                                <i class="fa fa-check"/> The van has reached <b t-out="student.van_boarding_point_id.name"/>.
+                            </div>
+                            <div class="mt-2">
+                                <div t-if="row['board']"><i class="fa fa-sign-in text-success"/> Boarded at
+                                    <b t-out="row['board'].event_at" t-options="{'widget': 'datetime'}"/></div>
+                                <div t-if="row['offboard']"><i class="fa fa-sign-out text-primary"/> Got off at
+                                    <b t-out="row['offboard'].event_at" t-options="{'widget': 'datetime'}"/></div>
+                                <div t-if="not row['board'] and not row['offboard']" class="text-muted small">No boarding record yet.</div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <h5 class="mt-4">Messages from the school</h5>
+                <div t-if="not notices" class="text-muted">Nothing yet.</div>
+                <div t-foreach="notices" t-as="note" class="border-bottom py-2">
+                    <div class="small text-muted"><span t-out="note.sent_at" t-options="{'widget': 'datetime'}"/></div>
+                    <div t-out="note.message"/>
+                </div>
+                <a t-attf-href="/my/school/student/#{student.id}/bus" class="btn btn-link px-0 mt-3">
+                    <i class="fa fa-arrow-left me-1"/>Back to the bus location
+                </a>
+            </div>
+        </t>
+    </template>
+</odoo>

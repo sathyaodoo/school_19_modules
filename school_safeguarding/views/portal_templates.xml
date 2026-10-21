@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_safeguarding" inherit_id="portal.portal_my_home" priority="49">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Report a Concern</t>
+                <t t-set="text">Tell us safely about bullying, cyberbullying or anything that worries you</t>
+                <t t-set="url" t-value="'/my/safeguarding'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_sg_help" name="Safeguarding - help box">
+        <div class="alert alert-danger">
+            <b>If you or someone else is in danger right now,</b> tell a teacher or another trusted adult immediately.
+            In India you can also call <b>CHILDLINE 1098</b> (free, open 24 hours).
+        </div>
+    </template>
+
+    <template id="portal_sg_form" name="Safeguarding - report a concern">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5" style="max-width: 760px;">
+                <h3>Report a Concern</h3>
+                <p class="text-muted">
+                    You can tell the school about bullying, cyberbullying, harassment or anything that makes a child feel
+                    unsafe. Only the school's Safeguarding team can read what you write.
+                </p>
+                <t t-call="school_safeguarding.portal_sg_help"/>
+                <div t-if="error" class="alert alert-warning" t-out="error"/>
+                <form action="/my/safeguarding/submit" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="category">What happened?</label>
+                        <select name="category" id="category" class="form-select" required="required">
+                            <option value="">Choose...</option>
+                            <t t-foreach="categories" t-as="cat">
+                                <option t-att-value="cat[0]" t-att-selected="'selected' if values.get('category') == cat[0] else None"
+                                        t-out="cat[1]"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="description">Tell us what happened</label>
+                        <textarea name="description" id="description" rows="6" class="form-control" required="required"
+                                  maxlength="5000" placeholder="Who, what, where, when. Write as much as you are comfortable with."><t t-out="values.get('description') or ''"/></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="incident_date">When did it happen? (optional)</label>
+                            <input type="date" name="incident_date" id="incident_date" class="form-control"
+                                   t-att-value="values.get('incident_date')"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="location">Where? (optional)</label>
+                            <input type="text" name="location" id="location" class="form-control" maxlength="200"
+                                   t-att-value="values.get('location')"/>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="involved">Who was involved? (optional)</label>
+                        <input type="text" name="involved" id="involved" class="form-control" maxlength="200"
+                               t-att-value="values.get('involved')"/>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" name="urgent" id="urgent"/>
+                        <label class="form-check-label" for="urgent">Someone may be in danger right now</label>
+                    </div>
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" name="anonymous" id="anonymous"/>
+                                <label class="form-check-label fw-bold" for="anonymous">Send this report anonymously</label>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                Your name is <b>not stored</b> with an anonymous report, so the school cannot see who
+                                sent it and cannot link it to you or your child. You get a reference and a code to look
+                                at the status later.
+                            </div>
+                            <div class="form-check" t-if="students">
+                                <input type="checkbox" class="form-check-input" name="about_me" id="about_me"/>
+                                <label class="form-check-label" for="about_me">
+                                    <t t-if="is_parent">This is about my child</t>
+                                    <t t-else="">This happened to me</t>
+                                    (ignored if the report is anonymous)
+                                </label>
+                            </div>
+                            <div class="mt-2" t-if="is_parent and len(students) &gt; 1">
+                                <select name="child" class="form-select">
+                                    <t t-foreach="students" t-as="kid">
+                                        <option t-att-value="kid.id" t-out="kid.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <input type="hidden" name="child" t-if="is_parent and len(students) == 1" t-att-value="students.id"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send to the Safeguarding team</button>
+                    <a href="/my/safeguarding/status" class="btn btn-link">Check the status of a report</a>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_sg_done" name="Safeguarding - report sent">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5" style="max-width: 760px;">
+                <div class="alert alert-success">
+                    <h4 class="alert-heading"><i class="fa fa-check-circle"/> Thank you for telling us.</h4>
+                    <p class="mb-0">The Safeguarding team will look at your report. You did the right thing.</p>
+                </div>
+                <t t-if="urgent"><t t-call="school_safeguarding.portal_sg_help"/></t>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div>Reference: <b t-out="reference"/></div>
+                        <div>Code: <b class="fs-4" t-out="code"/></div>
+                        <div class="small text-muted mt-2">
+                            Keep these to look at the status of your report later.
+                            <t t-if="anonymous">This report is anonymous: the code is the <b>only</b> way to check it.</t>
+                        </div>
+                    </div>
+                </div>
+                <a href="/my/safeguarding/status" class="btn btn-outline-primary">Check the status</a>
+                <a href="/my" class="btn btn-link">Back to my account</a>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_sg_status" name="Safeguarding - status of a report">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5" style="max-width: 760px;">
+                <h3>Status of a Report</h3>
+                <form action="/my/safeguarding/status" method="post" class="row g-2 mb-3">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="col-md-5">
+                        <input type="text" name="reference" class="form-control" placeholder="Reference (SG/2026/0001)"
+                               required="required"/>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="code" class="form-control" placeholder="Code" required="required"
+                               autocomplete="off"/>
+                    </div>
+                    <div class="col-md-3"><button type="submit" class="btn btn-primary w-100">Check</button></div>
+                </form>
+                <div t-if="error" class="alert alert-warning" t-out="error"/>
+                <div t-if="case" class="card">
+                    <div class="card-body">
+                        <div class="text-muted small">Report</div>
+                        <div class="fw-bold" t-out="case.name"/>
+                        <div class="text-muted small mt-2">Status</div>
+                        <div class="fs-5" t-out="case.public_status"/>
+                        <div t-if="case.public_update" class="mt-2">
+                            <div class="text-muted small">Message from the school</div>
+                            <div style="white-space: pre-line;" t-out="case.public_update"/>
+                        </div>
+                    </div>
+                </div>
+                <a href="/my/safeguarding" class="btn btn-link mt-3">Report a concern</a>
+            </div>
+        </t>
+    </template>
+</odoo>

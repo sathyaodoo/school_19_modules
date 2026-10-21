@@ -18,8 +18,9 @@ class SchoolMarkListWizard(models.TransientModel):
     student_ids = fields.Many2many('school.student', string='Students',
                                    help='Leave empty to include every student matching the filters above.')
     result_status = fields.Selection(
-        [('all', 'All'), ('pass', 'Passed only'), ('fail', 'Failed only')],
-        string='Result', default='all', required=True)
+        [('all', 'All')], string='Result', default='all', required=True)
+        #('pass', 'Passed only'), ('fail', 'Failed only')],
+        #string='Result', default='all', required=True)
 
     @api.model
     def default_get(self, fields_list):

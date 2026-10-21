@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- PD activities: a teacher sees their own and those they took part in
+             as a peer; edits only their own. Principal / HR / Admin: all. -->
+        <record id="rule_pd_activity_teacher_read" model="ir.rule">
+            <field name="name">PD activity: teacher reads own and peer activities</field>
+            <field name="model_id" ref="model_school_pd_activity"/>
+            <field name="domain_force">['|', ('teacher_id.user_id', '=', user.id), ('peer_teacher_ids.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+            <field name="perm_read" eval="True"/><field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/><field name="perm_unlink" eval="False"/>
+        </record>
+        <record id="rule_pd_activity_teacher_own" model="ir.rule">
+            <field name="name">PD activity: teacher edits own</field>
+            <field name="model_id" ref="model_school_pd_activity"/>
+            <field name="domain_force">[('teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+            <field name="perm_read" eval="False"/><field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/><field name="perm_unlink" eval="True"/>
+        </record>
+        <record id="rule_pd_activity_manager" model="ir.rule">
+            <field name="name">PD activity: all (principal, HR, admin)</field>
+            <field name="model_id" ref="model_school_pd_activity"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_principal')), (4, ref('group_school_hr_manager')), (4, ref('group_school_admin'))]"/>
+        </record>
+
+        <!-- Self-reflections are private: the teacher sees their own; the
+             Principal / HR / Admin only those the teacher shared. -->
+        <record id="rule_reflection_teacher" model="ir.rule">
+            <field name="name">Reflection: own (teacher)</field>
+            <field name="model_id" ref="model_school_teacher_reflection"/>
+            <field name="domain_force">[('teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_reflection_manager" model="ir.rule">
+            <field name="name">Reflection: shared or own (principal, HR, admin)</field>
+            <field name="model_id" ref="model_school_teacher_reflection"/>
+            <field name="domain_force">['|', ('shared', '=', True), ('teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_principal')), (4, ref('group_school_hr_manager')), (4, ref('group_school_admin'))]"/>
+        </record>
+
+        <!-- Goals: teacher own; Principal / HR / Admin all -->
+        <record id="rule_pd_goal_teacher" model="ir.rule">
+            <field name="name">PD goal: own (teacher)</field>
+            <field name="model_id" ref="model_school_teacher_pd_goal"/>
+            <field name="domain_force">[('teacher_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+        <record id="rule_pd_goal_manager" model="ir.rule">
+            <field name="name">PD goal: all (principal, HR, admin)</field>
+            <field name="model_id" ref="model_school_teacher_pd_goal"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_principal')), (4, ref('group_school_hr_manager')), (4, ref('group_school_admin'))]"/>
+        </record>
+    </data>
+</odoo>

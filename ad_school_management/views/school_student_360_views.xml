@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<!-- ===================================================================
+         LEARNING OUTCOMES & COMPETENCIES (framework)
+         =================================================================== -->
+	<record id="view_school_competency_list" model="ir.ui.view">
+		<field name="name">school.competency.list</field>
+		<field name="model">school.competency</field>
+		<field name="arch" type="xml">
+			<list editable="bottom">
+				<field name="sequence" widget="handle" />
+				<field name="category" />
+				<field name="name" />
+				<field name="code" optional="show" />
+				<field name="subject_id" optional="show" />
+				<field name="class_ids" widget="many2many_tags" optional="show" />
+				<field name="active" column_invisible="1" />
+			</list>
+		</field>
+	</record>
+	<record id="view_school_competency_search" model="ir.ui.view">
+		<field name="name">school.competency.search</field>
+		<field name="model">school.competency</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name" />
+				<field name="subject_id" />
+				<filter string="Learning Outcomes" name="lo"
+					domain="[('category', '=', 'learning_outcome')]" />
+				<filter string="Competencies" name="comp"
+					domain="[('category', '=', 'competency')]" />
+				<filter string="Life Skills" name="skill"
+					domain="[('category', '=', 'skill')]" />
+				<filter string="Communication" name="comm"
+					domain="[('category', '=', 'communication')]" />
+				<filter string="Creativity" name="crea"
+					domain="[('category', '=', 'creativity')]" />
+				<group>
+					<filter string="Category" name="group_category"
+						context="{'group_by': 'category'}" />
+					<filter string="Subject" name="group_subject"
+						context="{'group_by': 'subject_id'}" />
+				</group>
+			</search>
+		</field>
+	</record>
+	<record id="action_school_competency" model="ir.actions.act_window">
+		<field name="name">Learning Outcomes &amp; Competencies</field>
+		<field name="res_model">school.competency</field>
+		<field name="view_mode">list</field>
+		<field name="context">{'search_default_group_category': 1}</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Define learning outcomes
+				and competencies</p>
+			<p>Subject learning outcomes (e.g. CBSE codes), competencies, life
+				skills, communication and
+				creativity. Teachers assess students against them on a 4-level
+				scale.</p>
+		</field>
+	</record>
+
+	<!-- ===================================================================
+         COMPETENCY ASSESSMENTS
+         =================================================================== -->
+	<record id="view_school_student_competency_list" model="ir.ui.view">
+		<field name="name">school.student.competency.list</field>
+		<field name="model">school.student.competency</field>
+		<field name="arch" type="xml">
+			<list editable="top">
+				<field name="date" />
+				<field name="student_id" options="{'no_create': True}" />
+				<field name="class_id" optional="show" />
+				<field name="competency_id" options="{'no_create': True}" />
+				<field name="category" optional="show" />
+				<field name="subject_id" optional="hide" />
+				<field name="level" widget="badge"
+					decoration-danger="level == '1'"
+					decoration-warning="level == '2'"
+					decoration-info="level == '3'"
+					decoration-success="level == '4'" />
+				<field name="evidence" optional="show" />
+				<field name="assessed_by" optional="hide" />
+			</list>
+		</field>
+	</record>
+	<record id="view_school_student_competency_search" model="ir.ui.view">
+		<field name="name">school.student.competency.search</field>
+		<field name="model">school.student.competency</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="student_id" />
+				<field name="class_id" />
+				<field name="competency_id" />
+				<filter string="Beginning (needs support)" name="beginning"
+					domain="[('level', '=', '1')]" />
+				<filter string="Advanced" name="advanced"
+					domain="[('level', '=', '4')]" />
+				<group>
+					<filter string="Student" name="group_student"
+						context="{'group_by': 'student_id'}" />
+					<filter string="Category" name="group_category"
+						context="{'group_by': 'category'}" />
+					<filter string="Level" name="group_level"
+						context="{'group_by': 'level'}" />
+				</group>
+			</search>
+		</field>
+	</record>
+	<record id="action_school_student_competency" model="ir.actions.act_window">
+		<field name="name">Competency Assessments</field>
+		<field name="res_model">school.student.competency</field>
+		<field name="view_mode">list</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Assess a learning outcome
+				or competency</p>
+			<p>Beginning → Developing → Proficient → Advanced, with the evidence
+				observed.
+				The latest assessment of each competency appears in the
+				student's 360° profile.</p>
+		</field>
+	</record>
+
+	<!-- ===================================================================
+         DEVELOPMENT RECORDS
+         =================================================================== -->
+	<record id="view_school_student_record_list" model="ir.ui.view">
+		<field name="name">school.student.record.list</field>
+		<field name="model">school.student.record</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="date" />
+				<field name="student_ids" widget="many2many_tags" />
+				<field name="class_ids" widget="many2many_tags" optional="show" />
+				<field name="kind" />
+				<field name="name" />
+				<field name="area" optional="show" />
+				<field name="level" optional="show" />
+				<field name="result" optional="show" />
+				<field name="hours" sum="Total Hours" optional="show" />
+			</list>
+		</field>
+	</record>
+	<record id="view_school_student_record_form" model="ir.ui.view">
+		<field name="name">school.student.record.form</field>
+		<field name="model">school.student.record</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_title">
+						<label for="name" />
+						<h1>
+							<field name="name"
+								placeholder="e.g. Science Exhibition – Water Purifier Model" />
+						</h1>
+					</div>
+					<group>
+						<group>
+							<field name="student_ids" widget="many2many_tags"
+								options="{'no_create': True}" />
+							<field name="class_ids" widget="many2many_tags" />
+							<field name="kind" />
+							<field name="area"
+								invisible="kind in ('community_service', 'environmental', 'volunteering')" />
+						</group>
+						<group>
+							<field name="date" />
+							<field name="academic_year_id" />
+							<field name="level" />
+							<field name="result"
+								placeholder="e.g. 1st place, Gold, Grade A, Completed" />
+							<field name="hours"
+								invisible="kind not in ('community_service', 'environmental', 'volunteering', 'project', 'service_achievement')" />
+						</group>
+					</group>
+					<group>
+						<field name="description"
+							placeholder="What did the student(s) do / learn?" />
+						<field name="evidence" filename="evidence_filename" />
+						<field name="evidence_filename" invisible="1" />
+						<field name="recorded_by" />
+					</group>
+				</sheet>
+				<chatter />
+			</form>
+		</field>
+	</record>
+	<record id="view_school_student_record_search" model="ir.ui.view">
+		<field name="name">school.student.record.search</field>
+		<field name="model">school.student.record</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name" />
+				<field name="student_ids" string="Student" />
+				<field name="class_ids" string="Class" />
+				<filter string="Competitions" name="competition"
+					domain="[('kind', '=', 'competition')]" />
+				<filter string="Projects" name="project"
+					domain="[('kind', '=', 'project')]" />
+				<filter string="Skills" name="skill"
+					domain="[('kind', '=', 'skill')]" />
+				<filter string="Certifications" name="certification"
+					domain="[('kind', '=', 'certification')]" />
+				<filter string="Achievements" name="achievement"
+					domain="[('kind', '=', 'achievement')]" />
+				<filter string="Leadership" name="leadership"
+					domain="[('kind', '=', 'leadership')]" />
+				<separator />
+				<filter string="Social Responsibility" name="social"
+					domain="[('kind', 'in', ('community_service', 'environmental', 'volunteering', 'service_achievement'))]" />
+				<filter string="Date" name="filter_date" date="date" />
+				<group>
+					<filter string="Student" name="group_student"
+						context="{'group_by': 'student_ids'}" />
+					<filter string="Record Type" name="group_kind"
+						context="{'group_by': 'kind'}" />
+					<filter string="Class" name="group_class"
+						context="{'group_by': 'class_ids'}" />
+				</group>
+			</search>
+		</field>
+	</record>
+	<record id="action_school_student_record" model="ir.actions.act_window">
+		<field name="name">Development Records</field>
+		<field name="res_model">school.student.record</field>
+		<field name="view_mode">list,form</field>
+		<field name="search_view_id" ref="view_school_student_record_search" />
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Record a student's
+				development</p>
+			<p>Competitions, projects, skills, certifications, achievements,
+				leadership roles, community
+				service, environmental activities, volunteering and service
+				achievements.</p>
+		</field>
+	</record>
+
+	<!-- ===================================================================
+         CLUBS
+         =================================================================== -->
+	<record id="view_school_club_list" model="ir.ui.view">
+		<field name="name">school.club.list</field>
+		<field name="model">school.club</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="name" />
+				<field name="club_type" />
+				<field name="teacher_id" />
+				<field name="member_count" />
+			</list>
+		</field>
+	</record>
+	<record id="view_school_club_form" model="ir.ui.view">
+		<field name="name">school.club.form</field>
+		<field name="model">school.club</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<div class="oe_title">
+						<h1>
+							<field name="name" placeholder="e.g. Eco Club" />
+						</h1>
+					</div>
+					<group>
+						<group>
+							<field name="club_type" />
+							<field name="teacher_id"
+								options="{'no_create': True}" />
+						</group>
+						<group>
+							<field name="member_count" />
+							<field name="active" invisible="1" />
+						</group>
+					</group>
+					<field name="description"
+						placeholder="What does the club do?" />
+					<field name="membership_ids">
+						<list editable="bottom">
+							<field name="student_id"
+								options="{'no_create': True}" />
+							<field name="class_id" />
+							<field name="role" />
+							<field name="date_start" />
+							<field name="date_end" />
+							<field name="is_current" />
+						</list>
+					</field>
+				</sheet>
+			</form>
+		</field>
+	</record>
+	<record id="action_school_club" model="ir.actions.act_window">
+		<field name="name">Clubs</field>
+		<field name="res_model">school.club</field>
+		<field name="view_mode">list,form</field>
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Create a club</p>
+			<p>Eco Club, Science Club, Debate Club ... with members and their
+				roles.</p>
+		</field>
+	</record>
+
+	<!-- Student 360° screen: no standalone menu/action. It is opened from the
+         "360° Profile" button on the student form (school.student.action_open_360). -->
+
+	<!-- ===================================================================
+         STUDENT FORM: 360° button + Development tab
+         =================================================================== -->
+	<record id="view_student_form_inherit_360" model="ir.ui.view">
+		<field name="name">school.student.form.inherit.360</field>
+		<field name="model">school.student</field>
+		<field name="inherit_id"
+			ref="ad_school_management.view_school_student_form" />
+		<field name="arch" type="xml">
+			<xpath expr="//header" position="inside">
+				<button name="action_open_360" type="object"
+					string="360° Profile" icon="fa-user-circle"
+					class="btn-primary"
+					groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin" />
+			</xpath>
+			<xpath expr="//notebook" position="inside">
+				<!-- The full Student 360° profile, inside the student record -->
+				<page string="360° Profile" name="profile_360"
+					groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin">
+					<div class="d-flex gap-2 mb-3">
+						<button name="action_open_360" type="object"
+							string="Open Full Screen" icon="fa-expand"
+							class="btn-secondary" />
+						<button name="action_print_360" type="object"
+							string="Print 360° Profile" icon="fa-print"
+							class="btn-secondary" />
+						<span class="text-muted small align-self-center"> Built
+							from marks, attendance, competencies, activities,
+							clubs, development records, reading and service. Add
+							data in the <b>Development (360°)</b> tab. </span>
+					</div>
+					<field name="profile_360_html" readonly="1" nolabel="1" />
+				</page>
+				<page string="Development (360°)" name="development_360"
+					groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin">
+					<separator string="Development Records" />
+					<field name="development_record_ids"
+						context="{'default_student_ids': [(4, id)]}">
+						<list>
+							<field name="date" />
+							<field name="kind" />
+							<field name="name" />
+							<field name="area" optional="show" />
+							<field name="level" optional="show" />
+							<field name="result" optional="show" />
+							<field name="hours" optional="show" />
+						</list>
+					</field>
+					<separator string="Learning Outcomes &amp; Competencies" />
+					<field name="competency_ids">
+						<list editable="bottom">
+							<field name="date" />
+							<field name="competency_id"
+								options="{'no_create': True}" />
+							<field name="category" />
+							<field name="level" widget="badge"
+								decoration-danger="level == '1'"
+								decoration-warning="level == '2'"
+								decoration-info="level == '3'"
+								decoration-success="level == '4'" />
+							<field name="evidence" />
+						</list>
+					</field>
+					<separator
+						string="Behaviour &amp; Participation (quarterly / half-yearly)" />
+					<field name="behaviour_review_ids"
+						context="{'default_student_id': id}">
+						<list>
+							<field name="academic_year_id" />
+							<field name="period" />
+							<field name="behaviour" widget="badge"
+								decoration-danger="behaviour == '1'"
+								decoration-warning="behaviour == '2'"
+								decoration-info="behaviour == '3'"
+								decoration-success="behaviour == '4'" />
+							<field name="discipline" widget="badge"
+								decoration-danger="discipline == '1'"
+								decoration-warning="discipline == '2'"
+								decoration-info="discipline == '3'"
+								decoration-success="discipline == '4'" />
+							<field name="participation" widget="badge"
+								decoration-danger="participation == '1'"
+								decoration-warning="participation == '2'"
+								decoration-info="participation == '3'"
+								decoration-success="participation == '4'" />
+							<field name="teacher_observation" />
+						</list>
+					</field>
+					<separator string="Clubs" />
+					<field name="club_membership_ids">
+						<list editable="bottom">
+							<field name="club_id" options="{'no_create': True}" />
+							<field name="role" />
+							<field name="date_start" />
+							<field name="date_end" />
+						</list>
+					</field>
+				</page>
+			</xpath>
+		</field>
+	</record>
+
+	<!-- ===================================================================
+         BEHAVIOUR & PARTICIPATION REVIEWS
+         =================================================================== -->
+	<record id="view_school_student_behaviour_list" model="ir.ui.view">
+		<field name="name">school.student.behaviour.list</field>
+		<field name="model">school.student.behaviour</field>
+		<field name="arch" type="xml">
+			<list>
+				<field name="academic_year_id" />
+				<field name="period" />
+				<field name="student_ids" widget="many2many_tags" />
+				<field name="class_ids" widget="many2many_tags" optional="show" />
+				<field name="behaviour" widget="badge"
+					decoration-danger="behaviour == '1'"
+					decoration-warning="behaviour == '2'"
+					decoration-info="behaviour == '3'"
+					decoration-success="behaviour == '4'" />
+				<field name="discipline" widget="badge"
+					decoration-danger="discipline == '1'"
+					decoration-warning="discipline == '2'"
+					decoration-info="discipline == '3'"
+					decoration-success="discipline == '4'" />
+				<field name="participation" widget="badge"
+					decoration-danger="participation == '1'"
+					decoration-warning="participation == '2'"
+					decoration-info="participation == '3'"
+					decoration-success="participation == '4'" />
+				<field name="average_rating" optional="show" />
+				<field name="date" optional="hide" />
+				<field name="reviewed_by" optional="hide" />
+			</list>
+		</field>
+	</record>
+	<record id="view_school_student_behaviour_form" model="ir.ui.view">
+		<field name="name">school.student.behaviour.form</field>
+		<field name="model">school.student.behaviour</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<group>
+						<group>
+							<field name="student_ids" widget="many2many_tags"
+								options="{'no_create': True}" />
+							<field name="class_ids" widget="many2many_tags" />
+							<field name="period" widget="radio" />
+						</group>
+						<group>
+							<field name="date" />
+							<field name="academic_year_id" />
+							<field name="period_type" />
+							<field name="reviewed_by" />
+							<field name="portal_published" />
+						</group>
+					</group>
+					<group string="Ratings">
+						<group>
+							<field name="behaviour" widget="radio" />
+							<field name="discipline" widget="radio" />
+						</group>
+						<group>
+							<field name="participation" widget="radio" />
+							<field name="average_rating" />
+						</group>
+					</group>
+					<group string="Comments">
+						<field name="teacher_observation"
+							placeholder="What did you observe this period?" />
+					</group>
+					<!-- Full-width table (outside any <group>): one row for EVERY student of the review -->
+					<separator string="Student Self-Reflection &amp; Parent Feedback (one row per student)" />
+					<div class="text-muted mb-2" invisible="id">
+						Save the review and a row will appear here for every selected student.
+					</div>
+					<field name="feedback_ids" nolabel="1" colspan="2" class="w-100">
+						<list editable="bottom" create="false" delete="false">
+							<field name="student_id" readonly="1" />
+							<field name="self_reflection" widget="text" />
+							<field name="parent_feedback" widget="text" />
+						</list>
+					</field>
+				</sheet>
+			</form>
+		</field>
+	</record>
+	<record id="view_school_student_behaviour_search" model="ir.ui.view">
+		<field name="name">school.student.behaviour.search</field>
+		<field name="model">school.student.behaviour</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="student_ids" string="Student" />
+				<field name="class_ids" string="Class" />
+				<field name="academic_year_id" />
+				<filter string="Quarterly" name="quarterly"
+					domain="[('period_type', '=', 'quarterly')]" />
+				<filter string="Half-Yearly" name="half_yearly"
+					domain="[('period_type', '=', 'half_yearly')]" />
+				<separator />
+				<filter string="Needs Improvement" name="needs_improvement"
+					domain="['|', '|', ('behaviour', '=', '1'), ('discipline', '=', '1'), ('participation', '=', '1')]" />
+				<group>
+					<filter string="Student" name="group_student"
+						context="{'group_by': 'student_ids'}" />
+					<filter string="Class" name="group_class"
+						context="{'group_by': 'class_ids'}" />
+					<filter string="Review Period" name="group_period"
+						context="{'group_by': 'period'}" />
+					<filter string="Academic Year" name="group_year"
+						context="{'group_by': 'academic_year_id'}" />
+				</group>
+			</search>
+		</field>
+	</record>
+	<record id="action_school_student_behaviour" model="ir.actions.act_window">
+		<field name="name">Behaviour &amp; Participation</field>
+		<field name="res_model">school.student.behaviour</field>
+		<field name="view_mode">list,form</field>
+		<field name="search_view_id" ref="view_school_student_behaviour_search" />
+		<field name="help" type="html">
+			<p class="o_view_nocontent_smiling_face">Record a behaviour &amp;
+				participation review</p>
+			<p>Once every quarter or half-year, rate each student's behaviour,
+				discipline and participation,
+				and note teacher observations, the student's self-reflection and
+				parent feedback.</p>
+		</field>
+	</record>
+
+	<!-- ===================================================================
+         MENUS
+         =================================================================== -->
+	<menuitem id="menu_school_student_behaviour"
+		name="Behaviour &amp; Participation"
+		parent="ad_school_management.menu_school_personnel"
+		action="action_school_student_behaviour" sequence="78"
+		groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin" />
+	<menuitem id="menu_school_student_record" name="Development Records"
+		parent="ad_school_management.menu_school_personnel"
+		action="action_school_student_record" sequence="74"
+		groups="ad_school_management.group_school_teacher,ad_school_management.group_school_principal,ad_school_management.group_school_admin" />
+	<menuitem id="menu_school_student_competency" name="Competency Assessments"
+		parent="ad_school_management.menu_school_personnel"
+		action="action_school_student_competency" sequence="76"
+		groups="ad_school_management.group_school_teacher,ad_school_management.group_school_principal,ad_school_management.group_school_admin" />
+	<menuitem id="menu_school_club" name="Clubs"
+		parent="ad_school_management.menu_school_activities_root"
+		action="action_school_club" sequence="30" />
+	<menuitem id="menu_school_competency"
+		name="Learning Outcomes &amp; Competencies"
+		parent="ad_school_management.menu_school_configuration"
+		action="action_school_competency" sequence="95" />
+</odoo>

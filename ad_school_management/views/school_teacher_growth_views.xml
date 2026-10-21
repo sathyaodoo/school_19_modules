@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================================================================
+         PD ACTIVITIES
+         =================================================================== -->
+    <record id="view_school_pd_activity_list" model="ir.ui.view">
+        <field name="name">school.pd.activity.list</field>
+        <field name="model">school.pd.activity</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'draft'">
+                <field name="date_start"/>
+                <field name="teacher_id"/>
+                <field name="type_id"/>
+                <field name="name"/>
+                <field name="provider" optional="show"/>
+                <field name="hours" sum="Total Hours"/>
+                <field name="academic_year_id" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'submitted'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_pd_activity_form" model="ir.ui.view">
+        <field name="name">school.pd.activity.form</field>
+        <field name="model">school.pd.activity</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_reset_draft" type="object" string="Back to Draft"
+                            invisible="state != 'submitted'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager,ad_school_management.group_school_admin"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. CBSE Capacity Building: Competency-Based Assessment"
+                                   readonly="state == 'submitted'"/></h1>
+                    </div>
+                    <group>
+                        <group string="Activity">
+                            <field name="teacher_id" options="{'no_create': True}" readonly="state != 'draft'"/>
+                            <field name="type_id" options="{'no_quick_create': True}" readonly="state == 'submitted'"/>
+                            <field name="type_code" invisible="1"/>
+                            <field name="role" readonly="state == 'submitted'"/>
+                            <field name="provider" readonly="state == 'submitted'"/>
+                            <field name="mode" readonly="state == 'submitted'"/>
+                        </group>
+                        <group string="When &amp; How Long">
+                            <field name="date_start" readonly="state == 'submitted'"/>
+                            <field name="date_end" readonly="state == 'submitted'"/>
+                            <field name="hours" readonly="state == 'submitted'"/>
+                            <field name="academic_year_id"/>
+                        </group>
+                        <group string="Certificate" invisible="type_code not in ('certification', 'training', 'workshop', 'webinar')">
+                            <field name="certificate_number" invisible="type_code != 'certification'" readonly="state == 'submitted'"/>
+                            <field name="valid_until" invisible="type_code != 'certification'" readonly="state == 'submitted'"/>
+                        </group>
+                        <group string="Peers" invisible="type_code not in ('peer_observation', 'lesson_study', 'demo_class')">
+                            <field name="peer_teacher_ids" widget="many2many_tags" options="{'no_create': True}"
+                                   readonly="state == 'submitted'"/>
+                        </group>
+                        <group string="Class" invisible="type_code not in ('demo_class', 'peer_observation', 'lesson_study', 'innovation')">
+                            <field name="class_id" options="{'no_create': True}" readonly="state == 'submitted'"/>
+                            <field name="subject_id" options="{'no_create': True}" readonly="state == 'submitted'"/>
+                        </group>
+                        <group string="Publication / Research" invisible="type_code not in ('publication', 'research', 'webinar')">
+                            <field name="link" widget="url" readonly="state == 'submitted'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="certificate" filename="certificate_filename" readonly="state == 'submitted'"/>
+                        <field name="certificate_filename" invisible="1"/>
+                        <field name="description" placeholder="What did you learn? What was it about?"
+                               readonly="state == 'submitted'"/>
+                        <field name="impact" placeholder="How did it change your teaching or your students' learning?"
+                               readonly="state == 'submitted'"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_pd_activity_search" model="ir.ui.view">
+        <field name="name">school.pd.activity.search</field>
+        <field name="model">school.pd.activity</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="teacher_id"/>
+                <field name="type_id"/>
+                <field name="provider"/>
+                <filter string="My Activities" name="mine" domain="[('teacher_id.user_id', '=', uid)]"/>
+                <separator/>
+                <filter string="Submitted" name="submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <separator/>
+                <filter string="Date" name="filter_date" date="date_start"/>
+                <group>
+                    <filter string="Teacher" name="group_teacher" context="{'group_by': 'teacher_id'}"/>
+                    <filter string="Activity Type" name="group_type" context="{'group_by': 'type_id'}"/>
+                    <filter string="Academic Year" name="group_year" context="{'group_by': 'academic_year_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_school_pd_activity_pivot" model="ir.ui.view">
+        <field name="name">school.pd.activity.pivot</field>
+        <field name="model">school.pd.activity</field>
+        <field name="arch" type="xml">
+            <pivot string="Professional Development">
+                <field name="teacher_id" type="row"/>
+                <field name="type_id" type="col"/>
+                <field name="hours" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_school_pd_activity" model="ir.actions.act_window">
+        <field name="name">PD Activities</field>
+        <field name="res_model">school.pd.activity</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="search_view_id" ref="view_school_pd_activity_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record a professional-development activity</p>
+            <p>Training, certifications, workshops, webinars, demonstration classes, peer observation,
+               lesson study, research, publications and innovations. Submit it, and its hours
+               count towards the annual CPD target.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         SELF-REFLECTIONS
+         =================================================================== -->
+    <record id="view_school_teacher_reflection_list" model="ir.ui.view">
+        <field name="name">school.teacher.reflection.list</field>
+        <field name="model">school.teacher.reflection</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date"/>
+                <field name="teacher_id"/>
+                <field name="name"/>
+                <field name="shared" widget="boolean_toggle" readonly="1"/>
+                <field name="academic_year_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_teacher_reflection_form" model="ir.ui.view">
+        <field name="name">school.teacher.reflection.form</field>
+        <field name="model">school.teacher.reflection</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <i class="fa fa-lock me-1" title="Private"/>
+                        Your reflections are private. Tick <b>Share with Principal</b> only if you want the
+                        Principal / HR to read this one and give feedback.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Term 1 – Teaching fractions with manipulatives"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="teacher_id" options="{'no_create': True}"/>
+                            <field name="date"/>
+                            <field name="academic_year_id"/>
+                        </group>
+                        <group>
+                            <field name="shared" widget="boolean_toggle"/>
+                            <field name="activity_ids" widget="many2many_tags" options="{'no_create': True}"
+                                   domain="[('teacher_id', '=', teacher_id)]"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="went_well" placeholder="Which lessons or strategies worked well, and why?"/>
+                        <field name="challenges" placeholder="What did not work as planned? Which students struggled?"/>
+                        <field name="learnings" placeholder="What did you learn about your teaching?"/>
+                        <field name="next_steps" placeholder="What will you try or change next?"/>
+                        <field name="principal_comment" invisible="not shared"
+                               placeholder="Feedback from the Principal (only for shared reflections)"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_teacher_reflection" model="ir.actions.act_window">
+        <field name="name">Self-Reflections</field>
+        <field name="res_model">school.teacher.reflection</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Write a self-reflection</p>
+            <p>What went well, what was challenging, what you learned and what you will do next.
+               Private unless you choose to share it with the Principal.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ANNUAL PD GOALS
+         =================================================================== -->
+    <record id="view_school_teacher_pd_goal_list" model="ir.ui.view">
+        <field name="name">school.teacher.pd.goal.list</field>
+        <field name="model">school.teacher.pd.goal</field>
+        <field name="arch" type="xml">
+            <list decoration-success="is_met" decoration-muted="state == 'not_achieved'">
+                <field name="academic_year_id"/>
+                <field name="teacher_id"/>
+                <field name="name"/>
+                <field name="measure"/>
+                <field name="type_id" optional="show"/>
+                <field name="target"/>
+                <field name="achieved"/>
+                <field name="progress" widget="progressbar"/>
+                <field name="is_met" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-info="state == 'approved'"
+                       decoration-success="state == 'achieved'" decoration-danger="state == 'not_achieved'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_teacher_pd_goal_form" model="ir.ui.view">
+        <field name="name">school.teacher.pd.goal.form</field>
+        <field name="model">school.teacher.pd.goal</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" type="object" string="Approve Goal" class="oe_highlight"
+                            invisible="state != 'planned'"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager,ad_school_management.group_school_admin"/>
+                    <button name="action_mark_achieved" type="object" string="Mark Achieved"
+                            invisible="state not in ('planned', 'approved')"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager,ad_school_management.group_school_admin"/>
+                    <button name="action_mark_not_achieved" type="object" string="Mark Not Achieved"
+                            invisible="state not in ('planned', 'approved')"
+                            groups="ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager,ad_school_management.group_school_admin"/>
+                    <field name="state" widget="statusbar" statusbar_visible="planned,approved,achieved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Complete 50 hours of CPD"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="teacher_id" options="{'no_create': True}"/>
+                            <field name="academic_year_id" options="{'no_create': True}"/>
+                            <field name="deadline"/>
+                        </group>
+                        <group>
+                            <field name="measure" widget="radio"/>
+                            <field name="type_id" invisible="measure == 'qualitative'" options="{'no_create': True}"/>
+                            <field name="target" invisible="measure == 'qualitative'"/>
+                            <field name="achieved" invisible="measure == 'qualitative'"/>
+                            <field name="progress" widget="progressbar"/>
+                            <field name="is_met"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="teacher_note" placeholder="How do you plan to reach this goal?"/>
+                        <field name="principal_comment"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_teacher_pd_goal" model="ir.actions.act_window">
+        <field name="name">Annual PD Goals</field>
+        <field name="res_model">school.teacher.pd.goal</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Set an annual professional-development goal</p>
+            <p>Measured in CPD hours, a number of activities (e.g. 2 demonstration classes) or qualitatively.
+               Progress updates automatically from submitted activities.</p>
+        </field>
+    </record>
+
+    <!-- Activity types (configuration) -->
+    <record id="view_school_pd_activity_type_list" model="ir.ui.view">
+        <field name="name">school.pd.activity.type.list</field>
+        <field name="model">school.pd.activity.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="icon"/>
+                <field name="counts_hours"/>
+                <field name="code" optional="hide"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_school_pd_activity_type" model="ir.actions.act_window">
+        <field name="name">PD Activity Types</field>
+        <field name="res_model">school.pd.activity.type</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Dedicated dashboard -->
+    <record id="action_school_teacher_growth_dashboard" model="ir.actions.client">
+        <field name="name">Teacher Growth Dashboard</field>
+        <field name="tag">school_teacher_growth_dashboard</field>
+    </record>
+
+    <!-- ===================================================================
+         TEACHER FORM: Growth Portfolio tab
+         =================================================================== -->
+    <record id="view_school_teacher_form_inherit_growth" model="ir.ui.view">
+        <field name="name">school.teacher.form.inherit.growth</field>
+        <field name="model">school.teacher</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_teacher_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Growth Portfolio" name="growth"
+                      groups="ad_school_management.group_school_teacher,ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager,ad_school_management.group_school_admin">
+                    <div class="d-flex gap-2 mb-3">
+                        <button name="action_open_growth_dashboard" type="object" string="Open Growth Dashboard"
+                                icon="fa-line-chart" class="btn-primary"/>
+                        <button name="action_print_growth_portfolio" type="object" string="Print Portfolio"
+                                icon="fa-print" class="btn-secondary"/>
+                    </div>
+                    <group>
+                        <group string="This Academic Year">
+                            <field name="pd_hours_this_year"/>
+                            <field name="pd_target_hours"/>
+                            <field name="pd_activity_count"/>
+                        </group>
+                        <group string="Goals">
+                            <field name="pd_goal_count"/>
+                            <field name="pd_goals_met"/>
+                        </group>
+                    </group>
+                    <field name="pd_activity_ids" readonly="1">
+                        <list decoration-muted="state == 'draft'">
+                            <field name="date_start"/>
+                            <field name="type_id"/>
+                            <field name="name"/>
+                            <field name="hours" sum="Total"/>
+                            <field name="state" widget="badge" decoration-success="state == 'submitted'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         MENUS: School Management > Teacher Development
+         =================================================================== -->
+    <menuitem id="menu_school_teacher_development" name="Teacher Development" parent="ad_school_management.menu_school_root"
+              sequence="5"
+              groups="ad_school_management.group_school_teacher,ad_school_management.group_school_principal,ad_school_management.group_school_hr_manager,ad_school_management.group_school_admin"/>
+    <menuitem id="menu_school_teacher_growth_dashboard" name="Growth Dashboard" parent="menu_school_teacher_development"
+              action="action_school_teacher_growth_dashboard" sequence="10"/>
+    <menuitem id="menu_school_pd_activity" name="PD Activities" parent="menu_school_teacher_development"
+              action="action_school_pd_activity" sequence="20"/>
+    <menuitem id="menu_school_teacher_reflection" name="Self-Reflections" parent="menu_school_teacher_development"
+              action="action_school_teacher_reflection" sequence="30"/>
+    <menuitem id="menu_school_teacher_pd_goal" name="Annual PD Goals" parent="menu_school_teacher_development"
+              action="action_school_teacher_pd_goal" sequence="40"/>
+    <menuitem id="menu_school_pd_activity_type" name="PD Activity Types" parent="ad_school_management.menu_school_configuration"
+              action="action_school_pd_activity_type" sequence="90"/>
+</odoo>

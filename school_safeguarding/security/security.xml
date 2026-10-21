@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_school_safeguarding" model="ir.module.category">
+        <field name="name">School Safeguarding</field>
+        <field name="description">Confidential child-protection records. Give these groups only to authorised personnel.</field>
+        <field name="sequence">22</field>
+    </record>
+
+    <record model="res.groups.privilege" id="res_groups_privilege_school_safeguarding">
+        <field name="name">Safeguarding</field>
+        <field name="category_id" ref="module_category_school_safeguarding"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- every teacher / staff member may REPORT a concern (they can not read cases afterwards) -->
+    <record id="group_sg_reporter" model="res.groups">
+        <field name="name">Can report a safeguarding concern</field>
+        <field name="privilege_id" ref="res_groups_privilege_school_safeguarding"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- authorised personnel: see and handle all cases -->
+    <record id="group_sg_officer" model="res.groups">
+        <field name="name">Safeguarding Officer</field>
+        <field name="privilege_id" ref="res_groups_privilege_school_safeguarding"/>
+        <field name="sequence">20</field>
+        <field name="implied_ids" eval="[(4, ref('group_sg_reporter'))]"/>
+    </record>
+
+    <!-- Designated Safeguarding Lead: audit log, export, reopening closed cases -->
+    <record id="group_sg_lead" model="res.groups">
+        <field name="name">Safeguarding Lead</field>
+        <field name="privilege_id" ref="res_groups_privilege_school_safeguarding"/>
+        <field name="sequence">30</field>
+        <field name="implied_ids" eval="[(4, ref('group_sg_officer'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+
+    <!-- school / branch -->
+    <record id="rule_sg_case_company" model="ir.rule">
+        <field name="name">Safeguarding case: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_safeguarding_case"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_sg_log_company" model="ir.rule">
+        <field name="name">Safeguarding log: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_safeguarding_log"/>
+        <field name="domain_force">['|', ('case_id.company_id', '=', False), ('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_sg_action_company" model="ir.rule">
+        <field name="name">Safeguarding action: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_safeguarding_action"/>
+        <field name="domain_force">['|', ('case_id.company_id', '=', False), ('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_sg_escalation_company" model="ir.rule">
+        <field name="name">Safeguarding escalation: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_safeguarding_escalation"/>
+        <field name="domain_force">['|', ('case_id.company_id', '=', False), ('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_sg_access_log_company" model="ir.rule">
+        <field name="name">Safeguarding access log: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_safeguarding_access_log"/>
+        <field name="domain_force">['|', ('case_id.company_id', '=', False), ('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+
+    <!-- ======================== Well-being (counsellors) ======================== -->
+    <record id="module_category_school_wellbeing" model="ir.module.category">
+        <field name="name">School Well-being</field>
+        <field name="description">Confidential student well-being records. Give these groups only to authorised counsellors.</field>
+        <field name="sequence">23</field>
+    </record>
+
+    <record model="res.groups.privilege" id="res_groups_privilege_school_wellbeing">
+        <field name="name">Well-being</field>
+        <field name="category_id" ref="module_category_school_wellbeing"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- every teacher can RAISE a concern for the counsellor (and can not read it afterwards) -->
+    <record id="group_wb_reporter" model="res.groups">
+        <field name="name">Can raise a well-being concern</field>
+        <field name="privilege_id" ref="res_groups_privilege_school_wellbeing"/>
+        <field name="sequence">10</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- the counsellors: see and handle the well-being records -->
+    <record id="group_wb_counsellor" model="res.groups">
+        <field name="name">Counsellor</field>
+        <field name="privilege_id" ref="res_groups_privilege_school_wellbeing"/>
+        <field name="sequence">20</field>
+        <field name="implied_ids" eval="[(4, ref('group_wb_reporter')), (4, ref('group_sg_reporter'))]"/>
+    </record>
+
+    <!-- head counsellor: restricted cases, audit log, export, settings, reopening -->
+    <record id="group_wb_lead" model="res.groups">
+        <field name="name">Well-being Lead</field>
+        <field name="privilege_id" ref="res_groups_privilege_school_wellbeing"/>
+        <field name="sequence">30</field>
+        <field name="implied_ids" eval="[(4, ref('group_wb_counsellor')), (4, ref('base.group_allow_export'))]"/>
+    </record>
+
+    <!-- school / branch (applies to everybody) -->
+    <record id="rule_wb_case_company" model="ir.rule">
+        <field name="name">Well-being case: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_case"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_wb_checkin_company" model="ir.rule">
+        <field name="name">Well-being check-in: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_checkin"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_wb_assessment_company" model="ir.rule">
+        <field name="name">Well-being screening: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_assessment"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'parent_of', company_ids)]</field>
+    </record>
+
+    <!-- a RESTRICTED case: only its own counsellor (the Lead sees every case) -->
+    <record id="rule_wb_case_restricted" model="ir.rule">
+        <field name="name">Well-being case: restricted cases only for the case counsellor</field>
+        <field name="model_id" ref="model_school_wellbeing_case"/>
+        <field name="groups" eval="[(4, ref('group_wb_counsellor'))]"/>
+        <field name="domain_force">['|', ('is_restricted', '=', False), ('counsellor_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_wb_case_lead" model="ir.rule">
+        <field name="name">Well-being case: the Lead sees every case</field>
+        <field name="model_id" ref="model_school_wellbeing_case"/>
+        <field name="groups" eval="[(4, ref('group_wb_lead'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- session: follows the case (branch, restricted case) -->
+    <record id="rule_wb_session_company" model="ir.rule">
+        <field name="name">Well-being session: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_session"/>
+        <field name="domain_force">[('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_wb_session_restricted" model="ir.rule">
+        <field name="name">Well-being session: restricted cases only for the case counsellor</field>
+        <field name="model_id" ref="model_school_wellbeing_session"/>
+        <field name="groups" eval="[(4, ref('group_wb_counsellor'))]"/>
+        <field name="domain_force">['|', ('case_id.is_restricted', '=', False), ('case_id.counsellor_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_wb_session_lead" model="ir.rule">
+        <field name="name">Well-being session: the Lead sees all</field>
+        <field name="model_id" ref="model_school_wellbeing_session"/>
+        <field name="groups" eval="[(4, ref('group_wb_lead'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- intervention: follows the case (branch, restricted case) -->
+    <record id="rule_wb_intervention_company" model="ir.rule">
+        <field name="name">Well-being intervention: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_intervention"/>
+        <field name="domain_force">[('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_wb_intervention_restricted" model="ir.rule">
+        <field name="name">Well-being intervention: restricted cases only for the case counsellor</field>
+        <field name="model_id" ref="model_school_wellbeing_intervention"/>
+        <field name="groups" eval="[(4, ref('group_wb_counsellor'))]"/>
+        <field name="domain_force">['|', ('case_id.is_restricted', '=', False), ('case_id.counsellor_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_wb_intervention_lead" model="ir.rule">
+        <field name="name">Well-being intervention: the Lead sees all</field>
+        <field name="model_id" ref="model_school_wellbeing_intervention"/>
+        <field name="groups" eval="[(4, ref('group_wb_lead'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- referral: follows the case (branch, restricted case) -->
+    <record id="rule_wb_referral_company" model="ir.rule">
+        <field name="name">Well-being referral: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_referral"/>
+        <field name="domain_force">[('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_wb_referral_restricted" model="ir.rule">
+        <field name="name">Well-being referral: restricted cases only for the case counsellor</field>
+        <field name="model_id" ref="model_school_wellbeing_referral"/>
+        <field name="groups" eval="[(4, ref('group_wb_counsellor'))]"/>
+        <field name="domain_force">['|', ('case_id.is_restricted', '=', False), ('case_id.counsellor_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_wb_referral_lead" model="ir.rule">
+        <field name="name">Well-being referral: the Lead sees all</field>
+        <field name="model_id" ref="model_school_wellbeing_referral"/>
+        <field name="groups" eval="[(4, ref('group_wb_lead'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- log: follows the case (branch, restricted case) -->
+    <record id="rule_wb_log_company" model="ir.rule">
+        <field name="name">Well-being log: own branch + shared main school</field>
+        <field name="model_id" ref="model_school_wellbeing_log"/>
+        <field name="domain_force">[('case_id.company_id', 'parent_of', company_ids)]</field>
+    </record>
+    <record id="rule_wb_log_restricted" model="ir.rule">
+        <field name="name">Well-being log: restricted cases only for the case counsellor</field>
+        <field name="model_id" ref="model_school_wellbeing_log"/>
+        <field name="groups" eval="[(4, ref('group_wb_counsellor'))]"/>
+        <field name="domain_force">['|', ('case_id.is_restricted', '=', False), ('case_id.counsellor_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_wb_log_lead" model="ir.rule">
+        <field name="name">Well-being log: the Lead sees all</field>
+        <field name="model_id" ref="model_school_wellbeing_log"/>
+        <field name="groups" eval="[(4, ref('group_wb_lead'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- counsellors and safeguarding officers must be able to READ the student they work with (read-only).
+         The class-wise teacher rule does not apply to them: they are not teachers. The branch rule of the
+         school module still applies, so they only see the companies they are allowed to work in. -->
+    <record id="rule_wb_counsellor_read_students" model="ir.rule">
+        <field name="name">Counsellor / Safeguarding officer: read the students of their companies</field>
+        <field name="model_id" ref="ad_school_management.model_school_student"/>
+        <field name="groups" eval="[(4, ref('group_wb_counsellor')), (4, ref('group_sg_officer'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- who can raise what (after all the groups exist) -->
+    <!-- all teachers can report -->
+    <record id="ad_school_management.group_school_teacher" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('school_safeguarding.group_sg_reporter')), (4, ref('school_safeguarding.group_wb_reporter'))]"/>
+    </record>
+    <!-- the principal and the school admin may RAISE a well-being concern (they still can not read anything) -->
+    <record id="ad_school_management.group_school_principal" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('school_safeguarding.group_wb_reporter'))]"/>
+    </record>
+    <record id="ad_school_management.group_school_admin" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('school_safeguarding.group_wb_reporter'))]"/>
+    </record>
+</odoo>

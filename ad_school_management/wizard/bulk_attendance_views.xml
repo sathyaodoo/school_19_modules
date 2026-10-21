@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Attendance is taken once a day (morning): Present or Absent only. -->
     <record id="view_school_bulk_attendance_form" model="ir.ui.view">
         <field name="name">school.bulk.attendance.form</field>
         <field name="model">school.bulk.attendance</field>
@@ -7,25 +8,34 @@
             <form>
                 <group>
                     <group>
-                        <field name="class_id"/>
-                        <field name="section_id" domain="[('class_id', '=', class_id)]"/>
+                        <field name="class_id" options="{'no_create': True}"/>
+                        <field name="section_id" domain="[('class_id', '=', class_id)]" options="{'no_create': True}"/>
                     </group>
                     <group>
                         <field name="date"/>
-                        <field name="session" widget="radio"/>
+                        <field name="present_count" invisible="not line_ids"/>
+                        <field name="absent_count" invisible="not line_ids"/>
                     </group>
                 </group>
+                <div class="d-flex gap-2 mb-2" invisible="not line_ids">
+                    <button name="action_mark_all_present" type="object" string="Mark All Present"
+                            icon="fa-check" class="btn-secondary btn-sm"/>
+                    <button name="action_mark_all_absent" type="object" string="Mark All Absent"
+                            icon="fa-times" class="btn-secondary btn-sm"/>
+                </div>
                 <notebook>
-                    <page string="Students Attendance sheet" name="sheet">
+                    <page string="Students Attendance Sheet" name="sheet">
                         <field name="line_ids" force_save="1">
-                            <list editable="bottom" create="false" delete="false">
+                            <list editable="bottom" create="false" delete="false"
+                                  decoration-danger="status == 'absent'">
                                 <!-- force_save: the column is read-only, and the web
                                      client does not send read-only values unless
                                      force_save is set. Without it every line
                                      reached the server without a student, was
                                      dropped, and everyone was saved as Present. -->
+                                <field name="roll_number" optional="show"/>
                                 <field name="student_id" force_save="1"/>
-                                <field name="status"/>
+                                <field name="status" widget="radio" options="{'horizontal': true}"/>
                             </list>
                         </field>
                     </page>

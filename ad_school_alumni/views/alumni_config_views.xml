@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_alumni_expertise_list" model="ir.ui.view">
+        <field name="name">school.alumni.expertise.list</field>
+        <field name="model">school.alumni.expertise</field>
+        <field name="arch" type="xml">
+            <list string="Expertise Areas" editable="bottom">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_expertise" model="ir.actions.act_window">
+        <field name="name">Expertise Areas</field>
+        <field name="res_model">school.alumni.expertise</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <record id="view_school_alumni_industry_list" model="ir.ui.view">
+        <field name="name">school.alumni.industry.list</field>
+        <field name="model">school.alumni.industry</field>
+        <field name="arch" type="xml">
+            <list string="Industries" editable="bottom">
+                <field name="name"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_industry" model="ir.actions.act_window">
+        <field name="name">Industries</field>
+        <field name="res_model">school.alumni.industry</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+</odoo>

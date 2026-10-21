@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
+
+    <!-- ===================================================================
+         BOOKS (titles)
+         =================================================================== -->
     <record id="view_school_book_tree" model="ir.ui.view">
         <field name="name">school.book.tree</field>
         <field name="model">school.book</field>
@@ -9,9 +12,15 @@
                 <field name="name"/>
                 <field name="code"/>
                 <field name="author"/>
-                <field name="isbn"/>
+                <field name="genre_ids" widget="many2many_tags" options="{'color_field': 'color'}" optional="show"/>
+                <field name="reading_level" optional="show"/>
+                <field name="resource_type" optional="hide"/>
+                <field name="language" optional="hide"/>
+                <field name="isbn" optional="hide"/>
                 <field name="qty_total"/>
                 <field name="qty_available"/>
+                <field name="times_borrowed" optional="show"/>
+                <field name="avg_rating" widget="float" optional="show"/>
             </list>
         </field>
     </record>
@@ -21,33 +30,120 @@
         <field name="model">school.book</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="action_open_digital" type="object" string="Open Digital Resource"
+                            icon="fa-external-link" class="oe_highlight" invisible="not is_digital"/>
+                </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_add_copies" icon="fa-barcode"
+                                invisible="is_digital">
+                            <field string="Copies" name="qty_total" widget="statinfo"/>
+                        </button>
                         <button class="oe_stat_button" type="object" name="action_view_issues" icon="fa-book">
                             <field string="Issues" name="issue_count" widget="statinfo"/>
                         </button>
+                        <button class="oe_stat_button" type="object" name="action_view_reservations" icon="fa-clock-o"
+                                invisible="is_digital">
+                            <field string="Waiting" name="waiting_reservation_count" widget="statinfo"/>
+                        </button>
                     </div>
+                    <field name="cover_image" widget="image" class="oe_avatar" options="{'preview_image': 'cover_image'}"/>
                     <div class="oe_title">
                         <label for="name"/>
-                        <h1>
-                            <field name="name" placeholder="e.g. Introduction to Physics"/>
-                        </h1>
+                        <h1><field name="name" placeholder="e.g. Introduction to Physics"/></h1>
+                        <div class="text-muted" invisible="not review_count">
+                            <field name="avg_rating" class="oe_inline"/> / 5 from <field name="review_count" class="oe_inline"/> review(s)
+                        </div>
                     </div>
                     <group>
-                        <group>
+                        <group string="Book">
                             <field name="code" placeholder="e.g. BK001"/>
-                            <field name="isbn" placeholder="e.g. 978-3-16-148410-0"/>
-                            <field name="category"/>
-                        </group>
-                        <group>
                             <field name="author"/>
                             <field name="publisher"/>
-                            <field name="qty_total"/>
-                            <field name="qty_available"/>
+                            <field name="edition" placeholder="e.g. 3rd Edition, 2024"/>
+                            <field name="isbn" placeholder="e.g. 978-3-16-148410-0"/>
+                            <field name="language"/>
+                        </group>
+                        <group string="Library">
+                            <field name="resource_type"/>
+                            <field name="genre_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                            <field name="reading_level"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="price"/>
+                            <field name="vendor_id"/>
+                            <field name="rack_id" invisible="is_digital"/>
+                            <field name="qty_available" invisible="is_digital"/>
+                            <field name="is_digital" invisible="1"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Copies (Accession Register)" name="copies" invisible="is_digital">
+                            <field name="copy_ids" context="{'default_rack_id': rack_id, 'default_price': price, 'default_vendor_id': vendor_id}">
+                                <list editable="bottom" decoration-muted="state in ('written_off', 'lost')"
+                                      decoration-danger="state in ('missing', 'damaged')" decoration-info="state == 'issued'">
+                                    <field name="accession_no"/>
+                                    <field name="barcode"/>
+                                    <field name="barcode_img_url" widget="image_url" options="{'size': [130, 32]}" readonly="1" optional="hide"/>
+                                    <field name="rack_id"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="acquisition_date"/>
+                                    <field name="acquisition_type" optional="hide"/>
+                                    <field name="vendor_id" optional="show"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="price" optional="show"/>
+                                    <field name="invoice_ref" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Digital Resource" name="digital" invisible="not is_digital">
+                            <group>
+                                <field name="digital_url" widget="url"/>
+                                <field name="digital_file" filename="digital_filename"/>
+                                <field name="digital_filename" invisible="1"/>
+                            </group>
+                        </page>
+                        <page string="Summary" name="summary">
+                            <field name="description" placeholder="What is this book about?"/>
+                        </page>
+                        <page string="Reviews" name="reviews">
+                            <field name="review_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="student_id"/>
+                                    <field name="rating" widget="priority"/>
+                                    <field name="review"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
+                <chatter/>
             </form>
+        </field>
+    </record>
+
+    <record id="view_school_book_search" model="ir.ui.view">
+        <field name="name">school.book.search</field>
+        <field name="model">school.book</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" filter_domain="['|', '|', '|', ('name', 'ilike', self), ('code', 'ilike', self), ('isbn', 'ilike', self), ('author', 'ilike', self)]"/>
+                <field name="genre_ids"/>
+                <field name="author"/>
+                <field name="copy_ids" string="Barcode / Accession" filter_domain="['|', ('copy_ids.barcode', '=', self), ('copy_ids.accession_no', '=', self)]"/>
+                <filter string="Available" name="available" domain="[('qty_available', '>', 0)]"/>
+                <filter string="Printed" name="printed" domain="[('is_digital', '=', False)]"/>
+                <filter string="Digital Resources" name="digital" domain="[('is_digital', '=', True)]"/>
+                <separator/>
+                <filter string="Most Borrowed" name="most_borrowed" domain="[('times_borrowed', '>', 0)]"/>
+                <group>
+                    <filter string="Reading Level" name="group_level" context="{'group_by': 'reading_level'}"/>
+                    <filter string="Resource Type" name="group_type" context="{'group_by': 'resource_type'}"/>
+                    <filter string="Language" name="group_language" context="{'group_by': 'language'}"/>
+                    <filter string="Default Rack" name="group_rack" context="{'group_by': 'rack_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
@@ -55,26 +151,348 @@
         <field name="name">Books Catalog</field>
         <field name="res_model">school.book</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_book_search"/>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Add your first book!
-            </p>
+            <p class="o_view_nocontent_smiling_face">Add your first book!</p>
+            <p>Add the title, then its copies (each copy gets an accession number and barcode).</p>
         </field>
     </record>
 
+    <record id="action_school_digital_resources" model="ir.actions.act_window">
+        <field name="name">Digital Resources</field>
+        <field name="res_model">school.book</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_digital', '=', True)]</field>
+        <field name="context">{'default_resource_type': 'ebook'}</field>
+        <field name="search_view_id" ref="view_school_book_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add an e-book, audiobook or online resource</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         COPIES = ACCESSION REGISTER (+ acquisition history)
+         =================================================================== -->
+    <record id="view_school_book_copy_list" model="ir.ui.view">
+        <field name="name">school.book.copy.list</field>
+        <field name="model">school.book.copy</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state in ('written_off', 'lost')" decoration-danger="state in ('missing', 'damaged')"
+                  decoration-info="state == 'issued'">
+                <field name="accession_no"/>
+                <field name="barcode" optional="show"/>
+                <field name="barcode_img_url" widget="image_url" options="{'size': [130, 32]}" optional="show"/>
+                <field name="book_id"/>
+                <field name="rack_id"/>
+                <field name="state" widget="badge"/>
+                <field name="acquisition_date" optional="show"/>
+                <field name="acquisition_type" optional="hide"/>
+                <field name="vendor_id" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="price" sum="Total" optional="show"/>
+                <field name="invoice_ref" optional="hide"/>
+                <field name="last_verified_date" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_book_copy_form" model="ir.ui.view">
+        <field name="name">school.book.copy.form</field>
+        <field name="model">school.book.copy</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_damaged" type="object" string="Mark Damaged"
+                            invisible="state not in ('available', 'reserved', 'missing')"/>
+                    <button name="action_mark_available" type="object" string="Make Available (Repaired / Found)"
+                            invisible="state not in ('damaged', 'missing', 'lost')"/>
+                    <button name="action_write_off" type="object" string="Write Off"
+                            invisible="state in ('issued', 'written_off')"
+                            confirm="Write off this copy? It will no longer count in the library stock."/>
+                    <field name="state" widget="statusbar" statusbar_visible="available,issued,reserved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="accession_no"/>
+                        <h1><field name="accession_no"/></h1>
+                    </div>
+                    <group>
+                        <group string="Copy">
+                            <field name="book_id"/>
+                            <field name="barcode"/>
+                            <field name="barcode_img_url" widget="image_url" options="{'size': [260, 70]}" readonly="1"/>
+                            <field name="qr_img_url" widget="image_url" options="{'size': [100, 100]}" readonly="1"/>
+                            <field name="rack_id"/>
+                            <field name="current_issue_id" invisible="not current_issue_id"/>
+                            <field name="condition_note"/>
+                            <field name="last_verified_date"/>
+                        </group>
+                        <group string="Acquisition">
+                            <field name="acquisition_date"/>
+                            <field name="acquisition_type"/>
+                            <field name="vendor_id"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="price"/>
+                            <field name="invoice_ref"/>
+                        </group>
+                        <group string="Write-off" invisible="state == 'issued'">
+                            <field name="write_off_reason" readonly="state == 'written_off'"/>
+                            <field name="write_off_date" invisible="not write_off_date"/>
+                        </group>
+                    </group>
+                    <field name="issue_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="borrower_name"/>
+                            <field name="issue_date"/>
+                            <field name="due_date"/>
+                            <field name="return_date"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_book_copy_search" model="ir.ui.view">
+        <field name="name">school.book.copy.search</field>
+        <field name="model">school.book.copy</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="accession_no"/>
+                <field name="barcode"/>
+                <field name="book_id"/>
+                <field name="rack_id"/>
+                <field name="vendor_id"/>
+                <filter string="Available" name="available" domain="[('state', '=', 'available')]"/>
+                <filter string="Issued" name="issued" domain="[('state', '=', 'issued')]"/>
+                <filter string="Damaged" name="damaged" domain="[('state', '=', 'damaged')]"/>
+                <filter string="Missing" name="missing" domain="[('state', '=', 'missing')]"/>
+                <filter string="Lost" name="lost" domain="[('state', '=', 'lost')]"/>
+                <filter string="Written Off" name="written_off" domain="[('state', '=', 'written_off')]"/>
+                <separator/>
+                <filter string="Acquired On" name="filter_acquisition" date="acquisition_date"/>
+                <group>
+                    <filter string="Book" name="group_book" context="{'group_by': 'book_id'}"/>
+                    <filter string="Rack / Shelf" name="group_rack" context="{'group_by': 'rack_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Vendor / Donor" name="group_vendor" context="{'group_by': 'vendor_id'}"/>
+                    <filter string="Acquired (Month)" name="group_acq_month" context="{'group_by': 'acquisition_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_book_copy" model="ir.actions.act_window">
+        <field name="name">Accession Register</field>
+        <field name="res_model">school.book.copy</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_book_copy_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No copies yet</p>
+            <p>Every physical copy gets an accession number and barcode. Select copies and use
+               Print &gt; Book Labels to print barcode / QR labels.</p>
+        </field>
+    </record>
+
+    <record id="action_school_book_acquisition" model="ir.actions.act_window">
+        <field name="name">Acquisition History</field>
+        <field name="res_model">school.book.copy</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_book_copy_search"/>
+        <field name="context">{'search_default_group_acq_month': 1}</field>
+    </record>
+
+    <!-- ===================================================================
+         RACKS / GENRES (configuration)
+         =================================================================== -->
+    <record id="view_school_library_rack_list" model="ir.ui.view">
+        <field name="name">school.library.rack.list</field>
+        <field name="model">school.library.rack</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="location"/>
+                <field name="copy_count"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_school_library_rack" model="ir.actions.act_window">
+        <field name="name">Library Racks / Shelves</field>
+        <field name="res_model">school.library.rack</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_school_book_genre_list" model="ir.ui.view">
+        <field name="name">school.book.genre.list</field>
+        <field name="model">school.book.genre</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+                <field name="description"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_school_book_genre" model="ir.actions.act_window">
+        <field name="name">Book Genres</field>
+        <field name="res_model">school.book.genre</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- ===================================================================
+         MEMBERSHIP
+         =================================================================== -->
+    <record id="view_school_library_membership_list" model="ir.ui.view">
+        <field name="name">school.library.membership.list</field>
+        <field name="model">school.library.membership</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state != 'active'">
+                <field name="name"/>
+                <field name="member_name"/>
+                <field name="member_type"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="max_books"/>
+                <field name="issue_count"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'" decoration-danger="state != 'active'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_library_membership_form" model="ir.ui.view">
+        <field name="name">school.library.membership.form</field>
+        <field name="model">school.library.membership</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_print_card" type="object" string="Print Library Card" icon="fa-id-card"
+                            invisible="not id"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="member_type" widget="radio" options="{'horizontal': true}"/>
+                            <field name="student_id" invisible="member_type != 'student'"
+                                   required="member_type == 'student'" options="{'no_create': True}"/>
+                            <field name="employee_id" invisible="member_type != 'staff'"
+                                   required="member_type == 'staff'" options="{'no_create': True}"/>
+                            <field name="max_books"/>
+                        </group>
+                        <group>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="suspended"/>
+                            <field name="issue_count"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_library_membership" model="ir.actions.act_window">
+        <field name="name">Library Memberships</field>
+        <field name="res_model">school.library.membership</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a library card</p>
+            <p>Each member gets a card number with barcode / QR and a limit of books at a time.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         RESERVATIONS
+         =================================================================== -->
+    <record id="view_school_book_reservation_list" model="ir.ui.view">
+        <field name="name">school.book.reservation.list</field>
+        <field name="model">school.book.reservation</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'ready'" decoration-muted="state in ('cancelled', 'expired', 'fulfilled')">
+                <field name="request_date"/>
+                <field name="book_id"/>
+                <field name="student_id"/>
+                <field name="queue_position"/>
+                <field name="copy_id" optional="show"/>
+                <field name="hold_until" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'ready'" decoration-info="state == 'waiting'"/>
+                <button name="action_cancel" type="object" string="Cancel" icon="fa-times" class="btn-link"
+                        invisible="state not in ('waiting', 'ready')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_book_reservation_form" model="ir.ui.view">
+        <field name="name">school.book.reservation.form</field>
+        <field name="model">school.book.reservation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_cancel" type="object" string="Cancel Reservation"
+                            invisible="state not in ('waiting', 'ready')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="waiting,ready,fulfilled"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="book_id" readonly="id" domain="[('is_digital', '=', False)]" options="{'no_create': True}"/>
+                            <field name="student_id" readonly="id" options="{'no_create': True}"/>
+                            <field name="request_date"/>
+                        </group>
+                        <group>
+                            <field name="queue_position" invisible="state != 'waiting'"/>
+                            <field name="copy_id" invisible="not copy_id"/>
+                            <field name="hold_until" invisible="not hold_until"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_book_reservation" model="ir.actions.act_window">
+        <field name="name">Reservations</field>
+        <field name="res_model">school.book.reservation</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Reserve a book</p>
+            <p>When a copy is returned it is held for the first student in the queue, who is notified.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ISSUES
+         =================================================================== -->
     <record id="view_school_book_issue_tree" model="ir.ui.view">
         <field name="name">school.book.issue.tree</field>
         <field name="model">school.book.issue</field>
         <field name="arch" type="xml">
-            <list decoration-info="state == 'draft'" decoration-warning="state == 'issued'" decoration-danger="state == 'overdue'" decoration-success="state == 'returned'">
+            <list decoration-danger="state == 'overdue'" decoration-muted="state in ('returned', 'lost')"
+                  decoration-info="state == 'issued'">
                 <field name="name"/>
                 <field name="book_id"/>
-                <field name="student_id"/>
+                <field name="copy_id" optional="show"/>
+                <field name="borrower_name"/>
+                <field name="class_id" optional="hide"/>
                 <field name="issue_date"/>
                 <field name="due_date"/>
-                <field name="return_date"/>
-                <field name="fine_amount"/>
-                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'issued'" decoration-danger="state == 'overdue'" decoration-success="state == 'returned'"/>
+                <field name="return_date" optional="show"/>
+                <field name="renewal_count" optional="hide"/>
+                <field name="total_fine" sum="Total Fines" optional="show"/>
+                <field name="fine_state" widget="badge" optional="show"
+                       decoration-danger="fine_state == 'due'" decoration-success="fine_state == 'paid'"/>
+                <field name="state" widget="badge" decoration-danger="state == 'overdue'" decoration-info="state == 'issued'"/>
             </list>
         </field>
     </record>
@@ -86,26 +504,51 @@
             <form>
                 <header>
                     <button name="action_issue" type="object" string="Issue Book" class="oe_highlight" invisible="state != 'draft'"/>
-                    <button name="action_return" type="object" string="Return Book" class="oe_highlight" invisible="state not in ('issued', 'overdue')"/>
+                    <button name="action_return" type="object" string="Return" class="oe_highlight" invisible="state not in ('issued', 'overdue')"/>
+                    <button name="action_renew" type="object" string="Renew" invisible="state != 'issued'"/>
+                    <button name="action_return_damaged" type="object" string="Return Damaged" invisible="state not in ('issued', 'overdue')"/>
+                    <button name="action_mark_lost" type="object" string="Mark Lost" invisible="state not in ('issued', 'overdue')"
+                            confirm="Mark this book as lost? The book price is added as a fine."/>
+                    <button name="action_pay_fine" type="object" string="Fine Paid" invisible="fine_state != 'due'"/>
+                    <button name="action_waive_fine" type="object" string="Waive Fine" invisible="fine_state != 'due'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,issued,returned"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
-                        <label for="name"/>
-                        <h1>
-                            <field name="name"/>
-                        </h1>
+                        <h1><field name="name"/></h1>
                     </div>
                     <group>
-                        <group>
-                            <field name="book_id" domain="[('qty_available', '>', 0)]"/>
-                            <field name="student_id"/>
+                        <group string="Book">
+                            <field name="copy_id" readonly="state != 'draft'" options="{'no_create': True}"
+                                   placeholder="Scan barcode / type accession no."/>
+                            <field name="book_id" readonly="state != 'draft'" options="{'no_create': True}"/>
                         </group>
-                        <group>
-                            <field name="issue_date"/>
-                            <field name="due_date"/>
-                            <field name="return_date" invisible="state != 'returned'"/>
+                        <group string="Borrower">
+                            <field name="borrower_type" widget="radio" options="{'horizontal': true}" readonly="state != 'draft'"/>
+                            <field name="student_id" invisible="borrower_type != 'student'"
+                                   required="borrower_type == 'student'" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="employee_id" invisible="borrower_type != 'staff'"
+                                   required="borrower_type == 'staff'" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="membership_id" invisible="not membership_id"/>
+                        </group>
+                        <group string="Dates">
+                            <field name="issue_date" readonly="state != 'draft'"/>
+                            <field name="due_date" readonly="state not in ('draft', 'issued')"/>
+                            <field name="return_date" readonly="1"/>
+                            <field name="renewal_count"/>
+                        </group>
+                        <group string="Fines">
+                            <field name="fine_per_day"/>
                             <field name="fine_amount"/>
+                            <field name="lost_fine" readonly="state != 'lost'"/>
+                            <field name="damage_fine"/>
+                            <field name="total_fine"/>
+                            <field name="fine_state"/>
+                        </group>
+                        <group string="Student Review" invisible="not review_id" colspan="2">
+                            <field name="review_id" invisible="1"/>
+                            <field name="review_rating" widget="priority" readonly="1"/>
+                            <field name="review_text" readonly="1"/>
                         </group>
                     </group>
                 </sheet>
@@ -114,13 +557,44 @@
         </field>
     </record>
 
+    <record id="view_school_book_issue_search" model="ir.ui.view">
+        <field name="name">school.book.issue.search</field>
+        <field name="model">school.book.issue</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="book_id"/>
+                <field name="copy_id" string="Barcode / Accession"/>
+                <field name="student_id"/>
+                <field name="employee_id"/>
+                <field name="class_id"/>
+                <filter string="Issued" name="issued" domain="[('state', '=', 'issued')]"/>
+                <filter string="Overdue" name="overdue" domain="[('state', '=', 'overdue')]"/>
+                <filter string="Returned" name="returned" domain="[('state', '=', 'returned')]"/>
+                <filter string="Lost" name="lost" domain="[('state', '=', 'lost')]"/>
+                <separator/>
+                <filter string="Fine Due" name="fine_due" domain="[('fine_state', '=', 'due')]"/>
+                <filter string="Fine Paid" name="fine_paid" domain="[('fine_state', '=', 'paid')]"/>
+                <separator/>
+                <filter string="Issue Date" name="filter_issue_date" date="issue_date"/>
+                <group>
+                    <filter string="Book" name="group_book" context="{'group_by': 'book_id'}"/>
+                    <filter string="Borrower" name="group_borrower" context="{'group_by': 'borrower_name'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Fine Status" name="group_fine" context="{'group_by': 'fine_state'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'issue_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="view_school_book_issue_graph" model="ir.ui.view">
         <field name="name">school.book.issue.graph</field>
         <field name="model">school.book.issue</field>
         <field name="arch" type="xml">
-            <graph string="Book Issues Analysis" type="bar" sample="1">
+            <graph string="Library Analysis" type="bar">
                 <field name="book_id"/>
-                <field name="fine_amount" type="measure"/>
             </graph>
         </field>
     </record>
@@ -129,10 +603,10 @@
         <field name="name">school.book.issue.pivot</field>
         <field name="model">school.book.issue</field>
         <field name="arch" type="xml">
-            <pivot string="Book Issues Analysis" sample="1">
+            <pivot string="Library Analysis">
                 <field name="book_id" type="row"/>
                 <field name="state" type="col"/>
-                <field name="fine_amount" type="measure"/>
+                <field name="total_fine" type="measure"/>
             </pivot>
         </field>
     </record>
@@ -141,13 +615,276 @@
         <field name="name">Book Issues</field>
         <field name="res_model">school.book.issue</field>
         <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_school_book_issue_search"/>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Issue a book!
-            </p>
+            <p class="o_view_nocontent_smiling_face">Issue a book!</p>
         </field>
     </record>
 
+    <record id="action_school_library_analysis" model="ir.actions.act_window">
+        <field name="name">Library Analysis</field>
+        <field name="res_model">school.book.issue</field>
+        <field name="view_mode">pivot,graph,list,form</field>
+        <field name="search_view_id" ref="view_school_book_issue_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No circulation yet</p>
+            <p>Most borrowed books, overdue books, fines, reading by class and by month.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         STOCK VERIFICATION
+         =================================================================== -->
+    <record id="view_school_library_stock_verification_list" model="ir.ui.view">
+        <field name="name">school.library.stock.verification.list</field>
+        <field name="model">school.library.stock.verification</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="rack_ids" widget="many2many_tags"/>
+                <field name="expected_count"/>
+                <field name="found_count"/>
+                <field name="missing_count"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'in_progress'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_library_stock_verification_form" model="ir.ui.view">
+        <field name="name">school.library.stock.verification.form</field>
+        <field name="model">school.library.stock.verification</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start Count" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_validate" type="object" string="Validate" class="oe_highlight" invisible="state != 'in_progress'"
+                            confirm="Copies not found will be marked Missing. Continue?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="date" readonly="state == 'done'"/>
+                            <field name="rack_ids" widget="many2many_tags" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="expected_count"/>
+                            <field name="found_count"/>
+                            <field name="missing_count"/>
+                            <field name="issued_count"/>
+                        </group>
+                    </group>
+                    <group invisible="state != 'in_progress'">
+                        <field name="scan_barcode" placeholder="Scan a barcode or type an accession number, then press Enter"/>
+                    </group>
+                    <field name="line_ids" readonly="state == 'done'">
+                        <list editable="bottom" create="0" decoration-success="found" decoration-danger="not found">
+                            <field name="copy_id" readonly="1"/>
+                            <field name="book_name"/>
+                            <field name="rack_name"/>
+                            <field name="barcode"/>
+                            <field name="expected_state"/>
+                            <field name="found"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_library_stock_verification" model="ir.actions.act_window">
+        <field name="name">Stock Verification</field>
+        <field name="res_model">school.library.stock.verification</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Start a stock verification</p>
+            <p>Choose the racks (or the whole library), Start Count, scan every copy on the shelves,
+               then Validate: copies not found are marked Missing.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         READING INTELLIGENCE
+         =================================================================== -->
+    <!-- Reviews are written by the STUDENT from the portal; staff can only read
+         them, and Library Managers / School Admins can hide or show them. -->
+    <record id="view_school_book_review_list" model="ir.ui.view">
+        <field name="name">school.book.review.list</field>
+        <field name="model">school.book.review</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" decoration-muted="not active">
+                <field name="date"/>
+                <field name="book_id"/>
+                <field name="student_id"/>
+                <field name="rating" widget="priority" readonly="1"/>
+                <field name="review"/>
+                <field name="active" string="Visible" widget="boolean_toggle"
+                       groups="ad_school_management.group_library_manager,ad_school_management.group_school_admin"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_school_book_review_form" model="ir.ui.view">
+        <field name="name">school.book.review.form</field>
+        <field name="model">school.book.review</field>
+        <field name="arch" type="xml">
+            <form string="Book Review" create="0" delete="0">
+                <sheet>
+                    <widget name="web_ribbon" title="Hidden" bg_color="text-bg-secondary" invisible="active"/>
+                    <div class="alert alert-info" role="alert">
+                        Written by the student from the student portal. Staff can only hide or show a review.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="book_id" readonly="1"/>
+                            <field name="student_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="1"/>
+                            <field name="rating" widget="priority" readonly="1"/>
+                            <field name="active" string="Visible" widget="boolean_toggle"
+                                   groups="ad_school_management.group_library_manager,ad_school_management.group_school_admin"/>
+                        </group>
+                    </group>
+                    <field name="review" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_school_book_review_search" model="ir.ui.view">
+        <field name="name">school.book.review.search</field>
+        <field name="model">school.book.review</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="book_id"/>
+                <field name="student_id"/>
+                <filter string="Hidden" name="hidden" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Book" name="group_book" context="{'group_by': 'book_id'}"/>
+                    <filter string="Rating" name="group_rating" context="{'group_by': 'rating'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_school_book_review" model="ir.actions.act_window">
+        <field name="name">Student Reviews</field>
+        <field name="res_model">school.book.review</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_book_review_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No reviews yet</p>
+            <p>Students write their reviews themselves in the student portal
+               (My Account &gt; School Profiles &gt; Library), for books they have returned.</p>
+        </field>
+    </record>
+
+    <record id="view_school_book_recommendation_list" model="ir.ui.view">
+        <field name="name">school.book.recommendation.list</field>
+        <field name="model">school.book.recommendation</field>
+        <field name="arch" type="xml">
+            <list editable="top">
+                <field name="date"/>
+                <field name="book_id" options="{'no_create': True}"/>
+                <field name="class_ids" widget="many2many_tags"/>
+                <field name="student_ids" widget="many2many_tags"/>
+                <field name="note"/>
+                <field name="recommended_by"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_school_book_recommendation" model="ir.actions.act_window">
+        <field name="name">Reading Recommendations</field>
+        <field name="res_model">school.book.recommendation</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Recommend a book</p>
+            <p>Recommend a book to classes or students; it appears first in their "Recommended for you".</p>
+        </field>
+    </record>
+
+    <record id="view_school_reading_challenge_list" model="ir.ui.view">
+        <field name="name">school.reading.challenge.list</field>
+        <field name="model">school.reading.challenge</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="target_books"/>
+                <field name="participant_count"/>
+                <field name="completed_count"/>
+                <field name="state" widget="badge" decoration-info="state == 'running'" decoration-muted="state == 'closed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_reading_challenge_form" model="ir.ui.view">
+        <field name="name">school.reading.challenge.form</field>
+        <field name="model">school.reading.challenge</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start Challenge" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_add_participants" type="object" string="Add Students" invisible="state == 'closed'"/>
+                    <button name="action_award_house_points" type="object" string="Award House Points"
+                            invisible="state == 'draft' or not house_points"/>
+                    <button name="action_close" type="object" string="Close" invisible="state != 'running'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Summer Reading: 5 books in 30 days"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="target_books"/>
+                        </group>
+                        <group>
+                            <field name="class_ids" widget="many2many_tags"/>
+                            <field name="genre_ids" widget="many2many_tags"/>
+                            <field name="house_points"/>
+                            <field name="participant_count"/>
+                            <field name="completed_count"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Describe the challenge..."/>
+                    <field name="participant_ids">
+                        <list editable="bottom" decoration-success="completed">
+                            <field name="student_id" options="{'no_create': True}"/>
+                            <field name="class_id"/>
+                            <field name="house_id"/>
+                            <field name="books_read"/>
+                            <field name="progress" widget="progressbar"/>
+                            <field name="completed"/>
+                            <field name="house_points_awarded" optional="show"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_school_reading_challenge" model="ir.actions.act_window">
+        <field name="name">Reading Challenges</field>
+        <field name="res_model">school.reading.challenge</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Start a reading challenge</p>
+            <p>Set a target number of books for a period; progress updates as books are returned.
+               Completing students can earn House Points (Reading).</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         STUDENT: library card + reading profile + "Recommended for you"
+         =================================================================== -->
     <record id="view_student_form_inherit_library" model="ir.ui.view">
         <field name="name">school.student.form.inherit.library</field>
         <field name="model">school.student</field>
@@ -158,11 +895,82 @@
                     <field string="Library" name="book_issue_count" widget="statinfo"/>
                 </button>
             </div>
+            <xpath expr="//notebook" position="inside">
+                <page string="Reading" name="reading">
+                    <group>
+                        <group string="Reading Profile">
+                            <field name="library_membership_id"/>
+                            <field name="reading_level"/>
+                            <field name="suggested_reading_level"/>
+                            <field name="favourite_genre_ids" widget="many2many_tags"/>
+                        </group>
+                        <group string="Reading Activity">
+                            <field name="books_read_count"/>
+                            <field name="books_read_this_year"/>
+                            <field name="reading_frequency"/>
+                        </group>
+                    </group>
+                    <separator string="Recommended for You"/>
+                    <field name="recommended_book_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="author"/>
+                            <field name="genre_ids" widget="many2many_tags"/>
+                            <field name="reading_level"/>
+                            <field name="resource_type"/>
+                            <field name="qty_available"/>
+                            <field name="avg_rating"/>
+                        </list>
+                    </field>
+                    <separator string="Books Read"/>
+                    <field name="books_read_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="author"/>
+                            <field name="genre_ids" widget="many2many_tags"/>
+                        </list>
+                    </field>
+                    <separator string="Reading Challenges"/>
+                    <field name="reading_challenge_ids" readonly="1">
+                        <list decoration-success="completed">
+                            <field name="challenge_id"/>
+                            <field name="books_read"/>
+                            <field name="progress" widget="progressbar"/>
+                            <field name="completed"/>
+                        </list>
+                    </field>
+                    <separator string="Reviews"/>
+                    <field name="book_review_ids" readonly="1">
+                        <list>
+                            <field name="book_id"/>
+                            <field name="rating" widget="priority"/>
+                            <field name="review"/>
+                            <field name="date"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
         </field>
     </record>
 
+    <!-- ===================================================================
+         MENUS: Facilities > Library
+         =================================================================== -->
     <menuitem id="menu_school_library_sub" name="Library" parent="ad_school_management.menu_school_facilities" sequence="10"/>
     <menuitem id="menu_school_book" name="Books Catalog" parent="menu_school_library_sub" action="action_school_book" sequence="10"/>
+    <menuitem id="menu_school_book_copy" name="Accession Register" parent="menu_school_library_sub" action="action_school_book_copy" sequence="12"/>
+    <menuitem id="menu_school_digital_resources" name="Digital Resources" parent="menu_school_library_sub" action="action_school_digital_resources" sequence="14"/>
     <menuitem id="menu_school_book_issue" name="Book Issues" parent="menu_school_library_sub" action="action_school_book_issue" sequence="20"/>
+    <menuitem id="menu_school_book_reservation" name="Reservations" parent="menu_school_library_sub" action="action_school_book_reservation" sequence="22"/>
+    <menuitem id="menu_school_library_membership" name="Memberships" parent="menu_school_library_sub" action="action_school_library_membership" sequence="24"/>
+    <menuitem id="menu_school_library_stock_verification" name="Stock Verification" parent="menu_school_library_sub" action="action_school_library_stock_verification" sequence="30"/>
+    <menuitem id="menu_school_reading_challenge" name="Reading Challenges" parent="menu_school_library_sub" action="action_school_reading_challenge" sequence="40"/>
+    <menuitem id="menu_school_book_recommendation" name="Reading Recommendations" parent="menu_school_library_sub" action="action_school_book_recommendation" sequence="42"/>
+    <menuitem id="menu_school_library_analysis" name="Library Analysis" parent="menu_school_library_sub" action="action_school_library_analysis" sequence="50"/>
+    <menuitem id="menu_school_book_acquisition" name="Acquisition History" parent="menu_school_library_sub" action="action_school_book_acquisition" sequence="52"/>
 
+    <menuitem id="menu_school_library_rack" name="Library Racks / Shelves" parent="ad_school_management.menu_school_configuration"
+              action="action_school_library_rack" sequence="80"/>
+    <menuitem id="menu_school_book_genre" name="Book Genres" parent="ad_school_management.menu_school_configuration"
+              action="action_school_book_genre" sequence="81"/>
 </odoo>

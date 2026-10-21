@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stc_ping_wizard_form" model="ir.ui.view">
+        <field name="name">school.transport.ping.wizard.form</field>
+        <field name="model">school.transport.ping.wizard</field>
+        <field name="arch" type="xml">
+            <form string="GPS Test">
+                <div class="alert alert-info" role="alert">
+                    Sends a test GPS ping for a vehicle with a <b>running trip</b>, exactly like a real device, so you can
+                    see "van approaching", arrival, speed and the other alerts work. Use it for training and checking.
+                </div>
+                <group>
+                    <group>
+                        <field name="vehicle_id"/>
+                        <field name="mode" widget="radio"/>
+                        <field name="stop_id" invisible="mode != 'stop'" required="mode == 'stop'"/>
+                        <field name="meters_before" invisible="mode != 'stop'"/>
+                        <field name="latitude" invisible="mode != 'coordinates'"/>
+                        <field name="longitude" invisible="mode != 'coordinates'"/>
+                    </group>
+                    <group>
+                        <field name="speed"/>
+                        <field name="ping_at"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_send" string="Send Test Ping" type="object" class="btn-primary"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stc_ping_wizard" model="ir.actions.act_window">
+        <field name="name">GPS Test Tool</field>
+        <field name="res_model">school.transport.ping.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

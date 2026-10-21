@@ -349,6 +349,62 @@ class SchoolStudent(models.Model):
                     'sticky': True,
                 },
             )
+class SchoolStudentActivities(models.Model):
+    """Activities a student took part in and the prizes won, taken from the
+    activity participants (event.registration). Visible to Administrators,
+    the Principal and Teachers (the users who can read activity data)."""
+    _inherit = 'school.student'
+
+    _ACTIVITY_GROUPS = ('ad_school_management.group_school_admin,'
+                        'ad_school_management.group_school_principal,'
+                        'ad_school_management.group_school_teacher')
+
+    activity_registration_ids = fields.One2many(
+        'event.registration', 'student_id', string='School Activities',
+        domain=[('is_school_activity', '=', True), ('state', '!=', 'cancel')],
+        groups=_ACTIVITY_GROUPS)
+    activity_count = fields.Integer(
+        string='No. of School Activities', compute='_compute_activity_stats', groups=_ACTIVITY_GROUPS)
+    prize_count = fields.Integer(
+        string='No. of Prizes', compute='_compute_activity_stats', groups=_ACTIVITY_GROUPS)
+    activity_prize_summary = fields.Char(
+        string='Prizes Won', compute='_compute_activity_stats', groups=_ACTIVITY_GROUPS)
+
+    @api.depends('activity_registration_ids.school_position', 'activity_registration_ids.state')
+    def _compute_activity_stats(self):
+        labels = (('first', _('1st')), ('second', _('2nd')), ('third', _('3rd')))
+        for student in self:
+            regs = student.activity_registration_ids
+            prizes = regs.filtered('school_position')
+            student.activity_count = len(regs)
+            student.prize_count = len(prizes)
+            parts = []
+            for key, label in labels:
+                n = len(prizes.filtered(lambda r, k=key: r.school_position == k))
+                if n:
+                    parts.append('%s × %s' % (n, label))
+            student.activity_prize_summary = ', '.join(parts) or _('No prizes yet')
+
+    def _action_activity_registrations(self, prizes_only=False):
+        self.ensure_one()
+        domain = [('student_id', '=', self.id), ('is_school_activity', '=', True), ('state', '!=', 'cancel')]
+        if prizes_only:
+            domain.append(('school_position', '!=', False))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Prizes: %s', self.name) if prizes_only else _('Activities: %s', self.name),
+            'res_model': 'event.registration',
+            'view_mode': 'list',
+            'views': [(self.env.ref('ad_school_management.view_school_activity_participant_list').id, 'list')],
+            'domain': domain,
+            'context': {'create': False},
+        }
+
+    def action_view_student_activities(self):
+        return self._action_activity_registrations()
+
+    def action_view_student_prizes(self):
+        return self._action_activity_registrations(prizes_only=True)
 
 
 class SchoolStudentSibling(models.Model):
@@ -416,3 +472,4 @@ class SchoolStudentSibling(models.Model):
         if mirrors and not self.env.context.get('skip_sibling_mirror'):
             mirrors.with_context(skip_sibling_mirror=True).unlink()
         return res
+

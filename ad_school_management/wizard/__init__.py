@@ -5,3 +5,5 @@ from . import exam_result_entry
 from . import student_promotion
 from . import mark_list_wizard
 from . import activity_participant_wizard
+from . import resignation_emergency_exit
+from . import resignation_handover_exception

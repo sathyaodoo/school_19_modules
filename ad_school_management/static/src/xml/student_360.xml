@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- a small list of development items -->
+    <t t-name="ad_school_management.Student360Items">
+        <div t-if="!items or !items.length" class="small text-muted">None recorded.</div>
+        <ul t-else="" class="list-unstyled mb-0 small">
+            <li t-foreach="items" t-as="it" t-key="it_index" class="mb-1">
+                <b t-out="it.name"/>
+                <span t-if="it.result" class="badge text-bg-success ms-1" t-out="it.result"/>
+                <span class="text-muted">
+                    <t t-if="it.level"> · <t t-out="it.level"/></t>
+                    <t t-if="it.hours"> · <t t-out="it.hours"/> h</t>
+                    <t t-if="it.date"> · <t t-out="it.date"/></t>
+                </span>
+            </li>
+        </ul>
+    </t>
+
+    <t t-name="ad_school_management.Student360">
+        <div class="o_school_dashboard o_student_360 p-4">
+            <t t-set="d" t-value="state.data"/>
+
+            <!-- header -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                <div>
+                    <h2 class="mb-0"><i class="fa fa-user-circle text-primary me-2"/>Student 360° Digital Profile</h2>
+                    <div class="text-muted">Academic, development, reading &amp; creativity and social responsibility in one view.</div>
+                </div>
+                <div class="d-flex gap-2 align-items-center" t-if="d.student">
+                    <select t-if="d.years and d.years.length" class="form-select form-select-sm" style="width: auto;" t-on-change="onYearChange">
+                        <t t-foreach="d.years" t-as="y" t-key="y.id">
+                            <option t-att-value="y.id" t-att-selected="d.year and d.year.id == y.id" t-out="y.name"/>
+                        </t>
+                    </select>
+                    <button class="btn btn-sm btn-outline-secondary" t-on-click="changeStudent"><i class="fa fa-search me-1"/>Other Student</button>
+                    <button class="btn btn-sm btn-outline-primary" t-on-click="print"><i class="fa fa-print me-1"/>Print</button>
+                </div>
+            </div>
+
+            <!-- student picker -->
+            <div t-if="!state.studentId" class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <input type="text" class="form-control mb-3" placeholder="Search a student by name or admission no."
+                           t-att-value="state.term" t-on-input="onSearchInput"/>
+                    <div class="list-group">
+                        <button t-foreach="state.results" t-as="r" t-key="r.id" class="list-group-item list-group-item-action"
+                                t-on-click="() => this.pick(r.id)">
+                            <b t-out="r.name"/> <span class="text-muted ms-2" t-out="r.class"/>
+                        </button>
+                    </div>
+                    <div t-if="!state.results.length" class="text-muted small">No students found.</div>
+                </div>
+            </div>
+
+            <div t-elif="state.loading" class="text-center text-muted p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+
+            <t t-elif="d.student">
+                <t t-set="a" t-value="d.academic"/>
+                <!-- identity -->
+                <div class="card border-0 shadow-sm mb-4 o_360_identity">
+                    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div>
+                            <h3 class="mb-1 cursor-pointer" t-on-click="openStudent" t-out="d.student.name"/>
+                            <div class="text-muted">
+                                <t t-out="d.student.admission_no"/> · <t t-out="d.student.class"/>
+                                <t t-if="d.student.house"> · House <t t-out="d.student.house"/></t>
+                                <t t-if="d.student.leader_role"> · <i class="fa fa-star text-warning"/> <t t-out="d.student.leader_role"/></t>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-4 text-center">
+                            <div><div class="h3 mb-0"><t t-if="a.overall !== null" t-out="a.overall + '%'"/><t t-else="">-</t>
+                                <i t-if="a.trend" t-attf-class="fa #{trendIcon(a.trend)} fs-6 ms-1"/></div><small class="text-muted">Academic average</small></div>
+                            <div><div class="h3 mb-0"><t t-if="a.attendance.percent !== null" t-out="a.attendance.percent + '%'"/><t t-else="">-</t></div><small class="text-muted">Attendance</small></div>
+                            <div><div class="h3 mb-0" t-out="d.reading.books_read"/><small class="text-muted">Books read</small></div>
+                            <div><div class="h3 mb-0" t-out="d.achievements.length"/><small class="text-muted">Achievements</small></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- holistic summary -->
+                <div class="card border-0 shadow-sm mb-4 o_360_summary">
+                    <div class="card-body">
+                        <h5 class="mb-2"><i class="fa fa-commenting-o text-primary me-2"/>Holistic Profile</h5>
+                        <p class="mb-0"><t t-foreach="d.summary" t-as="line" t-key="line_index"><t t-out="line"/> </t></p>
+                    </div>
+                </div>
+
+                <!-- strengths / gaps / support -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100 o_360_strength"><div class="card-body">
+                            <h6 class="text-success"><i class="fa fa-thumbs-up me-1"/>Strengths</h6>
+                            <div t-if="!d.strengths.length" class="small text-muted">Not enough data yet.</div>
+                            <ul class="small mb-0 ps-3"><li t-foreach="d.strengths" t-as="s" t-key="s_index" t-out="s"/></ul>
+                        </div></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100 o_360_gap"><div class="card-body">
+                            <h6 class="text-warning"><i class="fa fa-puzzle-piece me-1"/>Learning Gaps</h6>
+                            <div t-if="!d.gaps.length" class="small text-muted">No gaps detected.</div>
+                            <ul class="small mb-0 ps-3"><li t-foreach="d.gaps" t-as="g" t-key="g_index" t-out="g"/></ul>
+                        </div></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100 o_360_support"><div class="card-body">
+                            <h6 class="text-danger"><i class="fa fa-life-ring me-1"/>Areas Requiring Support</h6>
+                            <div t-if="!d.support.length" class="small text-muted">None at the moment.</div>
+                            <ul class="small mb-0 ps-3"><li t-foreach="d.support" t-as="x" t-key="x_index" t-out="x"/></ul>
+                        </div></div>
+                    </div>
+                </div>
+
+                <!-- ============ ACADEMIC ============ -->
+                <h4 class="mb-3"><i class="fa fa-graduation-cap text-primary me-2"/>Academic</h4>
+                <div class="row mb-4">
+                    <div class="col-lg-7 mb-3">
+                        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <h6>Subject-wise Performance</h6>
+                            <div t-if="!a.subjects.length" class="small text-muted">No exam results yet.</div>
+                            <table t-else="" class="table table-sm align-middle mb-0">
+                                <thead class="table-light"><tr><th>Subject</th><th style="min-width: 140px;">Average</th><th class="text-end">Latest</th><th>History</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="a.subjects" t-as="s" t-key="s.name">
+                                        <td><t t-out="s.name"/>
+                                            <span t-if="s.status == 'strength'" class="badge text-bg-success ms-1">strength</span>
+                                            <span t-if="s.status == 'support'" class="badge text-bg-danger ms-1">support</span></td>
+                                        <td><div class="d-flex justify-content-between small"><span t-out="s.avg + '%'"/></div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div t-attf-class="progress-bar #{s.status == 'strength' ? 'bg-success' : s.status == 'support' ? 'bg-danger' : 'bg-primary'}" t-attf-style="width: #{s.avg}%"/>
+                                            </div></td>
+                                        <td class="text-end"><t t-out="s.last + '%'"/> <i t-if="s.trend" t-attf-class="fa #{trendIcon(s.trend)}"/></td>
+                                        <td class="small text-muted" t-out="s.history.join(' → ')"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div></div>
+                    </div>
+                    <div class="col-lg-5 mb-3">
+                        <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+                            <h6>Academic Performance</h6>
+                            <div t-if="!a.exams.length" class="small text-muted">No exams yet.</div>
+                            <div t-foreach="a.exams" t-as="e" t-key="e_index" class="mb-2">
+                                <div class="d-flex justify-content-between small"><span t-out="e.name"/><span><t t-out="e.avg"/>%<span t-if="e.failed" class="text-danger ms-1">(<t t-out="e.failed"/> failed)</span></span></div>
+                                <div class="progress" style="height: 6px;"><div class="progress-bar" t-attf-style="width: #{e.avg}%"/></div>
+                            </div>
+                        </div></div>
+                        <div class="card border-0 shadow-sm"><div class="card-body">
+                            <h6>Attendance</h6>
+                            <div t-if="a.attendance.percent === null" class="small text-muted">No attendance recorded.</div>
+                            <div t-else="">
+                                <div class="h4 mb-1"><t t-out="a.attendance.percent"/>%</div>
+                                <div class="small text-muted"><t t-out="a.attendance.present"/> present · <t t-out="a.attendance.absent"/> absent of <t t-out="a.attendance.days"/> school days</div>
+                            </div>
+                        </div></div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4"><div class="card-body">
+                    <div class="d-flex justify-content-between"><h6>Learning Outcomes &amp; Competencies</h6>
+                        <button class="btn btn-sm btn-link" t-on-click="() => this.openList('school.student.competency', 'Competency Assessments')">Assess / Open</button></div>
+                    <div class="row">
+                        <t t-foreach="['learning_outcome', 'competency', 'skill']" t-as="cat" t-key="cat">
+                            <t t-set="group" t-value="d.competencies[cat]"/>
+                            <div class="col-md-4 mb-2">
+                                <div class="fw-bold small mb-1" t-out="group.label + 's'"/>
+                                <div t-if="!group.items.length" class="small text-muted">Not assessed yet.</div>
+                                <div t-foreach="group.items" t-as="c" t-key="c.name" class="small mb-1">
+                                    <span t-attf-class="badge #{levelClass(c.level)} me-1" t-out="c.label"/><t t-out="c.name"/>
+                                    <span t-if="c.subject" class="text-muted"> (<t t-out="c.subject"/>)</span>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div></div>
+
+                <!-- ============ STUDENT DEVELOPMENT ============ -->
+                <h4 class="mb-3"><i class="fa fa-trophy text-primary me-2"/>Student Development</h4>
+                <div class="row mb-2">
+                    <t t-foreach="['sports', 'arts', 'cultural', 'academic']" t-as="k" t-key="k">
+                        <t t-set="act" t-value="d.activities[k]"/>
+                        <div class="col-6 col-xl-3 mb-3">
+                            <div class="card border-0 shadow-sm h-100"><div class="card-body">
+                                <div class="d-flex justify-content-between"><h6 t-out="act.label"/><span class="h5 mb-0" t-out="act.count"/></div>
+                                <div class="small text-success mb-1" t-if="act.wins"><i class="fa fa-trophy"/> <t t-out="act.wins"/> place(s)</div>
+                                <ul class="list-unstyled small mb-0">
+                                    <li t-foreach="act.items" t-as="it" t-key="it_index"><t t-out="it.name"/>
+                                        <span t-if="it.place" class="badge text-bg-warning ms-1" t-out="it.place"/></li>
+                                </ul>
+                            </div></div>
+                        </div>
+                    </t>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Clubs</h6>
+                        <div t-if="!d.clubs.length" class="small text-muted">Not a member of any club.</div>
+                        <ul class="list-unstyled small mb-0"><li t-foreach="d.clubs" t-as="c" t-key="c_index">
+                            <b t-out="c.name"/> <span class="text-muted">· <t t-out="c.role"/><t t-if="!c.current"> (past)</t></span></li></ul>
+                    </div></div></div>
+                    <div class="col-md-4 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Competitions</h6><t t-set="items" t-value="d.competitions"/><t t-call="ad_school_management.Student360Items"/>
+                    </div></div></div>
+                    <div class="col-md-4 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Leadership</h6><t t-set="items" t-value="d.leadership"/><t t-call="ad_school_management.Student360Items"/>
+                    </div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Projects</h6><t t-set="items" t-value="d.projects"/><t t-call="ad_school_management.Student360Items"/>
+                    </div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Skills Acquired</h6><t t-set="items" t-value="d.skills"/><t t-call="ad_school_management.Student360Items"/>
+                    </div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Certifications</h6><t t-set="items" t-value="d.certifications"/><t t-call="ad_school_management.Student360Items"/>
+                    </div></div></div>
+                    <div class="col-md-3 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Achievements</h6><t t-set="items" t-value="d.achievements"/><t t-call="ad_school_management.Student360Items"/>
+                    </div></div></div>
+                </div>
+
+                <!-- ============ READING & CREATIVITY ============ -->
+                <h4 class="mb-3"><i class="fa fa-book text-primary me-2"/>Reading &amp; Creativity</h4>
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                        <h6>Reading Habits &amp; Profile</h6>
+                        <div class="small">
+                            <div><b t-out="d.reading.books_read"/> books read · <b t-out="d.reading.last_12_months"/> in the last 12 months</div>
+                            <div><b t-out="d.reading.per_month"/> books per month</div>
+                            <div t-if="d.reading.level">Reading level: <b t-out="d.reading.level"/></div>
+                            <div t-if="d.reading.genres.length">Favourite genres: <t t-out="d.reading.genres.join(', ')"/></div>
+                            <div><t t-out="d.reading.reviews"/> book review(s) written</div>
+                        </div>
+                    </div></div></div>
+                    <t t-foreach="['creativity', 'communication']" t-as="cat" t-key="cat">
+                        <t t-set="group" t-value="d.competencies[cat]"/>
+                        <div class="col-md-4 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <h6 t-out="cat == 'creativity' ? 'Creativity' : 'Communication Skills'"/>
+                            <div t-if="!group.items.length" class="small text-muted">Not assessed yet.</div>
+                            <div t-foreach="group.items" t-as="c" t-key="c.name" class="small mb-1">
+                                <span t-attf-class="badge #{levelClass(c.level)} me-1" t-out="c.label"/><t t-out="c.name"/>
+                            </div>
+                            <div t-if="cat == 'creativity' and d.activities.arts.count" class="small text-muted mt-2">
+                                <t t-out="d.activities.arts.count"/> arts activity(ies) · <t t-out="d.activities.cultural.count"/> cultural
+                            </div>
+                        </div></div></div>
+                    </t>
+                </div>
+
+                <!-- ============ SOCIAL RESPONSIBILITY ============ -->
+                <h4 class="mb-3"><i class="fa fa-leaf text-primary me-2"/>Social Responsibility</h4>
+                <div class="row mb-4">
+                    <t t-foreach="['community_service', 'environmental', 'volunteering', 'service_achievement']" t-as="k" t-key="k">
+                        <t t-set="soc" t-value="d.social[k]"/>
+                        <div class="col-6 col-xl-3 mb-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+                            <div class="d-flex justify-content-between"><h6 t-out="soc.label"/><span class="h5 mb-0" t-out="soc.count"/></div>
+                            <div class="small text-muted mb-1" t-if="soc.hours"><t t-out="soc.hours"/> hour(s)</div>
+                            <t t-set="items" t-value="soc.items"/><t t-call="ad_school_management.Student360Items"/>
+                        </div></div></div>
+                    </t>
+                </div>
+                <div class="small text-muted" t-if="d.community_points">
+                    Also earned <b t-out="d.community_points"/> community-contribution house point(s).
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openList('school.student.record', 'Development Records')"><i class="fa fa-plus me-1"/>Development Records</button>
+                    <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openList('school.club.membership', 'Clubs')"><i class="fa fa-users me-1"/>Clubs</button>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

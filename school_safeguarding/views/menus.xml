@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_sg_root" name="Safeguarding &amp; Well-being" parent="ad_school_management.menu_school_root" sequence="27"
+              groups="school_safeguarding.group_sg_reporter,school_safeguarding.group_sg_officer,school_safeguarding.group_sg_lead,school_safeguarding.group_wb_reporter,school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_sg_report" name="Report a Concern" parent="menu_sg_root" action="action_sg_report_wizard"
+              sequence="5" groups="school_safeguarding.group_sg_reporter,school_safeguarding.group_sg_officer,school_safeguarding.group_sg_lead"/>
+    <menuitem id="menu_sg_cases" name="Cases" parent="menu_sg_root" action="action_sg_case" sequence="10"
+              groups="school_safeguarding.group_sg_officer,school_safeguarding.group_sg_lead"/>
+    <menuitem id="menu_sg_actions" name="Follow-up Actions" parent="menu_sg_root" action="action_sg_action"
+              sequence="20" groups="school_safeguarding.group_sg_officer,school_safeguarding.group_sg_lead"/>
+    <menuitem id="menu_sg_analysis" name="Analysis" parent="menu_sg_root" action="action_sg_analysis" sequence="30"
+              groups="school_safeguarding.group_sg_officer,school_safeguarding.group_sg_lead"/>
+
+    <!-- ======================== Well-being (counsellors) ======================== -->
+    <menuitem id="menu_wb_root" name="Well-being" parent="menu_sg_root" sequence="40" groups="school_safeguarding.group_wb_reporter,school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_raise" name="Raise a Well-being Concern" parent="menu_wb_root" action="action_wb_concern_wizard" sequence="5" groups="school_safeguarding.group_wb_reporter,school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_cases" name="Well-being Cases" parent="menu_wb_root" action="action_wb_case" sequence="10" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_checkins" name="Check-ins" parent="menu_wb_root" action="action_wb_checkin" sequence="20" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_sessions" name="Counselling Sessions" parent="menu_wb_root" action="action_wb_session" sequence="30" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_interventions" name="Intervention Follow-up" parent="menu_wb_root" action="action_wb_intervention" sequence="40" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_referrals" name="Referrals" parent="menu_wb_root" action="action_wb_referral" sequence="50" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_assessments" name="Screenings" parent="menu_wb_root" action="action_wb_assessment" sequence="60" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_trends" name="Check-in Trends" parent="menu_wb_root" action="action_wb_checkin_trends" sequence="70" groups="school_safeguarding.group_wb_counsellor,school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_areas" name="Concern Areas" parent="menu_wb_root" action="action_wb_area" sequence="80" groups="school_safeguarding.group_wb_lead"/>
+    <menuitem id="menu_wb_settings" name="Well-being Settings" parent="menu_wb_root" action="action_wb_settings" sequence="90" groups="school_safeguarding.group_wb_lead"/>
+</odoo>

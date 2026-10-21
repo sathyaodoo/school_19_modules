@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================== settings -->
+    <record id="view_wb_config_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.config.form</field>
+        <field name="model">school.wellbeing.config</field>
+        <field name="arch" type="xml">
+            <form string="Well-being Settings">
+                <sheet>
+                    <div class="oe_title"><h1>Well-being Settings</h1></div>
+                    <group>
+                        <group string="Check-ins">
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="checkin_interval_days"/>
+                            <field name="struggling_streak"/>
+                            <field name="auto_case_need_help"/>
+                        </group>
+                        <group string="Records">
+                            <field name="retention_years"/>
+                        </group>
+                    </group>
+                    <group string="Help text for students"><field name="helpline_text" nolabel="1"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_wb_settings" model="ir.actions.server">
+        <field name="name">Well-being Settings</field>
+        <field name="model_id" ref="model_school_wellbeing_config"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_settings()</field>
+    </record>
+
+    <record id="view_wb_area_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.area.list</field>
+        <field name="model">school.wellbeing.area</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="for_parents"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_wb_area" model="ir.actions.act_window">
+        <field name="name">Concern Areas</field>
+        <field name="res_model">school.wellbeing.area</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- ======================== cases -->
+    <record id="view_wb_case_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.case.list</field>
+        <field name="model">school.wellbeing.case</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="level == 'high' and state != 'closed'" decoration-muted="state == 'closed'">
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="class_id" optional="show"/>
+                <field name="area_ids" widget="many2many_tags" optional="show"/>
+                <field name="level" widget="badge" decoration-danger="level == 'high'" decoration-warning="level == 'medium'"/>
+                <field name="state" widget="badge"/>
+                <field name="source" optional="show"/>
+                <field name="counsellor_id" optional="show"/>
+                <field name="wants_to_talk" optional="show"/>
+                <field name="is_restricted" optional="hide"/>
+                <field name="overdue_intervention_count" optional="hide"/>
+                <field name="opened_datetime" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wb_case_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.case.form</field>
+        <field name="model">school.wellbeing.case</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start_assessment" string="Start Assessment" type="object" class="btn-primary" invisible="state != 'new'"/>
+                    <button name="action_start_support" string="Start Support" type="object" class="btn-primary" invisible="state != 'assessment'"/>
+                    <button name="action_monitor" string="Move to Monitoring" type="object" invisible="state != 'support'"/>
+                    <button name="action_close" string="Close Case" type="object" invisible="state not in ('assessment', 'support', 'monitoring')"/>
+                    <button name="action_share_with_safeguarding" string="Share with Safeguarding" type="object"
+                            invisible="safeguarding_ref" help="Bullying or a child in danger: tell the Safeguarding team (the counselling notes are not copied)."/>
+                    <button name="action_reopen" string="Reopen" type="object" invisible="state != 'closed'"
+                            groups="school_safeguarding.group_wb_lead" confirm="Reopen this closed case?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,assessment,support,monitoring,closed"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fa fa-lock"/> <b>Confidential.</b> Do not discuss this case with anyone who is not authorised.
+                        Opening it is recorded. If a child may be in danger or bullied, also use <b>Safeguarding</b>.
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="not wants_to_talk or state != 'new'">
+                        The student asked to talk to a counsellor.
+                    </div>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_checkins" type="object" class="oe_stat_button" icon="fa-smile-o">
+                            <field name="checkin_count" widget="statinfo" string="Check-ins"/>
+                        </button>
+                        <button name="action_view_assessments" type="object" class="oe_stat_button" icon="fa-line-chart">
+                            <field name="assessment_count" widget="statinfo" string="Screenings"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="student_id" readonly="id"/>
+                            <field name="class_id"/>
+                            <field name="area_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="level"/>
+                        </group>
+                        <group>
+                            <field name="counsellor_id"/>
+                            <field name="source" readonly="id"/>
+                            <field name="reporter_label"/>
+                            <field name="wants_to_talk"/>
+                            <field name="is_restricted"/>
+                            <field name="safeguarding_ref" invisible="not safeguarding_ref"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="opened_datetime"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Concern" name="concern">
+                            <field name="concern_text" placeholder="What was noticed / shared..."/>
+                        </page>
+                        <page string="Assessment &amp; Plan" name="plan">
+                            <group>
+                                <field name="assessment_notes"/>
+                                <field name="plan"/>
+                            </group>
+                        </page>
+                        <page string="Sessions" name="sessions">
+                            <field name="session_ids">
+                                <list>
+                                    <field name="session_date"/>
+                                    <field name="session_type"/>
+                                    <field name="mode"/>
+                                    <field name="duration_minutes"/>
+                                    <field name="risk_level"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Interventions" name="interventions">
+                            <field name="intervention_ids">
+                                <list editable="bottom" decoration-danger="overdue" decoration-muted="state != 'todo'">
+                                    <field name="overdue" column_invisible="1"/>
+                                    <field name="kind"/>
+                                    <field name="description"/>
+                                    <field name="responsible_id"/>
+                                    <field name="due_date"/>
+                                    <field name="state"/>
+                                    <button name="action_done" type="object" icon="fa-check" title="Done" invisible="state != 'todo' or not id"/>
+                                    <button name="action_cancel" type="object" icon="fa-times" title="Cancel" invisible="state != 'todo' or not id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Referrals" name="referrals">
+                            <field name="referral_ids">
+                                <list>
+                                    <field name="referral_date"/>
+                                    <field name="kind"/>
+                                    <field name="referred_to"/>
+                                    <field name="urgency"/>
+                                    <field name="consent_given"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Case Log" name="log">
+                            <field name="log_ids" readonly="1">
+                                <list>
+                                    <field name="log_datetime"/>
+                                    <field name="author_id"/>
+                                    <field name="text"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Closure" name="closure">
+                            <group>
+                                <group>
+                                    <field name="outcome"/>
+                                    <field name="closed_datetime"/>
+                                    <field name="closed_by"/>
+                                    <field name="retention_until"/>
+                                </group>
+                                <group><field name="closure_notes"/></group>
+                            </group>
+                        </page>
+                        <page string="Who Opened This Case" name="audit" groups="school_safeguarding.group_wb_lead">
+                            <field name="access_log_ids" readonly="1">
+                                <list><field name="viewed_datetime"/><field name="user_id"/></list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_case_search" model="ir.ui.view">
+        <field name="name">school.wellbeing.case.search</field>
+        <field name="model">school.wellbeing.case</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="area_ids"/>
+                <field name="counsellor_id"/>
+                <filter name="mine" string="My cases" domain="[('counsellor_id', '=', uid)]"/>
+                <filter name="open" string="Open" domain="[('state', '!=', 'closed')]"/>
+                <filter name="new" string="Waiting for assessment" domain="[('state', '=', 'new')]"/>
+                <filter name="high" string="High priority" domain="[('level', '=', 'high'), ('state', '!=', 'closed')]"/>
+                <filter name="talk" string="Student wants to talk" domain="[('wants_to_talk', '=', True), ('state', '!=', 'closed')]"/>
+                <filter name="overdue" string="Overdue interventions" domain="[('intervention_ids', 'any', [('state', '=', 'todo'), ('due_date', '&lt;', context_today().strftime('%Y-%m-%d'))])]"/>
+                <group>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_level" string="Priority" context="{'group_by': 'level'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_source" string="Raised by" context="{'group_by': 'source'}"/>
+                    <filter name="group_counsellor" string="Counsellor" context="{'group_by': 'counsellor_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_wb_case_pivot" model="ir.ui.view">
+        <field name="name">school.wellbeing.case.pivot</field>
+        <field name="model">school.wellbeing.case</field>
+        <field name="arch" type="xml">
+            <pivot string="Cases">
+                <field name="state" type="row"/>
+                <field name="level" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_wb_case" model="ir.actions.act_window">
+        <field name="name">Cases</field>
+        <field name="res_model">school.wellbeing.case</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No well-being case</p>
+            <p>Cases come from teachers, parents, students and check-in alerts. You can open one yourself too.</p>
+        </field>
+    </record>
+
+    <!-- ======================== counselling sessions -->
+    <record id="view_wb_session_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.session.list</field>
+        <field name="model">school.wellbeing.session</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state in ('cancelled', 'no_show')" decoration-danger="risk_level == 'high'">
+                <field name="session_date"/>
+                <field name="student_id"/>
+                <field name="case_id"/>
+                <field name="counsellor_id"/>
+                <field name="session_type"/>
+                <field name="duration_minutes"/>
+                <field name="risk_level"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wb_session_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.session.form</field>
+        <field name="model">school.wellbeing.session</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" string="Session Held" type="object" class="btn-primary" invisible="state != 'scheduled'"/>
+                    <button name="action_no_show" string="Did Not Come" type="object" invisible="state != 'scheduled'"/>
+                    <button name="action_cancel" string="Cancel" type="object" invisible="state != 'scheduled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="scheduled,done"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="alert"><i class="fa fa-lock"/> Session notes are private to the counsellors.</div>
+                    <group>
+                        <group>
+                            <field name="case_id" options="{'no_create': True}"/>
+                            <field name="student_id"/>
+                            <field name="counsellor_id"/>
+                            <field name="session_date"/>
+                            <field name="duration_minutes"/>
+                        </group>
+                        <group>
+                            <field name="session_type"/>
+                            <field name="mode"/>
+                            <field name="mood_start"/>
+                            <field name="mood_end"/>
+                            <field name="risk_level"/>
+                            <field name="next_session_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes" placeholder="What was discussed..."/>
+                        <field name="next_steps"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_session_calendar" model="ir.ui.view">
+        <field name="name">school.wellbeing.session.calendar</field>
+        <field name="model">school.wellbeing.session</field>
+        <field name="arch" type="xml">
+            <calendar date_start="session_date" date_delay="duration_hours" color="counsellor_id" mode="week" quick_create="0">
+                <field name="student_id"/>
+                <field name="session_type"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_wb_session_search" model="ir.ui.view">
+        <field name="name">school.wellbeing.session.search</field>
+        <field name="model">school.wellbeing.session</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="case_id"/>
+                <filter name="mine" string="My sessions" domain="[('counsellor_id', '=', uid)]"/>
+                <filter name="scheduled" string="Scheduled" domain="[('state', '=', 'scheduled')]"/>
+                <filter name="high" string="High risk seen" domain="[('risk_level', '=', 'high')]"/>
+                <group>
+                    <filter name="group_counsellor" string="Counsellor" context="{'group_by': 'counsellor_id'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'session_type'}"/>
+                    <filter name="group_month" string="Month" context="{'group_by': 'session_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wb_session" model="ir.actions.act_window">
+        <field name="name">Counselling Sessions</field>
+        <field name="res_model">school.wellbeing.session</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="context">{'search_default_scheduled': 1}</field>
+    </record>
+
+    <!-- ======================== interventions -->
+    <record id="view_wb_intervention_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.intervention.list</field>
+        <field name="model">school.wellbeing.intervention</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="overdue" decoration-muted="state != 'todo'" create="0">
+                <field name="overdue" column_invisible="1"/>
+                <field name="due_date"/>
+                <field name="student_id"/>
+                <field name="case_id"/>
+                <field name="kind"/>
+                <field name="description"/>
+                <field name="responsible_id"/>
+                <field name="state" widget="badge"/>
+                <button name="action_done" type="object" icon="fa-check" title="Done" invisible="state != 'todo'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wb_intervention_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.intervention.form</field>
+        <field name="model">school.wellbeing.intervention</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" string="Done" type="object" class="btn-primary" invisible="state != 'todo'"/>
+                    <button name="action_cancel" string="Cancel" type="object" invisible="state != 'todo'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="todo,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="case_id" options="{'no_create': True}"/>
+                            <field name="kind"/>
+                            <field name="description"/>
+                        </group>
+                        <group>
+                            <field name="responsible_id"/>
+                            <field name="due_date"/>
+                            <field name="review_date"/>
+                            <field name="done_date"/>
+                        </group>
+                    </group>
+                    <group><field name="outcome"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_intervention_search" model="ir.ui.view">
+        <field name="name">school.wellbeing.intervention.search</field>
+        <field name="model">school.wellbeing.intervention</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="description"/>
+                <filter name="mine" string="Mine" domain="[('responsible_id', '=', uid)]"/>
+                <filter name="todo" string="To do" domain="[('state', '=', 'todo')]"/>
+                <filter name="overdue" string="Overdue" domain="[('state', '=', 'todo'), ('due_date', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_responsible" string="Responsible" context="{'group_by': 'responsible_id'}"/>
+                    <filter name="group_kind" string="Type" context="{'group_by': 'kind'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wb_intervention" model="ir.actions.act_window">
+        <field name="name">Intervention Follow-up</field>
+        <field name="res_model">school.wellbeing.intervention</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_todo': 1}</field>
+    </record>
+
+    <!-- ======================== referrals -->
+    <record id="view_wb_referral_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.referral.list</field>
+        <field name="model">school.wellbeing.referral</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state in ('completed', 'declined')" decoration-danger="urgency == 'urgent' and state in ('planned', 'sent')">
+                <field name="referral_date"/>
+                <field name="student_id"/>
+                <field name="case_id"/>
+                <field name="kind"/>
+                <field name="referred_to"/>
+                <field name="urgency"/>
+                <field name="consent_given"/>
+                <field name="follow_up_date"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wb_referral_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.referral.form</field>
+        <field name="model">school.wellbeing.referral</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_send" string="Send Referral" type="object" class="btn-primary" invisible="state != 'planned'"/>
+                    <button name="action_accept" string="Accepted" type="object" invisible="state != 'sent'"/>
+                    <button name="action_in_progress" string="In Progress" type="object" invisible="state not in ('sent', 'accepted')"/>
+                    <button name="action_complete" string="Completed" type="object" invisible="state not in ('sent', 'accepted', 'in_progress')"/>
+                    <button name="action_decline" string="Declined" type="object" invisible="state not in ('sent', 'accepted')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="planned,sent,accepted,in_progress,completed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="case_id" options="{'no_create': True}"/>
+                            <field name="kind"/>
+                            <field name="is_external"/>
+                            <field name="referred_to"/>
+                            <field name="urgency"/>
+                            <field name="referral_date"/>
+                        </group>
+                        <group string="Consent">
+                            <field name="consent_given"/>
+                            <field name="consent_by" invisible="not consent_given"/>
+                            <field name="consent_date" invisible="not consent_given"/>
+                            <field name="consent_waived_reason" invisible="consent_given or not is_external"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason"/>
+                        <field name="outcome"/>
+                        <field name="follow_up_date"/>
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_referral_search" model="ir.ui.view">
+        <field name="name">school.wellbeing.referral.search</field>
+        <field name="model">school.wellbeing.referral</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="referred_to"/>
+                <filter name="active" string="Not finished" domain="[('state', 'not in', ('completed', 'declined'))]"/>
+                <filter name="external" string="External" domain="[('is_external', '=', True)]"/>
+                <filter name="no_consent" string="No consent yet" domain="[('is_external', '=', True), ('consent_given', '=', False)]"/>
+                <group>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_kind" string="Type" context="{'group_by': 'kind'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_wb_referral" model="ir.actions.act_window">
+        <field name="name">Referrals</field>
+        <field name="res_model">school.wellbeing.referral</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+    <!-- ======================== check-ins -->
+    <record id="view_wb_checkin_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.checkin.list</field>
+        <field name="model">school.wellbeing.checkin</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="status == 'need_help'" decoration-warning="status == 'struggling'">
+                <field name="checkin_date"/>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="status" widget="badge" decoration-success="status == 'good'" decoration-info="status == 'okay'"
+                       decoration-warning="status == 'struggling'" decoration-danger="status == 'need_help'"/>
+                <field name="wants_to_talk"/>
+                <field name="source" optional="show"/>
+                <field name="case_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wb_checkin_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.checkin.form</field>
+        <field name="model">school.wellbeing.checkin</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="alert alert-warning" role="alert"><i class="fa fa-lock"/> Confidential check-in.</div>
+                    <group>
+                        <group>
+                            <field name="student_id" readonly="id"/>
+                            <field name="checkin_date" readonly="id"/>
+                            <field name="status" widget="radio" options="{'horizontal': true}"/>
+                            <field name="wants_to_talk"/>
+                        </group>
+                        <group>
+                            <field name="source"/>
+                            <field name="case_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group><field name="note"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_checkin_search" model="ir.ui.view">
+        <field name="name">school.wellbeing.checkin.search</field>
+        <field name="model">school.wellbeing.checkin</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <filter name="need_help" string="Need help" domain="[('status', '=', 'need_help')]"/>
+                <filter name="struggling" string="Struggling" domain="[('status', '=', 'struggling')]"/>
+                <filter name="worried" string="Struggling or Need help" domain="[('status', 'in', ('struggling', 'need_help'))]"/>
+                <filter name="talk" string="Wants to talk" domain="[('wants_to_talk', '=', True)]"/>
+                <separator/>
+                <filter name="today" string="Today" domain="[('checkin_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="week" string="Last 7 days" domain="[('checkin_date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_status" string="How they feel" context="{'group_by': 'status'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                    <filter name="group_week" string="Week" context="{'group_by': 'checkin_date:week'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_wb_checkin_pivot" model="ir.ui.view">
+        <field name="name">school.wellbeing.checkin.pivot</field>
+        <field name="model">school.wellbeing.checkin</field>
+        <field name="arch" type="xml">
+            <pivot string="Check-in trends">
+                <field name="class_id" type="row"/>
+                <field name="status" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_wb_checkin_graph" model="ir.ui.view">
+        <field name="name">school.wellbeing.checkin.graph</field>
+        <field name="model">school.wellbeing.checkin</field>
+        <field name="arch" type="xml">
+            <graph string="Check-ins per week" type="bar" stacked="True">
+                <field name="checkin_date" interval="week"/>
+                <field name="status"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_wb_checkin" model="ir.actions.act_window">
+        <field name="name">Check-ins</field>
+        <field name="res_model">school.wellbeing.checkin</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_worried': 1, 'search_default_week': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No check-in to show</p>
+            <p>Students check in from the portal (Well-being). "Struggling" and "Need help" are shown first.</p>
+        </field>
+    </record>
+
+    <record id="action_wb_checkin_trends" model="ir.actions.act_window">
+        <field name="name">Check-in Trends</field>
+        <field name="res_model">school.wellbeing.checkin</field>
+        <field name="view_mode">graph,pivot,list</field>
+    </record>
+
+    <!-- ======================== screenings (ratings) -->
+    <record id="view_wb_assessment_list" model="ir.ui.view">
+        <field name="name">school.wellbeing.assessment.list</field>
+        <field name="model">school.wellbeing.assessment</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="highest &gt;= 4">
+                <field name="assessment_date"/>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="social_adjustment"/>
+                <field name="peer_relationships"/>
+                <field name="academic_stress"/>
+                <field name="emotional_wellbeing"/>
+                <field name="bullying_concern"/>
+                <field name="highest" optional="hide"/>
+                <field name="counsellor_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_wb_assessment_form" model="ir.ui.view">
+        <field name="name">school.wellbeing.assessment.form</field>
+        <field name="model">school.wellbeing.assessment</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        1 = no concern, 5 = serious concern. Do it again every term to see the trend.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="case_id" options="{'no_create': True}"/>
+                            <field name="assessment_date"/>
+                            <field name="counsellor_id"/>
+                        </group>
+                        <group string="Ratings">
+                            <field name="social_adjustment"/>
+                            <field name="peer_relationships"/>
+                            <field name="academic_stress"/>
+                            <field name="emotional_wellbeing"/>
+                            <field name="bullying_concern"/>
+                        </group>
+                    </group>
+                    <group><field name="notes"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_wb_assessment_search" model="ir.ui.view">
+        <field name="name">school.wellbeing.assessment.search</field>
+        <field name="model">school.wellbeing.assessment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <filter name="high" string="High concern (4-5)" domain="[('highest', '&gt;=', 4)]"/>
+                <filter name="bullying" string="Bullying concern" domain="[('bullying_concern', '=', True)]"/>
+                <group>
+                    <filter name="group_student" string="Student" context="{'group_by': 'student_id'}"/>
+                    <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_wb_assessment_graph" model="ir.ui.view">
+        <field name="name">school.wellbeing.assessment.graph</field>
+        <field name="model">school.wellbeing.assessment</field>
+        <field name="arch" type="xml">
+            <graph string="Screening trend" type="line">
+                <field name="assessment_date" interval="month"/>
+                <field name="social_value" type="measure"/>
+                <field name="peer_value" type="measure"/>
+                <field name="stress_value" type="measure"/>
+                <field name="emotional_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_wb_assessment" model="ir.actions.act_window">
+        <field name="name">Screenings</field>
+        <field name="res_model">school.wellbeing.assessment</field>
+        <field name="view_mode">list,form,graph</field>
+    </record>
+</odoo>

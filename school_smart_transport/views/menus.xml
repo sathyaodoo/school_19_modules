@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_stc_trips" name="Live Trips" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_trip" sequence="40"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_alerts" name="Transport Alerts" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_alerts" sequence="45"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_boarding" name="Boarding Records" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_boarding" sequence="50"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_behaviour" name="Driver Behaviour" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_behaviour" sequence="55"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_notifications" name="Parent Notifications" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_notification" sequence="60"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_events" name="All Trip Events" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_events" sequence="65"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_settings" name="Alert Settings" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_settings" sequence="70"
+              groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal"/>
+    <menuitem id="menu_stc_ping" name="GPS Test Tool" parent="ad_school_management.menu_school_transport_sub"
+              action="action_stc_ping_wizard" sequence="75" groups="ad_school_management.group_school_admin"/>
+</odoo>

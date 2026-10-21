@@ -14,7 +14,9 @@
                         <group>
                             <field name="start_time" widget="float_time"/>
                             <field name="end_time" widget="float_time"/>
-                            <field name="default_rate"/>
+                            <!-- Fixed meal rate retired: the bill is the sum of the food items
+                                 actually bought (each at its own Sales Price). -->
+                            <!-- <field name="default_rate"/> -->
                         </group>
                         <group>
                             <field name="applicable_category_ids" widget="many2many_tags"/>
@@ -36,7 +38,7 @@
                 <field name="name"/>
                 <field name="start_time" widget="float_time"/>
                 <field name="end_time" widget="float_time"/>
-                <field name="default_rate"/>
+                <!-- <field name="default_rate"/> -->
                 <field name="applicable_category_ids" widget="many2many_tags"/>
             </list>
         </field>

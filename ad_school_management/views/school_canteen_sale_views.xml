@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         CANTEEN SALES = standard Sales Orders (sale.order)
+         ================================================================ -->
+    <record id="view_sale_order_form_canteen" model="ir.ui.view">
+        <field name="name">sale.order.form.canteen</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="is_canteen_sale" invisible="1"/>
+                <button name="action_canteen_load_menu" type="object" string="Load Menu Dishes"
+                        icon="fa-cutlery"
+                        invisible="not is_canteen_sale or state not in ('draft', 'sent')"/>
+                <button name="action_canteen_checkout" type="object" string="Confirm &amp; Invoice"
+                        class="oe_highlight" icon="fa-check"
+                        invisible="not is_canteen_sale or state not in ('draft', 'sent')"/>
+            </xpath>
+            <xpath expr="//group[@name='partner_details']/field[@name='partner_id']" position="before">
+                <field name="canteen_customer_type" widget="radio" options="{'horizontal': true}"
+                       invisible="not is_canteen_sale" readonly="state not in ('draft', 'sent')"/>
+                <field name="canteen_student_id" options="{'no_create': True}"
+                       invisible="not is_canteen_sale or canteen_customer_type != 'student'"
+                       required="is_canteen_sale and canteen_customer_type == 'student'"
+                       readonly="state not in ('draft', 'sent')"/>
+                <field name="canteen_employee_id" options="{'no_create': True}"
+                       invisible="not is_canteen_sale or canteen_customer_type != 'staff'"
+                       required="is_canteen_sale and canteen_customer_type == 'staff'"
+                       readonly="state not in ('draft', 'sent')"/>
+                <field name="canteen_meal_id" options="{'no_create': True}"
+                       invisible="not is_canteen_sale" readonly="state not in ('draft', 'sent')"/>
+                <field name="canteen_date"
+                       invisible="not is_canteen_sale" readonly="state not in ('draft', 'sent')"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_sale_order_list_canteen" model="ir.ui.view">
+        <field name="name">sale.order.list.canteen</field>
+        <field name="model">sale.order</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-info="state in ('draft', 'sent')">
+                <field name="name" string="Number"/>
+                <field name="canteen_date"/>
+                <field name="canteen_meal_id"/>
+                <field name="canteen_customer_type"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="amount_total" sum="Total" widget="monetary"/>
+                <field name="invoice_status" widget="badge" optional="show"
+                       decoration-success="invoice_status == 'invoiced'"
+                       decoration-warning="invoice_status == 'to invoice'"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'sale'" decoration-info="state in ('draft', 'sent')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sale_order_search_canteen" model="ir.ui.view">
+        <field name="name">sale.order.search.canteen</field>
+        <field name="model">sale.order</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="canteen_student_id"/>
+                <field name="canteen_employee_id"/>
+                <field name="canteen_meal_id"/>
+                <field name="order_line" string="Dish" filter_domain="[('order_line.product_id', 'ilike', self)]"/>
+                <filter string="Today" name="today" domain="[('canteen_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Draft" name="draft" domain="[('state', 'in', ('draft', 'sent'))]"/>
+                <filter string="To Invoice" name="to_invoice" domain="[('invoice_status', '=', 'to invoice')]"/>
+                <separator/>
+                <filter string="Students" name="students" domain="[('canteen_customer_type', '=', 'student')]"/>
+                <filter string="Staff" name="staff" domain="[('canteen_customer_type', '=', 'staff')]"/>
+                <filter string="Guests" name="guests" domain="[('canteen_customer_type', '=', 'guest')]"/>
+                <group>
+                    <filter string="Date" name="group_date" context="{'group_by': 'canteen_date'}"/>
+                    <filter string="Meal" name="group_meal" context="{'group_by': 'canteen_meal_id'}"/>
+                    <filter string="Customer Type" name="group_type" context="{'group_by': 'canteen_customer_type'}"/>
+                    <filter string="Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_canteen_sale" model="ir.actions.act_window">
+        <field name="name">Canteen Sales</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_sale_order_list_canteen')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('sale.view_order_form')})]"/>
+        <field name="search_view_id" ref="view_sale_order_search_canteen"/>
+        <field name="domain">[('is_canteen_sale', '=', True)]</field>
+        <field name="context">{'default_is_canteen_sale': True, 'default_canteen_customer_type': 'student', 'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record a canteen sale</p>
+            <p>
+                Choose the customer and the meal: today's menu dishes are added with their prices.
+                Change quantities or remove what was not taken, then click <b>Confirm &amp; Invoice</b>.
+                The bill is the total of the dishes actually bought; their ingredients leave stock.
+            </p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         CANTEEN PURCHASES = standard Purchase Orders (purchase.order)
+         (MMD approval, receipts into stock and vendor bills as usual)
+         ================================================================ -->
+    <record id="view_purchase_order_form_canteen" model="ir.ui.view">
+        <field name="name">purchase.order.form.canteen</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet//field[@name='partner_id']" position="after">
+                <field name="is_canteen_purchase" readonly="state not in ('draft', 'sent')"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_school_canteen_purchase" model="ir.actions.act_window">
+        <field name="name">Canteen Purchases</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_canteen_purchase', '=', True)]</field>
+        <field name="context">{'default_is_canteen_purchase': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Buy food stock for the canteen</p>
+            <p>
+                Create a Request for Quotation to a vendor with the ingredients and their
+                purchase prices. After MMD approval and confirmation, receive the goods
+                (stock increases) and record the vendor bill.
+            </p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         TRACKING / REPORTING (standard reports, filtered to the canteen)
+         ================================================================ -->
+    <record id="action_school_canteen_sale_report" model="ir.actions.act_window">
+        <field name="name">Canteen Sales Analysis</field>
+        <field name="res_model">sale.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="domain">[('product_tmpl_id.is_canteen_dish', '=', True), ('state', '=', 'sale')]</field>
+        <field name="context">{'pivot_row_groupby': ['product_id'], 'pivot_measures': ['product_uom_qty', 'price_total'], 'graph_groupbys': ['date:day']}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No canteen sales yet</p>
+            <p>Plates sold and revenue per dish, customer, day, ...</p>
+        </field>
+    </record>
+
+    <record id="action_school_canteen_purchase_report" model="ir.actions.act_window">
+        <field name="name">Canteen Purchase Analysis</field>
+        <field name="res_model">purchase.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="domain">[('order_id.is_canteen_purchase', '=', True)]</field>
+        <field name="context">{'pivot_row_groupby': ['product_id'], 'pivot_measures': ['qty_ordered', 'qty_received', 'price_total']}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No canteen purchases yet</p>
+        </field>
+    </record>
+
+    <record id="action_school_canteen_stock_moves" model="ir.actions.act_window">
+        <field name="name">Ingredient Stock Moves</field>
+        <field name="res_model">stock.move.line</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="domain">[('product_id.product_tmpl_id.is_canteen_item', '=', True), ('state', '=', 'done')]</field>
+        <field name="context">{'search_default_groupby_product_id': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No stock movements yet</p>
+            <p>Every ingredient received from vendors and used by the dishes sold.</p>
+        </field>
+    </record>
+
+</odoo>

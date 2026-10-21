@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Body of every school leave notification (inbox + email).
+         Rendered from models/hr_leave.py -> _school_render_notification(). -->
+    <template id="school_leave_notification_body" name="School Leave Notification">
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #222;">
+            <p style="margin: 0 0 12px 0;">Dear <t t-out="recipient_name"/>,</p>
+            <p style="margin: 0 0 12px 0;"><t t-out="message"/></p>
+            <table style="border-collapse: collapse; margin: 0 0 12px 0;" cellpadding="6">
+                <tr>
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>Teacher / Staff</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="employee_name"/></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>Leave Type</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="leave_type"/></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>From</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="date_from"/></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>To</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="date_to"/></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>Duration</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="duration"/></td>
+                </tr>
+                <tr t-if="reason">
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>Reason</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="reason"/></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>Status</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="status"/></td>
+                </tr>
+                <tr t-if="deadline">
+                    <td style="border: 1px solid #ddd; background: #f6f6f6;"><strong>Principal Must Approve By</strong></td>
+                    <td style="border: 1px solid #ddd;"><t t-out="deadline"/></td>
+                </tr>
+            </table>
+            <p t-if="portal_url" style="margin: 0 0 12px 0;">
+                You can follow your request here:
+                <a t-att-href="portal_url" style="color: #714B67;">My Leave Requests</a>
+            </p>
+        </div>
+    </template>
+</odoo>

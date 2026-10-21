@@ -74,6 +74,20 @@
                                 icon="fa-user"
                                 string="Contact Profile">
                         </button>
+                        <!-- Activities taken part in / prizes won -->
+                        <button name="action_view_student_activities" type="object" class="oe_stat_button"
+                                icon="fa-flag" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher">
+                            <field name="activity_count" widget="statinfo" string="Activities"/>
+                        </button>
+                        <button name="action_view_student_prizes" type="object" class="oe_stat_button"
+                                icon="fa-trophy" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher">
+                            <field name="prize_count" widget="statinfo" string="Prizes"/>
+                        </button>
+                        <!-- Total activity score (monthly breakdown opens on click) -->
+                        <button name="action_view_student_scores" type="object" class="oe_stat_button"
+                                icon="fa-star" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher">
+                            <field name="activity_total_score" widget="statinfo" string="Activity Score"/>
+                        </button>
                     </div>
                     <field name="photo" widget="image" class="oe_avatar" options="{'zoom': true, 'preview_image': 'photo'}"/>
                     <div class="oe_title">
@@ -180,6 +194,45 @@
                                     </list>
                                 </field>
                             </group>
+                        </page>
+<page string="Activities &amp; Prizes" name="activities" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher">
+                            <group>
+                                <group>
+                                    <field name="activity_count" string="Activities Taken Part In"/>
+                                    <field name="prize_count" string="Prizes Won"/>
+                                </group>
+                                <group>
+                                    <field name="activity_prize_summary" string="Prize Summary"/>
+                                    <field name="activity_month_score" string="This Month's Score"/>
+                                    <field name="activity_total_score" string="Total Activity Score"/>
+                                </group>
+                            </group>
+                            <separator string="Monthly Score"/>
+                            <field name="activity_score_ids" readonly="1">
+                                <list default_order="month desc">
+                                    <field name="month_label" string="Month"/>
+                                    <field name="activity_count" string="Activities"/>
+                                    <field name="prize_count" string="Prizes"/>
+                                    <field name="participation_points"/>
+                                    <field name="prize_points"/>
+                                    <field name="total_score" string="Month Score" sum="Total"/>
+                                </list>
+                            </field>
+                            <separator string="Activities"/>
+                            <field name="activity_registration_ids" readonly="1">
+                                <list decoration-success="school_position" default_order="school_activity_date desc">
+                                    <field name="event_id" string="Activity"/>
+                                    <field name="school_activity_type" string="Type"/>
+                                    <field name="school_activity_date" string="Date"/>
+                                    <field name="school_venue" optional="show"/>
+                                    <field name="school_house_id" string="Group" optional="hide"/>
+                                    <field name="school_position" string="Prize"
+                                           widget="badge" decoration-warning="school_position == 'first'"
+                                           decoration-info="school_position == 'second'"
+                                           decoration-muted="school_position == 'third'"/>
+                                    <field name="school_score" string="Score" sum="Total"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Medical &amp; Notes" name="medical_notes">
                             <group>

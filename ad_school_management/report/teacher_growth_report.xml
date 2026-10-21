@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_teacher_growth_portfolio" model="ir.actions.report">
+        <field name="name">Teacher Growth Portfolio</field>
+        <field name="model">school.teacher</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ad_school_management.report_teacher_growth_portfolio</field>
+        <field name="report_file">ad_school_management.report_teacher_growth_portfolio</field>
+        <field name="print_report_name">'Growth Portfolio - %s' % object.name</field>
+        <field name="binding_model_id" ref="model_school_teacher"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_teacher_growth_portfolio">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="teacher">
+                <t t-call="web.external_layout">
+                    <t t-set="vals" t-value="teacher._growth_report_values()"/>
+                    <t t-set="year" t-value="vals['year']"/>
+                    <t t-set="p" t-value="vals['p']"/>
+                    <t t-set="acts" t-value="vals['acts']"/>
+                    <t t-set="reflections" t-value="vals['reflections']"/>
+                    <div class="page">
+                        <h2>Teacher Growth Portfolio</h2>
+                        <p>
+                            <b t-out="teacher.name"/><t t-if="teacher.job_title"> – <t t-out="teacher.job_title"/></t><br/>
+                            Academic Year: <b t-out="year.name or '-'"/>
+                        </p>
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <td>CPD hours</td><td><b t-out="p['hours']"/> of <t t-out="p['target']"/> hours (<t t-out="p['percent']"/>%)</td>
+                                <td>Submitted activities</td><td><b t-out="p['activity_count']"/></td>
+                            </tr>
+                            <tr>
+                                <td>Annual goals met</td><td><b t-out="p['goals_met']"/> of <t t-out="len(p['goals'])"/></td>
+                                <td>Self-reflections</td><td><b t-out="p['reflection_count']"/> (<t t-out="p['shared_reflections']"/> shared)</td>
+                            </tr>
+                        </table>
+
+                        <h4 class="mt-4">Summary by Activity Type</h4>
+                        <table class="table table-sm">
+                            <thead><tr><th>Activity Type</th><th class="text-end">Count</th><th class="text-end">Hours</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="p['by_type']" t-as="t">
+                                    <td t-out="t['name']"/><td class="text-end" t-out="t['count']"/><td class="text-end" t-out="t['hours']"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4 class="mt-4">Submitted Activities</h4>
+                        <table class="table table-sm">
+                            <thead><tr><th>Date</th><th>Type</th><th>Title</th><th>Provider</th><th class="text-end">Hours</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="acts" t-as="a">
+                                    <td><span t-field="a.date_start"/></td><td t-out="a.type_id.name"/>
+                                    <td><t t-out="a.name"/><div t-if="a.impact" class="small text-muted">Impact: <t t-out="a.impact"/></div></td>
+                                    <td t-out="a.provider or ''"/><td class="text-end" t-out="a.hours or ''"/>
+                                </tr>
+                                <tr t-if="not acts"><td colspan="5" class="text-muted">No submitted activities.</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4 class="mt-4">Annual Professional-Development Goals</h4>
+                        <table class="table table-sm">
+                            <thead><tr><th>Goal</th><th class="text-end">Progress</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="p['goals']" t-as="g">
+                                    <td t-out="g['name']"/><td class="text-end"><t t-out="g['progress']"/>%</td><td t-out="g['state']"/>
+                                </tr>
+                                <tr t-if="not p['goals']"><td colspan="3" class="text-muted">No goals set.</td></tr>
+                            </tbody>
+                        </table>
+
+                        <t t-if="reflections">
+                            <h4 class="mt-4">Shared Self-Reflections</h4>
+                            <div t-foreach="reflections" t-as="r" class="mb-3" style="page-break-inside: avoid;">
+                                <b t-out="r.name"/> <span class="text-muted">(<span t-field="r.date"/>)</span>
+                                <div t-if="r.went_well"><i>Went well:</i> <t t-out="r.went_well"/></div>
+                                <div t-if="r.challenges"><i>Challenges:</i> <t t-out="r.challenges"/></div>
+                                <div t-if="r.learnings"><i>Learned:</i> <t t-out="r.learnings"/></div>
+                                <div t-if="r.next_steps"><i>Next steps:</i> <t t-out="r.next_steps"/></div>
+                            </div>
+                        </t>
+                        <p class="text-muted small mt-4">Only submitted activities and reflections the teacher chose to share are included.</p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

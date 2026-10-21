@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================================================================
+         EARLY WARNING ALERTS
+         =================================================================== -->
+    <record id="view_school_early_warning_list" model="ir.ui.view">
+        <field name="name">school.early.warning.list</field>
+        <field name="model">school.early.warning</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state in ('closed', 'dismissed')" decoration-bf="state == 'to_review'">
+                <header>
+                    <button name="action_run_scan" type="object" string="Run Early Warning Scan" icon="fa-refresh"
+                            display="always" class="btn-secondary"
+                            groups="ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+                </header>
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="section_id" optional="hide"/>
+                <field name="category_summary"/>
+                <field name="suggested_level" widget="badge" string="Suggested (for review)"
+                       decoration-warning="suggested_level == 'amber'" decoration-danger="suggested_level == 'red'"/>
+                <field name="confirmed_level" widget="badge" string="Confirmed"
+                       decoration-success="confirmed_level == 'green'" decoration-warning="confirmed_level == 'amber'"
+                       decoration-danger="confirmed_level == 'red'"/>
+                <field name="reviewer_id" optional="show"/>
+                <field name="follow_up_date" optional="show"/>
+                <field name="date" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state == 'to_review'" decoration-warning="state == 'in_progress'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_early_warning_form" model="ir.ui.view">
+        <field name="name">school.early.warning.form</field>
+        <field name="model">school.early.warning</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm_review" type="object" string="Confirm Review" class="oe_highlight"
+                            invisible="state != 'to_review'"/>
+                    <button name="action_close" type="object" string="Close (Resolved)" class="oe_highlight"
+                            invisible="state != 'in_progress'"/>
+                    <button name="action_dismiss" type="object" string="Dismiss (No Concern)"
+                            invisible="state not in ('to_review', 'in_progress')"/>
+                    <button name="action_reopen" type="object" string="Reopen" invisible="state not in ('closed', 'dismissed')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="to_review,in_progress,closed"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-info mb-3" role="alert">
+                        <i class="fa fa-user-md me-1" title="Human review"/>
+                        <b>Signals for review, not a label.</b> The system only points out patterns in marks,
+                        attendance, participation and behaviour. A teacher or counsellor reviews them and decides
+                        the level; the student's status changes only after that review.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                        <h3><field name="student_id" readonly="1"/></h3>
+                    </div>
+                    <group>
+                        <group string="System Suggestion (for review)">
+                            <field name="suggested_level" widget="badge"
+                                   decoration-warning="suggested_level == 'amber'" decoration-danger="suggested_level == 'red'"/>
+                            <field name="category_summary"/>
+                            <field name="score"/>
+                            <field name="date"/>
+                            <field name="last_scan_date"/>
+                        </group>
+                        <group string="Student">
+                            <field name="class_id"/>
+                            <field name="section_id"/>
+                            <field name="reviewer_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <separator string="Signals and Evidence"/>
+                    <field name="signal_ids">
+                        <list>
+                            <field name="category"/>
+                            <field name="indicator"/>
+                            <field name="detail"/>
+                            <field name="weight" optional="hide"/>
+                        </list>
+                    </field>
+                    <separator string="Teacher / Counsellor Review"/>
+                    <group>
+                        <group>
+                            <field name="confirmed_level" widget="radio"
+                                   readonly="state in ('closed', 'dismissed')" required="state == 'in_progress'"/>
+                            <field name="intervention_ids" widget="many2many_tags" options="{'no_create': True}"
+                                   readonly="state in ('closed', 'dismissed')"/>
+                            <field name="follow_up_date" readonly="state in ('closed', 'dismissed')"/>
+                        </group>
+                        <group>
+                            <field name="reviewed_by" invisible="not reviewed_by"/>
+                            <field name="review_date" invisible="not review_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="review_note" placeholder="What did you check (talked to the student, the subject teachers, the parents)? What do you conclude?"
+                               readonly="state in ('closed', 'dismissed')"/>
+                        <field name="action_plan" placeholder="Who does what, by when?"
+                               readonly="state in ('closed', 'dismissed')"/>
+                        <field name="closing_note" invisible="state == 'to_review'" readonly="state in ('closed', 'dismissed')"
+                               placeholder="How did it go? (needed to close)"/>
+                        <field name="dismiss_reason" invisible="state == 'closed'" readonly="state == 'dismissed'"
+                               placeholder="Only if there is no concern, e.g. absences explained by medical leave"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_early_warning_search" model="ir.ui.view">
+        <field name="name">school.early.warning.search</field>
+        <field name="model">school.early.warning</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="reviewer_id"/>
+                <filter string="To Review" name="to_review" domain="[('state', '=', 'to_review')]"/>
+                <filter string="Intervention in Progress" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter string="Open" name="open" domain="[('state', 'in', ('to_review', 'in_progress'))]"/>
+                <separator/>
+                <filter string="Suggested: Immediate Intervention" name="suggested_red" domain="[('suggested_level', '=', 'red')]"/>
+                <filter string="Confirmed: Immediate Intervention" name="confirmed_red" domain="[('confirmed_level', '=', 'red')]"/>
+                <filter string="Confirmed: Requires Attention" name="confirmed_amber" domain="[('confirmed_level', '=', 'amber')]"/>
+                <separator/>
+                <filter string="Assigned to Me" name="mine" domain="[('reviewer_id', '=', uid)]"/>
+                <filter string="Follow-up Due" name="follow_up_due" domain="[('state', '=', 'in_progress'), ('follow_up_date', '&lt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Suggested Level" name="group_suggested" context="{'group_by': 'suggested_level'}"/>
+                    <filter string="Confirmed Level" name="group_confirmed" context="{'group_by': 'confirmed_level'}"/>
+                    <filter string="Reviewer" name="group_reviewer" context="{'group_by': 'reviewer_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_early_warning" model="ir.actions.act_window">
+        <field name="name">Early Warnings</field>
+        <field name="res_model">school.early.warning</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_early_warning_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No early warnings to review</p>
+            <p>The system checks marks, attendance, participation, library use and behaviour every day and
+               raises signals for a teacher / counsellor to review. It never labels a child by itself.</p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         BEHAVIOUR INCIDENTS
+         =================================================================== -->
+    <record id="view_school_student_incident_list" model="ir.ui.view">
+        <field name="name">school.student.incident.list</field>
+        <field name="model">school.student.incident</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="severity == 'serious'">
+                <field name="date"/>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <field name="category"/>
+                <field name="severity" widget="badge" decoration-warning="severity == 'moderate'" decoration-danger="severity == 'serious'"/>
+                <field name="description"/>
+                <field name="reported_by" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_student_incident_form" model="ir.ui.view">
+        <field name="name">school.student.incident.form</field>
+        <field name="model">school.student.incident</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id" options="{'no_create': True}"/>
+                            <field name="class_id"/>
+                            <field name="section_id"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="category"/>
+                            <field name="severity" widget="radio" options="{'horizontal': true}"/>
+                            <field name="reported_by"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description" placeholder="Facts only: what happened, where, who was involved."/>
+                        <field name="action_taken"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_student_incident_search" model="ir.ui.view">
+        <field name="name">school.student.incident.search</field>
+        <field name="model">school.student.incident</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="class_id"/>
+                <filter string="Serious" name="serious" domain="[('severity', '=', 'serious')]"/>
+                <filter string="Disciplinary" name="discipline" domain="[('category', 'in', ('discipline', 'bullying'))]"/>
+                <filter string="Behaviour / Wellbeing" name="wellbeing" domain="[('category', 'in', ('behaviour_change', 'wellbeing'))]"/>
+                <filter string="Date" name="filter_date" date="date"/>
+                <group>
+                    <filter string="Student" name="group_student" context="{'group_by': 'student_id'}"/>
+                    <filter string="Class" name="group_class" context="{'group_by': 'class_id'}"/>
+                    <filter string="Type" name="group_category" context="{'group_by': 'category'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_student_incident" model="ir.actions.act_window">
+        <field name="name">Behaviour Incidents</field>
+        <field name="res_model">school.student.incident</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_school_student_incident_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record a behaviour incident</p>
+            <p>Disciplinary incidents, observed behaviour changes and wellbeing concerns feed the Behavioural
+               Risk signals of the early warning system.</p>
+        </field>
+    </record>
+
+    <!-- Interventions (configuration) -->
+    <record id="view_school_ews_intervention_list" model="ir.ui.view">
+        <field name="name">school.early.warning.intervention.list</field>
+        <field name="model">school.early.warning.intervention</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_school_ews_intervention" model="ir.actions.act_window">
+        <field name="name">Early Warning Interventions</field>
+        <field name="res_model">school.early.warning.intervention</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- ===================================================================
+         STUDENT FORM: confirmed status, counts, "Check Now"
+         =================================================================== -->
+    <record id="view_student_form_inherit_early_warning" model="ir.ui.view">
+        <field name="name">school.student.form.inherit.early.warning</field>
+        <field name="model">school.student</field>
+        <field name="inherit_id" ref="ad_school_management.view_school_student_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button class="oe_stat_button" type="object" name="action_view_early_warnings" icon="fa-heartbeat"
+                        groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin">
+                    <field string="Early Warnings" name="early_warning_count" widget="statinfo"/>
+                </button>
+                <button class="oe_stat_button" type="object" name="action_view_incidents" icon="fa-exclamation-triangle"
+                        groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin">
+                    <field string="Incidents" name="incident_count" widget="statinfo"/>
+                </button>
+            </div>
+            <xpath expr="//field[@name='gpa']" position="after">
+                <field name="wellbeing_status" widget="badge"
+                       decoration-success="wellbeing_status == 'green'" decoration-warning="wellbeing_status == 'amber'"
+                       decoration-danger="wellbeing_status == 'red'"
+                       groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         MENUS: Students & Faculty > Early Warnings / Behaviour Incidents
+         =================================================================== -->
+    <menuitem id="menu_school_early_warning" name="Early Warnings" parent="ad_school_management.menu_school_personnel"
+              action="action_school_early_warning" sequence="70"
+              groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+    <menuitem id="menu_school_student_incident" name="Behaviour Incidents" parent="ad_school_management.menu_school_personnel"
+              action="action_school_student_incident" sequence="72"
+              groups="ad_school_management.group_school_teacher,ad_school_management.group_school_counsellor,ad_school_management.group_school_principal,ad_school_management.group_school_admin"/>
+    <menuitem id="menu_school_ews_intervention" name="Early Warning Interventions" parent="ad_school_management.menu_school_configuration"
+              action="action_school_ews_intervention" sequence="85"/>
+</odoo>

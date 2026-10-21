@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_school_alumni_guidance_list" model="ir.ui.view">
+        <field name="name">school.alumni.guidance.list</field>
+        <field name="model">school.alumni.guidance</field>
+        <field name="arch" type="xml">
+            <list string="Career Guidance" decoration-muted="state == 'cancelled'" decoration-success="state == 'done'">
+                <field name="date_start"/>
+                <field name="name"/>
+                <field name="topic"/>
+                <field name="mode"/>
+                <field name="alumni_ids" widget="many2many_tags"/>
+                <field name="class_ids" widget="many2many_tags" optional="show"/>
+                <field name="student_count"/>
+                <field name="rating" widget="priority" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state == 'planned'"
+                       decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_guidance_form" model="ir.ui.view">
+        <field name="name">school.alumni.guidance.form</field>
+        <field name="model">school.alumni.guidance</field>
+        <field name="arch" type="xml">
+            <form string="Career Guidance">
+                <header>
+                    <button name="action_done" type="object" string="Mark as Done" class="oe_highlight"
+                            invisible="state != 'planned'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'planned'"/>
+                    <button name="action_reset" type="object" string="Reset to Planned" invisible="state == 'planned'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="planned,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Careers in Engineering"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="topic"/>
+                            <field name="mode"/>
+                            <field name="date_start"/>
+                            <field name="duration" widget="float_time"/>
+                            <field name="venue"/>
+                        </group>
+                        <group>
+                            <field name="alumni_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="organizer_id"/>
+                            <field name="class_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="student_count"/>
+                            <field name="rating" widget="priority" invisible="state != 'done'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Students" name="students">
+                            <button name="action_load_class_students" type="object" string="Add Students of the Classes"
+                                    class="btn-secondary mb-2" icon="fa-users" invisible="not class_ids or state != 'planned'"/>
+                            <field name="student_ids" options="{'no_create': True}">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="admission_no"/>
+                                    <field name="class_id"/>
+                                    <field name="section_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Agenda / Notes" name="notes">
+                            <field name="description"/>
+                        </page>
+                        <page string="Feedback" name="feedback">
+                            <field name="feedback" placeholder="What did the students learn? Follow-ups?"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_guidance_calendar" model="ir.ui.view">
+        <field name="name">school.alumni.guidance.calendar</field>
+        <field name="model">school.alumni.guidance</field>
+        <field name="arch" type="xml">
+            <calendar string="Career Guidance" date_start="date_start" color="topic" mode="month">
+                <field name="name"/>
+                <field name="alumni_ids" widget="many2many_tags"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_school_alumni_guidance_search" model="ir.ui.view">
+        <field name="name">school.alumni.guidance.search</field>
+        <field name="model">school.alumni.guidance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="alumni_ids"/>
+                <field name="class_ids"/>
+                <filter string="Planned" name="planned" domain="[('state', '=', 'planned')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter string="Topic" name="group_topic" context="{'group_by': 'topic'}"/>
+                    <filter string="Mode" name="group_mode" context="{'group_by': 'mode'}"/>
+                    <filter string="Month" name="group_month" context="{'group_by': 'date_start:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_school_alumni_guidance" model="ir.actions.act_window">
+        <field name="name">Career Guidance</field>
+        <field name="res_model">school.alumni.guidance</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="search_view_id" ref="view_school_alumni_guidance_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No career guidance sessions yet.</p>
+            <p>Plan a session, add the alumni counsellors and the students who attend.</p>
+        </field>
+    </record>
+</odoo>
