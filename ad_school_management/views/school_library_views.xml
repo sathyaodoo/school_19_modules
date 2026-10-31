@@ -954,20 +954,31 @@
     </record>
 
     <!-- ===================================================================
-         MENUS: Facilities > Library
+         MENUS: Library app (own entry in the main app switcher)
          =================================================================== -->
-    <menuitem id="menu_school_library_sub" name="Library" parent="ad_school_management.menu_school_facilities" sequence="10"/>
-    <menuitem id="menu_school_book" name="Books Catalog" parent="menu_school_library_sub" action="action_school_book" sequence="10"/>
-    <menuitem id="menu_school_book_copy" name="Accession Register" parent="menu_school_library_sub" action="action_school_book_copy" sequence="12"/>
-    <menuitem id="menu_school_digital_resources" name="Digital Resources" parent="menu_school_library_sub" action="action_school_digital_resources" sequence="14"/>
-    <menuitem id="menu_school_book_issue" name="Book Issues" parent="menu_school_library_sub" action="action_school_book_issue" sequence="20"/>
-    <menuitem id="menu_school_book_reservation" name="Reservations" parent="menu_school_library_sub" action="action_school_book_reservation" sequence="22"/>
-    <menuitem id="menu_school_library_membership" name="Memberships" parent="menu_school_library_sub" action="action_school_library_membership" sequence="24"/>
-    <menuitem id="menu_school_library_stock_verification" name="Stock Verification" parent="menu_school_library_sub" action="action_school_library_stock_verification" sequence="30"/>
-    <menuitem id="menu_school_reading_challenge" name="Reading Challenges" parent="menu_school_library_sub" action="action_school_reading_challenge" sequence="40"/>
-    <menuitem id="menu_school_book_recommendation" name="Reading Recommendations" parent="menu_school_library_sub" action="action_school_book_recommendation" sequence="42"/>
-    <menuitem id="menu_school_library_analysis" name="Library Analysis" parent="menu_school_library_sub" action="action_school_library_analysis" sequence="50"/>
-    <menuitem id="menu_school_book_acquisition" name="Acquisition History" parent="menu_school_library_sub" action="action_school_book_acquisition" sequence="52"/>
+    <menuitem id="menu_school_library_sub" name="Library" sequence="11"
+              action="action_school_book"/>
+
+    <menuitem id="menu_school_library_catalog" name="Catalog" parent="menu_school_library_sub" sequence="10"/>
+    <menuitem id="menu_school_book" name="Books Catalog" parent="menu_school_library_catalog" action="action_school_book" sequence="10"/>
+    <menuitem id="menu_school_book_copy" name="Accession Register" parent="menu_school_library_catalog" action="action_school_book_copy" sequence="12"/>
+    <menuitem id="menu_school_digital_resources" name="Digital Resources" parent="menu_school_library_catalog" action="action_school_digital_resources" sequence="14"/>
+
+    <menuitem id="menu_school_library_circulation" name="Circulation" parent="menu_school_library_sub" sequence="20"/>
+    <menuitem id="menu_school_book_issue" name="Book Issues" parent="menu_school_library_circulation" action="action_school_book_issue" sequence="20"/>
+    <menuitem id="menu_school_book_reservation" name="Reservations" parent="menu_school_library_circulation" action="action_school_book_reservation" sequence="22"/>
+    <menuitem id="menu_school_library_membership" name="Memberships" parent="menu_school_library_circulation" action="action_school_library_membership" sequence="24"/>
+
+    <menuitem id="menu_school_library_inventory" name="Inventory" parent="menu_school_library_sub" sequence="30"/>
+    <menuitem id="menu_school_library_stock_verification" name="Stock Verification" parent="menu_school_library_inventory" action="action_school_library_stock_verification" sequence="30"/>
+
+    <menuitem id="menu_school_library_reading" name="Reading" parent="menu_school_library_sub" sequence="40"/>
+    <menuitem id="menu_school_reading_challenge" name="Reading Challenges" parent="menu_school_library_reading" action="action_school_reading_challenge" sequence="40"/>
+    <menuitem id="menu_school_book_recommendation" name="Reading Recommendations" parent="menu_school_library_reading" action="action_school_book_recommendation" sequence="42"/>
+
+    <menuitem id="menu_school_library_reporting" name="Reporting" parent="menu_school_library_sub" sequence="50"/>
+    <menuitem id="menu_school_library_analysis" name="Library Analysis" parent="menu_school_library_reporting" action="action_school_library_analysis" sequence="50"/>
+    <menuitem id="menu_school_book_acquisition" name="Acquisition History" parent="menu_school_library_reporting" action="action_school_book_acquisition" sequence="52"/>
 
     <menuitem id="menu_school_library_rack" name="Library Racks / Shelves" parent="ad_school_management.menu_school_configuration"
               action="action_school_library_rack" sequence="80"/>

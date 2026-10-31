@@ -309,8 +309,9 @@
         <field name="domain">[('repeat_fault', '=', True)]</field>
     </record>
 
-    <menuitem id="menu_school_maintenance_root" name="Maintenance"
-              parent="menu_school_facilities" sequence="30"/>
+    <!-- Maintenance app (own entry in the main app switcher) -->
+    <menuitem id="menu_school_maintenance_root" name="Maintenance" sequence="14"
+              action="action_school_maintenance_overdue"/>
     <menuitem id="menu_school_maintenance_overdue" name="Overdue Tickets"
               parent="menu_school_maintenance_root" action="action_school_maintenance_overdue" sequence="10"/>
     <menuitem id="menu_school_maintenance_repeat" name="Repeated Faults"

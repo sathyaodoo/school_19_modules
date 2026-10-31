@@ -6,7 +6,9 @@
            Purchase       -> buy ingredients (RFQs / orders / vendor bills)
            Manufacturing  -> recipes (Bills of Materials) and cooking (MOs)
            Inventory      -> stock of ingredients and dishes -->
-    <menuitem id="menu_school_canteen_sub" name="Canteen" parent="ad_school_management.menu_school_facilities" sequence="30"/>
+    <!-- Canteen app (own entry in the main app switcher) -->
+    <menuitem id="menu_school_canteen_sub" name="Canteen" sequence="15"
+              action="action_school_canteen_meal"/>
 
     <menuitem id="menu_school_canteen_meal" name="Meal Master"
               parent="menu_school_canteen_sub" action="action_school_canteen_meal" sequence="10"/>
