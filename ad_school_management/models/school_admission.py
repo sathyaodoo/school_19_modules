@@ -65,6 +65,93 @@ class SchoolAdmissionRemark(models.Model):
     user_id = fields.Many2one('res.users', string='By', default=lambda self: self.env.user, readonly=True)
     date = fields.Datetime(string='Date', default=fields.Datetime.now, readonly=True)
 
+class SchoolAdmissionDocument(models.Model):
+    _name = 'school.admission.document'
+    _description = 'School Admission Document'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+
+    admission_id = fields.Many2one(
+        'school.admission',
+        string='Admission',
+        required=True,
+        ondelete='cascade'
+    )
+
+    document_name = fields.Char(
+        string='Document Name',
+        required=True,
+        tracking=True
+    )
+
+    document_file = fields.Binary(
+        string='Upload File',
+        attachment=True
+    )
+
+    document_filename = fields.Char(
+        string='Filename',
+        tracking=True
+    )
+
+    def action_view_document(self):
+        self.ensure_one()
+
+        if not self.document_file:
+            raise ValidationError(
+                _("No document has been uploaded.")
+            )
+
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/web/content?model=school.admission.document'
+                '&id=%s&field=document_file&filename_field=document_filename'
+                '&download=false' % self.id,
+            'target': 'new',
+        }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        documents = super().create(vals_list)
+
+        for doc in documents:
+            if doc.admission_id:
+                doc.admission_id.message_post(
+                    body=_("Document Uploaded: %s") % doc.document_name
+                )
+
+        return documents
+
+    def write(self, vals):
+        result = super().write(vals)
+
+        if any(key in vals for key in [
+            'document_name',
+            'document_file',
+            'document_filename'
+        ]):
+            for doc in self:
+                if doc.admission_id:
+                    doc.admission_id.message_post(
+                        body=_("Document Updated: %s") % doc.document_name
+                    )
+
+        return result
+
+    def unlink(self):
+        logs = [
+            (doc.admission_id, doc.document_name)
+            for doc in self
+        ]
+
+        result = super().unlink()
+
+        for admission, name in logs:
+            if admission.exists():
+                admission.message_post(
+                    body=_("Document Deleted: %s") % name
+                )
+
+        return result
 
 class SchoolAdmission(models.Model):
     _name = 'school.admission'
@@ -114,6 +201,12 @@ class SchoolAdmission(models.Model):
         ('O+', 'O+'), ('O-', 'O-'),
         ('AB+', 'AB+'), ('AB-', 'AB-')
     ], string='Blood Group', tracking=True)
+    blood_group_id = fields.Many2one(
+    'school.blood.group',
+    string='Blood Group',
+    tracking=True,
+    ondelete='restrict'
+)
     nationality_id = fields.Many2one('res.country', string='Nationality')
     religion = fields.Char(string='Religion')
     caste = fields.Char(string='Caste')
@@ -186,6 +279,7 @@ class SchoolAdmission(models.Model):
     kanban_state_color = fields.Integer(compute='_compute_kanban_color')
 
     student_id = fields.Many2one('school.student', string='Student Profile', readonly=True)
+    document_ids = fields.One2many('school.admission.document','admission_id',string='Documents')
     remark_ids = fields.One2many('school.admission.remark', 'admission_id', string='Stage Remarks', readonly=True)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.company)
 
@@ -208,6 +302,14 @@ class SchoolAdmission(models.Model):
                 raise ValidationError(_("Please enter the Referrer Name for a referral admission."))
             if source_type == 'anganwadi' and not rec.anganwadi_visit_date:
                 raise ValidationError(_("Please enter the Anganwadi Visit Date."))
+                
+    @api.onchange('state_id')
+    def _onchange_state_id(self):
+        for rec in self:
+            if rec.state_id:
+                rec.country_id = rec.state_id.country_id
+            else:
+                rec.country_id = False
 
     @api.onchange('referral_student_id')
     def _onchange_referral_student(self):
@@ -397,6 +499,7 @@ class SchoolAdmission(models.Model):
                 'date_of_birth': record.date_of_birth,
                 'gender': record.gender,
                 'blood_group': record.blood_group,
+                'blood_group_id': record.blood_group_id.id or False,
                 'nationality_id': record.nationality_id.id,
                 'religion': record.religion,
                 'caste': record.caste,

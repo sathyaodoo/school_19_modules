@@ -206,7 +206,7 @@
                     <div class="tab-pane fade" id="timetable" role="tabpanel" aria-labelledby="timetable-tab">
                         <div class="card shadow-sm border-0 p-4">
                             <h5 class="text-secondary mb-3">Class Timetable Schedule</h5>
-                            <div class="table-responsive" t-if="timetable and timetable.timetable_line_ids">
+                            <div class="table-responsive" t-if="timetable and timetable.timetable_line_ids.filtered(lambda l: l.subject_id)">
                                 <table class="table table-bordered">
                                     <thead class="table-light text-center">
                                         <tr>
@@ -219,7 +219,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <t t-foreach="timetable.timetable_line_ids" t-as="line">
+                                        <t t-foreach="timetable.timetable_line_ids.filtered(lambda l: l.subject_id)" t-as="line">
                                             <tr>
                                                 <td><strong class="text-capitalize"><t t-out="line.day_of_week"/></strong></td>
                                                 <td><t t-out="line.subject_id.name"/></td>
@@ -379,7 +379,7 @@
                                 <div class="card mb-3">
                                     <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
                                         <strong>
-                                            <t t-out="behaviour_period_labels.get(rev.period)"/>
+                                            <t t-out="rev.date_from" t-options="{'widget': 'date'}"/> to <t t-out="rev.date_to" t-options="{'widget': 'date'}"/>
                                             - <t t-out="rev.academic_year_id.name"/>
                                         </strong>
                                         <span class="text-muted small">

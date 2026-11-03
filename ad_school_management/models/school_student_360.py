@@ -32,8 +32,6 @@ RECORD_KINDS = [
 AREAS = [('sports', 'Sports'), ('arts', 'Arts'), ('cultural', 'Cultural'), ('academic', 'Academic'),
          ('technology', 'Technology'), ('social', 'Social'), ('other', 'Other')]
 BEHAVIOUR_RATINGS = [('4', 'Excellent'), ('3', 'Good'), ('2', 'Satisfactory'), ('1', 'Needs Improvement')]
-REVIEW_PERIODS = [('q1', 'Quarter 1 (Q1)'), ('q2', 'Quarter 2 (Q2)'), ('q3', 'Quarter 3 (Q3)'),
-                  ('q4', 'Quarter 4 (Q4)'), ('h1', 'First Half-Yearly (H1)'), ('h2', 'Second Half-Yearly (H2)')]
 RECORD_LEVELS = [('class', 'Class'), ('school', 'School'), ('inter_school', 'Inter-School'), ('district', 'District'),
                  ('state', 'State'), ('national', 'National'), ('international', 'International')]
 
@@ -110,7 +108,7 @@ class SchoolStudentBehaviour(models.Model):
     (school.student.behaviour.feedback)."""
     _name = 'school.student.behaviour'
     _description = 'Student Behaviour & Participation Review'
-    _order = 'academic_year_id desc, period, id desc'
+    _order = 'academic_year_id desc, date_from desc, id desc'
 
     student_ids = fields.Many2many(
         'school.student', 'school_student_behaviour_student_rel', 'behaviour_id', 'student_id',
@@ -118,12 +116,13 @@ class SchoolStudentBehaviour(models.Model):
         help='All the students this review applies to. They can belong to different classes.')
     class_ids = fields.Many2many(
         'school.class', 'school_student_behaviour_class_rel', 'behaviour_id', 'class_id',
-        string='Classes', compute='_compute_class_ids', store=True,
-        help="Filled in automatically from the students' classes.")
-    period = fields.Selection(REVIEW_PERIODS, string='Review Period', required=True, default='q1',
-                              help='Quarterly (Q1-Q4) or half-yearly (H1-H2) review.')
-    period_type = fields.Selection([('quarterly', 'Quarterly'), ('half_yearly', 'Half-Yearly')],
-                                   string='Frequency', compute='_compute_period_type', store=True)
+        string='Classes', compute='_compute_class_ids', store=True, readonly=False,
+        help="Pick a class to list only its students. Classes of the selected "
+             "students are added automatically.")
+    date_from = fields.Date(string='From Date', required=True, default=fields.Date.context_today,
+                            help='First day of the review period.')
+    date_to = fields.Date(string='To Date', required=True, default=fields.Date.context_today,
+                          help='Last day of the review period.')
     date = fields.Date(string='Reviewed On', required=True, default=fields.Date.context_today)
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year',
                                        compute='_compute_academic_year', store=True, index=True)
@@ -168,13 +167,9 @@ class SchoolStudentBehaviour(models.Model):
 
     @api.depends('student_ids.class_id')
     def _compute_class_ids(self):
+        # editable: keep the classes the user picked, add those of the students
         for rec in self:
-            rec.class_ids = rec.student_ids.class_id
-
-    @api.depends('period')
-    def _compute_period_type(self):
-        for rec in self:
-            rec.period_type = 'half_yearly' if rec.period in ('h1', 'h2') else 'quarterly'
+            rec.class_ids = rec.class_ids | rec.student_ids.class_id
 
     @api.depends('date')
     def _compute_academic_year(self):
@@ -187,28 +182,34 @@ class SchoolStudentBehaviour(models.Model):
             vals = [int(v) for v in (rec.behaviour, rec.discipline, rec.participation) if v]
             rec.average_rating = sum(vals) / len(vals) if vals else 0.0
 
-    @api.constrains('student_ids', 'period', 'academic_year_id')
-    def _check_one_review_per_period(self):
-        """A student can have only one review per period in an academic year
-        (replaces the old SQL unique(student_id, academic_year_id, period))."""
+    @api.constrains('date_from', 'date_to')
+    def _check_dates(self):
         for rec in self:
-            if not rec.student_ids:
+            if rec.date_from and rec.date_to and rec.date_from > rec.date_to:
+                raise ValidationError(_("The From Date must be before (or equal to) the To Date."))
+
+    @api.constrains('student_ids', 'date_from', 'date_to')
+    def _check_one_review_per_period(self):
+        """A student cannot have two reviews whose date ranges overlap."""
+        for rec in self:
+            if not rec.student_ids or not rec.date_from or not rec.date_to:
                 continue
-            clash = self.search([('id', '!=', rec.id), ('period', '=', rec.period),
-                                 ('academic_year_id', '=', rec.academic_year_id.id),
+            clash = self.search([('id', '!=', rec.id),
+                                 ('date_from', '<=', rec.date_to),
+                                 ('date_to', '>=', rec.date_from),
                                  ('student_ids', 'in', rec.student_ids.ids)], limit=1)
             if clash:
                 names = ', '.join((clash.student_ids & rec.student_ids).mapped('name'))
                 raise ValidationError(_(
-                    "Already reviewed for this period in this academic year: %s.", names))
+                    "Already reviewed for an overlapping period: %s.", names))
 
-    @api.depends('student_ids', 'period', 'academic_year_id')
+    @api.depends('student_ids', 'date_from', 'date_to', 'academic_year_id')
     def _compute_display_name(self):
-        labels = dict(REVIEW_PERIODS)
         for rec in self:
             names = rec.student_ids.mapped('name')
             who = ', '.join(names[:3]) + (_(" +%s more", len(names) - 3) if len(names) > 3 else '')
-            rec.display_name = ' - '.join(filter(None, [who, labels.get(rec.period), rec.academic_year_id.name]))
+            period = ' to '.join(d.strftime('%d %b %Y') for d in (rec.date_from, rec.date_to) if d)
+            rec.display_name = ' - '.join(filter(None, [who, period, rec.academic_year_id.name]))
 
     @api.model
     def _portal_save_feedback(self, review, student, partner, kind, text):
@@ -318,8 +319,112 @@ class SchoolClubMembership(models.Model):
         for rec in self:
             if rec.date_end and rec.date_end < rec.date_start:
                 raise ValidationError(_("'Left On' cannot be before 'Joined On'."))
+class SchoolCompetition(models.Model):
+    _name = 'school.competition'
+    _description = 'Competition Master'
+    _order = 'name'
 
+    name = fields.Char(
+        string='Competition Name',
+        required=True
+    )
+    active = fields.Boolean(default=True)
 
+    _name_unique = models.Constraint(
+        'unique(name)',
+        'Competition already exists!'
+    )
+
+class SchoolStudentCompetitionDetail(models.Model):
+    _name = 'school.student.competition.detail'
+    _description = 'Student Competition Details'
+    _order = 'id'
+
+    student_record_id = fields.Many2one(
+        'school.student.record',
+        string='Development Record',
+        required=True,
+        ondelete='cascade',
+    )
+
+    competition_id = fields.Many2one(
+        'school.competition',
+        string='Competition',
+        required=True,
+        ondelete='restrict',
+    )
+    
+    class_id = fields.Many2one('school.class', string='Class')
+    student_id = fields.Many2one('school.student', string='Student Name')
+
+    result = fields.Char(string='Result / Position')
+    award = fields.Char(string='Award')
+    competition_date = fields.Date(string='Competition Date')
+    remarks = fields.Text(string='Remarks')
+    certificate = fields.Binary(
+        string='Certificate',
+        attachment=True,
+    )
+    certificate_filename = fields.Char(string='Certificate Filename')
+
+    _competition_unique = models.Constraint(
+        'unique(student_record_id, competition_id)',
+        'This competition already has a detail page for this record!',
+    )
+
+class SchoolStudentCompetitionParticipant(models.Model):
+    _name = 'school.student.competition.participant'
+    _description = 'Competition Participant'
+    _order = 'competition_id, id'
+
+    record_id = fields.Many2one(
+        'school.student.record',
+        string='Development Record',
+        required=True,
+        ondelete='cascade',
+    )
+    competition_id = fields.Many2one(
+        'school.competition',
+        string='Competition',
+        required=True,
+        ondelete='restrict',
+    )
+    class_id = fields.Many2one(
+        'school.class',
+        string='Class',
+        ondelete='restrict',
+    )
+    student_id = fields.Many2one(
+        'school.student',
+        string='Student Name',
+        domain="[('class_id', '=', class_id)]",
+        ondelete='restrict',
+    )
+    result = fields.Selection(
+    [
+        ('first', 'First'),
+        ('second', 'Second'),
+        ('third', 'Third'),
+    ],
+    string='Position',
+)
+    certificate = fields.Binary(string='Certificate', attachment=True)
+    certificate_filename = fields.Char(string='Certificate Filename')
+
+    @api.onchange('class_id')
+    def _onchange_class_id(self):
+        for rec in self:
+            if rec.student_id and rec.student_id.class_id != rec.class_id:
+                rec.student_id = False
+
+    @api.constrains('class_id', 'student_id')
+    def _check_student_class(self):
+        for rec in self:
+            if rec.student_id and rec.student_id.class_id != rec.class_id:
+                raise ValidationError(_(
+                    "The selected student does not belong to the selected class."
+                ))
+    
 # ======================================================================
 # Development records (projects, skills, certifications, achievements,
 # competitions, leadership, community service, environment, volunteering)
@@ -336,7 +441,7 @@ class SchoolStudentRecord(models.Model):
     # project, a competition team, a community-service drive).
     student_ids = fields.Many2many(
         'school.student', 'school_student_record_student_rel', 'record_id', 'student_id',
-        string='Students', required=True,
+        string='Students',
         help='All the students who took part. They can belong to different classes.')
     class_ids = fields.Many2many(
         'school.class', 'school_student_record_class_rel', 'record_id', 'class_id',
@@ -346,6 +451,52 @@ class SchoolStudentRecord(models.Model):
     area = fields.Selection(AREAS, string='Area')
     level = fields.Selection(RECORD_LEVELS, string='Level', default='school')
     result = fields.Char(string='Result / Position', help='e.g. "1st place", "Gold", "Grade A", "Completed"')
+    competition_ids = fields.Many2many(
+        'school.competition',
+        'school_student_competition_rel',
+        'student_record_id',
+        'competition_id',
+        string='Competitions'
+    )
+
+    competition_detail_ids = fields.One2many(
+        'school.student.competition.detail',
+        'student_record_id',
+        string='Competition Details'
+    )
+
+    competition_participant_ids = fields.One2many(
+        'school.student.competition.participant',
+        'record_id',
+        string='Competition Participants',
+    )
+    
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._sync_students_from_participants()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        if 'competition_ids' in vals:
+            for rec in self:
+                # remove participant rows of competitions that were deselected
+                rec.competition_participant_ids.filtered(
+                    lambda p: p.competition_id not in rec.competition_ids
+                ).unlink()
+        if 'competition_participant_ids' in vals or 'competition_ids' in vals:
+            self._sync_students_from_participants()
+        return result
+
+    def _sync_students_from_participants(self):
+        """Keep the record's students in line with the students listed in
+        the competition tabs (needed by the 360° profile)."""
+        for rec in self:
+            students = rec.competition_participant_ids.student_id
+            if students:
+                rec.student_ids = [(6, 0, students.ids)]
+            
     hours = fields.Float(string='Hours', help='Hours of service / volunteering.')
     date = fields.Date(string='Date', required=True, default=fields.Date.context_today)
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year',
@@ -637,15 +788,16 @@ class SchoolStudent360(models.Model):
 
         # ================= BEHAVIOUR & PARTICIPATION (quarterly / half-yearly) =================
         rating_labels = dict(BEHAVIOUR_RATINGS)
-        period_labels = dict(REVIEW_PERIODS)
-        period_order = [k for k, _l in REVIEW_PERIODS]
         reviews = env['school.student.behaviour'].sudo().search(
             [('student_ids', 'in', self.id)] + ([('academic_year_id', '=', year.id)] if year else []))
         # this student's own self-reflection / parent feedback lines
         fb_by_review = {f.review_id.id: f for f in env['school.student.behaviour.feedback'].sudo().search(
             [('student_id', '=', self.id), ('review_id', 'in', reviews.ids)])}
         behaviour_reviews = [{
-            'id': r.id, 'period': period_labels.get(r.period),
+            'id': r.id,
+            'period': ' to '.join(d.strftime('%d %b %Y') for d in (r.date_from, r.date_to) if d),
+            'date_from': r.date_from.strftime('%d %b %Y') if r.date_from else '',
+            'date_to': r.date_to.strftime('%d %b %Y') if r.date_to else '',
             'behaviour': int(r.behaviour), 'behaviour_label': rating_labels.get(r.behaviour),
             'discipline': int(r.discipline), 'discipline_label': rating_labels.get(r.discipline),
             'participation': int(r.participation), 'participation_label': rating_labels.get(r.participation),
@@ -653,7 +805,7 @@ class SchoolStudent360(models.Model):
             'reflection': (fb_by_review.get(r.id).self_reflection if fb_by_review.get(r.id) else '') or '',
             'parent_feedback': (fb_by_review.get(r.id).parent_feedback if fb_by_review.get(r.id) else '') or '',
             'date': r.date.strftime('%d %b %Y'),
-        } for r in reviews.sorted(lambda r: (period_order.index(r.period), r.id))]
+        } for r in reviews.sorted(lambda r: (r.date_from or fields.Date.today(), r.id))]
 
         profile = {
             'student': {'id': self.id, 'name': self.name,

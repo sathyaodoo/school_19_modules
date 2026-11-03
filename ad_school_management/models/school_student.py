@@ -1,6 +1,11 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
+try:
+    from odoo.fields import Domain
+except ImportError:  # pragma: no cover
+    Domain = None
+
 class SchoolStudent(models.Model):
     _name = 'school.student'
     _description = 'Student'
@@ -9,6 +14,39 @@ class SchoolStudent(models.Model):
     _order = 'roll_number, name'
 
     partner_id = fields.Many2one('res.partner', string='Partner', required=True, ondelete='cascade')
+
+    # ------------------------------------------------------------------
+    # Alumni never show up in the "current students" screens
+    # ------------------------------------------------------------------
+    def _hide_alumni(self, domain):
+        """Add "student is not alumni" to a domain coming from the web client
+        (lists, kanban, dropdowns, groupings).
+
+        Left untouched when the context has include_alumni, or when the domain
+        already filters on student_status (e.g. the Alumni filter in the
+        search bar), so alumni can still be looked up on purpose."""
+        if self.env.context.get('include_alumni') or 'student_status' in str(domain):
+            return domain
+        not_alumni = [('student_status', '!=', 'alumni')]
+        if Domain is not None:
+            return Domain(domain or []) & Domain(not_alumni)
+        return list(domain or []) + not_alumni
+
+    @api.model
+    def web_search_read(self, domain, *args, **kwargs):
+        return super().web_search_read(self._hide_alumni(domain), *args, **kwargs)
+
+    @api.model
+    def web_read_group(self, domain, *args, **kwargs):
+        return super().web_read_group(self._hide_alumni(domain), *args, **kwargs)
+
+    @api.model
+    def formatted_read_group(self, domain, *args, **kwargs):
+        return super().formatted_read_group(self._hide_alumni(domain), *args, **kwargs)
+
+    @api.model
+    def name_search(self, name='', domain=None, *args, **kwargs):
+        return super().name_search(name, self._hide_alumni(domain), *args, **kwargs)
     
     admission_no = fields.Char(string='Admission No.', readonly=True, copy=False)
     class_id = fields.Many2one('school.class', string='Class', required=True, tracking=True)
@@ -472,4 +510,3 @@ class SchoolStudentSibling(models.Model):
         if mirrors and not self.env.context.get('skip_sibling_mirror'):
             mirrors.with_context(skip_sibling_mirror=True).unlink()
         return res
-

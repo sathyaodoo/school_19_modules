@@ -41,3 +41,4 @@ from . import school_substitution
 from . import school_early_warning
 from . import school_teacher_growth
 from . import school_student_360
+from . import school_blood_group
