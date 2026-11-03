@@ -69,12 +69,12 @@ class SchoolHostelRoom(models.Model):
     @api.constrains('capacity', 'rent')
     def _check_values(self):
         for room in self:
-            if room.capacity <= 0:
-                raise ValidationError(_("Room capacity must be greater than zero."))
+            if not 1 <= room.capacity:
+                raise ValidationError(_("Room capacity must be at least 1"))
             if room.rent < 0:
                 raise ValidationError(_("Room rent cannot be negative."))
 
-    @api.depends('capacity', 'allocation_ids.state')
+    @api.depends('capacity', 'allocation_ids.state', 'allocation_ids.room_id')
     def _compute_availability(self):
         for room in self:
             allocated = self.env['school.hostel.allocation'].search_count([
@@ -83,10 +83,12 @@ class SchoolHostelRoom(models.Model):
             ])
             room.availability = max(room.capacity - allocated, 0)
 
-    @api.depends('capacity', 'availability')
+    @api.depends('capacity', 'allocation_ids.state', 'allocation_ids.room_id')
     def _compute_occupied_beds(self):
         for room in self:
-            room.occupied_beds = room.capacity - room.availability
+            room.occupied_beds = self.env['school.hostel.allocation'].search_count([
+                ('room_id', '=', room.id), ('state', '=', 'allocated')
+            ])
 
 class SchoolHostelAllocation(models.Model):
     _name = 'school.hostel.allocation'
@@ -105,27 +107,107 @@ class SchoolHostelAllocation(models.Model):
         ('vacated', 'Vacated')
     ], string='Status', default='draft', required=True, tracking=True)
 
+    vacate_reason = fields.Text(string='Vacate Reason', tracking=True)
+    student_gender = fields.Selection(related='student_id.gender', readonly=True)
+
+    @api.onchange('student_id')
+    def _onchange_student_id(self):
+        self.room_id = False
+
     @api.constrains('date_start', 'date_end')
     def _check_dates(self):
         for rec in self:
             if rec.date_start and rec.date_end and rec.date_start > rec.date_end:
                 raise ValidationError(_("Vacated date must be after start date!"))
 
+    def _check_allocation_allowed(self):
+        """Serialize allocations per room and check room/student compatibility."""
+        for rec in self:
+            if not rec.room_id or not rec.student_id:
+                continue
+            # PostgreSQL row lock prevents two users taking the last bed together.
+            self.env.cr.execute(
+                'SELECT id FROM school_hostel_room WHERE id = %s FOR UPDATE',
+                [rec.room_id.id],
+            )
+            desired = {'male': 'boys', 'female': 'girls'}.get(rec.student_id.gender)
+            if not desired or rec.room_id.hostel_id.type != desired:
+                raise ValidationError(_('Student gender does not match hostel type.'))
+            if self.search_count([
+                ('student_id', '=', rec.student_id.id),
+                ('state', '=', 'allocated'),
+                ('id', '!=', rec.id),
+            ]):
+                raise ValidationError(_('Student already has an active hostel allocation.'))
+            occupied = self.search_count([
+                ('room_id', '=', rec.room_id.id),
+                ('state', '=', 'allocated'),
+                ('id', '!=', rec.id),
+            ])
+            if occupied >= rec.room_id.capacity:
+                raise ValidationError(_('Room %s is full.') % rec.room_id.name)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Validate allocated creates before insertion, including student-facilities flow.
+        for vals in vals_list:
+            if vals.get('state') == 'allocated':
+                room = self.env['school.hostel.room'].browse(vals['room_id'])
+                student = self.env['school.student'].browse(vals['student_id'])
+                self.env.cr.execute(
+                    'SELECT id FROM school_hostel_room WHERE id = %s FOR UPDATE', [room.id]
+                )
+                if room.hostel_id.type != {'male': 'boys', 'female': 'girls'}.get(student.gender):
+                    raise ValidationError(_('Student gender does not match hostel type.'))
+                if self.search_count([('student_id', '=', student.id), ('state', '=', 'allocated')]):
+                    raise ValidationError(_('Student already has an active hostel allocation.'))
+                if self.search_count([('room_id', '=', room.id), ('state', '=', 'allocated')]) >= (room.capacity):
+                    raise ValidationError(_('Room %s is full.') % room.name)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get('state') == 'allocated' or (
+            ('student_id' in vals or 'room_id' in vals) and
+            any(rec.state == 'allocated' for rec in self)
+        ):
+            # First update in-memory for validation? Validate each target explicitly using new().
+            for rec in self:
+                room = self.env['school.hostel.room'].browse(vals.get('room_id', rec.room_id.id))
+                student = self.env['school.student'].browse(vals.get('student_id', rec.student_id.id))
+                self.env.cr.execute(
+                    'SELECT id FROM school_hostel_room WHERE id = %s FOR UPDATE', [room.id]
+                )
+                if room.hostel_id.type != {'male': 'boys', 'female': 'girls'}.get(student.gender):
+                    raise ValidationError(_('Student gender does not match hostel type.'))
+                if self.search_count([('student_id', '=', student.id), ('state', '=', 'allocated'), ('id', '!=', rec.id)]):
+                    raise ValidationError(_('Student already has an active hostel allocation.'))
+                if self.search_count([('room_id', '=', room.id), ('state', '=', 'allocated'), ('id', '!=', rec.id)]) >= (room.capacity):
+                    raise ValidationError(_('Room %s is full.') % room.name)
+        return super().write(vals)
+
     def action_allocate(self):
         for rec in self:
-            if rec.room_id.availability <= 0:
-                raise ValidationError(_("This room has no available beds."))
-            rec.student_id.write({'hostel_room_id': rec.room_id.id})
+            if rec.state != 'draft':
+                continue
             rec.write({'state': 'allocated'})
+            rec.student_id.with_context(skip_hostel_sync=True).write({
+                'hostel_room_id': rec.room_id.id
+            })
 
     def action_vacate(self):
         for rec in self:
-            today = fields.Date.context_today(rec)
-            rec.student_id.write({'hostel_room_id': False})
+            if rec.state != 'allocated':
+                continue
+            if not rec.vacate_reason:
+                raise ValidationError(_('Please enter Vacate Reason before vacating.'))
             rec.write({
-                'date_end': today,
-                'state': 'vacated'
+                'date_end': fields.Date.context_today(rec),
+                'state': 'vacated',
             })
+            if rec.student_id.hostel_room_id == rec.room_id:
+                rec.student_id.with_context(skip_hostel_sync=True).write({
+                    'hostel_room_id': False
+                })
 
 class SchoolStudent(models.Model):
     _inherit = 'school.student'
@@ -133,6 +215,57 @@ class SchoolStudent(models.Model):
     hostel_room_id = fields.Many2one('school.hostel.room', string='Hostel Room')
     hostel_allocation_ids = fields.One2many('school.hostel.allocation', 'student_id', string='Hostel Allocations')
     hostel_allocation_count = fields.Integer(string='Hostel Allocations Count', compute='_compute_hostel_allocation_count')
+
+    student_gender = fields.Selection(related='gender', readonly=True)
+
+    def _sync_hostel_allocation(self):
+        Allocation = self.env['school.hostel.allocation']
+        for student in self:
+            active = Allocation.search([
+                ('student_id', '=', student.id), ('state', '=', 'allocated')
+            ])
+            room = student.hostel_room_id
+            if room and len(active) == 1 and active.room_id == room:
+                continue
+            if room:
+                # Lock and validate availability before vacating the old room.
+                self.env.cr.execute(
+                    'SELECT id FROM school_hostel_room WHERE id = %s FOR UPDATE', [room.id]
+                )
+                expected = {'male': 'boys', 'female': 'girls'}.get(student.gender)
+                if room.hostel_id.type != expected:
+                    raise ValidationError(_('Student gender does not match hostel type.'))
+                if Allocation.search_count([
+                    ('room_id', '=', room.id), ('state', '=', 'allocated'),
+                    ('student_id', '!=', student.id)
+                ]) >= (room.capacity):
+                    raise ValidationError(_('Room %s is full.') % room.name)
+            if active:
+                active.write({
+                    'state': 'vacated',
+                    'date_end': fields.Date.context_today(student),
+                    'vacate_reason': 'Room changed from Student Facilities' if room else 'Cleared from Student Facilities',
+                })
+            if room:
+                Allocation.create({
+                    'student_id': student.id,
+                    'room_id': room.id,
+                    'date_start': fields.Date.context_today(student),
+                    'state': 'allocated',
+                })
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        students = super().create(vals_list)
+        if not self.env.context.get('skip_hostel_sync'):
+            students.filtered('hostel_room_id')._sync_hostel_allocation()
+        return students
+
+    def write(self, vals):
+        result = super().write(vals)
+        if 'hostel_room_id' in vals and not self.env.context.get('skip_hostel_sync'):
+            self._sync_hostel_allocation()
+        return result
 
     def _compute_hostel_allocation_count(self):
         for student in self:

@@ -1,5 +1,10 @@
+import logging
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
+
+_logger = logging.getLogger(__name__)
+
 
 class SchoolTimetable(models.Model):
     _name = 'school.timetable'
@@ -19,6 +24,83 @@ class SchoolTimetable(models.Model):
         'unique(class_id, section_id, academic_year_id)',
         'Timetable already exists for this Class, Section, and Academic Year!'
     )
+
+    # One list per weekday tab of the form. All of them show the SAME
+    # records as timetable_line_ids, filtered by day.
+    monday_line_ids = fields.One2many(
+        'school.timetable.line', 'timetable_id', string='Monday',
+        domain=[('day_of_week', '=', 'monday')], context={'default_day_of_week': 'monday'})
+    tuesday_line_ids = fields.One2many(
+        'school.timetable.line', 'timetable_id', string='Tuesday',
+        domain=[('day_of_week', '=', 'tuesday')], context={'default_day_of_week': 'tuesday'})
+    wednesday_line_ids = fields.One2many(
+        'school.timetable.line', 'timetable_id', string='Wednesday',
+        domain=[('day_of_week', '=', 'wednesday')], context={'default_day_of_week': 'wednesday'})
+    thursday_line_ids = fields.One2many(
+        'school.timetable.line', 'timetable_id', string='Thursday',
+        domain=[('day_of_week', '=', 'thursday')], context={'default_day_of_week': 'thursday'})
+    friday_line_ids = fields.One2many(
+        'school.timetable.line', 'timetable_id', string='Friday',
+        domain=[('day_of_week', '=', 'friday')], context={'default_day_of_week': 'friday'})
+    saturday_line_ids = fields.One2many(
+        'school.timetable.line', 'timetable_id', string='Saturday',
+        domain=[('day_of_week', '=', 'saturday')], context={'default_day_of_week': 'saturday'})
+
+    @api.model
+    def default_get(self, fields_list):
+        """Open a new timetable with all 8 periods already listed on every
+        day tab: the subject, teacher and times are entered by the user."""
+        res = super().default_get(fields_list)
+        periods = [key for key, _label in self.env['school.timetable.line']._fields['period'].selection]
+        for day in ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'):
+            field_name = f'{day}_line_ids'
+            if field_name in fields_list and not res.get(field_name):
+                res[field_name] = [
+                    fields.Command.create({
+                        'day_of_week': day,
+                        'period': period,
+                    })
+                    for period in periods
+                ]
+        return res
+
+    DAYS = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        timetables = super().create(vals_list)
+        timetables._ensure_period_lines()
+        return timetables
+
+    def _ensure_period_lines(self):
+        """Make sure every day (Mon-Sat) has all 8 periods, so they are
+        always displayed automatically and never picked by hand."""
+        Line = self.env['school.timetable.line'].with_context(school_timetable_no_notify=True)
+        periods = [key for key, _label in Line._fields['period'].selection]
+        vals_list = []
+        for timetable in self:
+            existing = {(l.day_of_week, l.period) for l in timetable.timetable_line_ids}
+            for day in self.DAYS:
+                for period in periods:
+                    if (day, period) not in existing:
+                        vals_list.append({
+                            'timetable_id': timetable.id,
+                            'day_of_week': day,
+                            'period': period,
+                        })
+        if vals_list:
+            Line.create(vals_list)
+
+    def _register_hook(self):
+        """Complete the periods of existing timetables when the server
+        loads/upgrades the module (no separate data file needed)."""
+        res = super()._register_hook()
+        try:
+            with self.env.cr.savepoint():
+                self.sudo().search([])._ensure_period_lines()
+        except Exception:
+            _logger.exception("Could not complete the timetable periods")
+        return res
 
     @api.depends('class_id', 'section_id', 'academic_year_id')
     def _compute_name(self):
@@ -45,7 +127,7 @@ class SchoolTimetable(models.Model):
 class SchoolTimetableLine(models.Model):
     _name = 'school.timetable.line'
     _description = 'Timetable Line'
-    _order = 'day_sequence, start_time'
+    _order = 'day_sequence, start_time, id'
 
     timetable_id = fields.Many2one('school.timetable', string='Timetable Reference', required=True, ondelete='cascade')
     # Stored copy of the class timetable's name ("Class-01 - Sec-A (2026-2027)"),
@@ -61,11 +143,21 @@ class SchoolTimetableLine(models.Model):
         ('saturday', 'Saturday'),
         ('sunday', 'Sunday')
     ], string='Day of Week', required=True)
-    # Monday=1 ... Sunday=7, so periods sort in week order (not alphabetically).
+    period = fields.Selection([
+        ('first period', 'First Period'),
+        ('second period', 'Second Period'),
+        ('third period', 'Third Period'),
+        ('fourth period', 'Fourth Period'),
+        ('fifth period', 'Fifth Period'),
+        ('sixth period', 'Sixth Period'),
+        ('seventh period', 'Seventh Period'),
+        ('eighth period', 'Eighth Period'),
+    ], string='Period', required=True)
+    # Monday=1 ... Sunday=7, so lines sort in week order (not alphabetically).
     day_sequence = fields.Integer(compute='_compute_day_sequence', store=True, index=True)
     
-    subject_id = fields.Many2one('school.subject', string='Subject', required=True)
-    teacher_id = fields.Many2one('school.teacher', string='Teacher', required=True)
+    subject_id = fields.Many2one('school.subject', string='Subject')
+    teacher_id = fields.Many2one('school.teacher', string='Teacher')
     # Taken from the timetable header (entered once there). Kept as a stored
     # field on the line so substitutions, the substitute-teacher e-mail, the
     # student portal and the room-conflict check keep working unchanged.
@@ -73,9 +165,9 @@ class SchoolTimetableLine(models.Model):
         string='Classroom/Room', related='timetable_id.classroom', store=True, readonly=True)
     
     # aggregator=False: times must never be added up in grouped lists
-    start_time = fields.Float(string='Start Time (Hour)', required=True, aggregator=False,
+    start_time = fields.Float(string='Start Time (Hour)', default=0.0, aggregator=False,
                               help="Use 9.5 for 09:30 AM")
-    end_time = fields.Float(string='End Time (Hour)', required=True, aggregator=False,
+    end_time = fields.Float(string='End Time (Hour)', default=0.0, aggregator=False,
                             help="Use 10.5 for 10:30 AM")
 
     @api.depends('day_of_week')
@@ -87,7 +179,7 @@ class SchoolTimetableLine(models.Model):
     # ------------------------------------------------------------------
     # Tell teachers when their timetable changes
     # ------------------------------------------------------------------
-    _TEACHER_FIELDS = {'teacher_id', 'day_of_week', 'start_time', 'end_time', 'subject_id', 'timetable_id'}
+    _TEACHER_FIELDS = {'teacher_id', 'day_of_week', 'period', 'start_time', 'end_time', 'subject_id', 'timetable_id'}
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -138,17 +230,31 @@ class SchoolTimetableLine(models.Model):
     #         raise UserError(_("Your user is not linked to a teacher."))
     #     return teacher.action_print_timetable()
 
+    @api.constrains('subject_id', 'teacher_id')
+    def _check_subject_teacher(self):
+        for line in self:
+            if bool(line.subject_id) != bool(line.teacher_id):
+                raise ValidationError(_(
+                    "Please select both a Subject and a Teacher for %s on %s "
+                    "(or leave both empty for a free period)."
+                ) % (dict(self._fields['period'].selection).get(line.period, ''),
+                     dict(self._fields['day_of_week'].selection).get(line.day_of_week, '')))
+
     @api.constrains('start_time', 'end_time')
     def _check_times(self):
         for line in self:
+            if not line.subject_id and not line.teacher_id:
+                continue  # free period: no times needed
             if line.start_time >= line.end_time:
                 raise ValidationError(_("Start time must be before end time!"))
             if line.start_time < 0 or line.start_time >= 24 or line.end_time < 0 or line.end_time >= 24:
                 raise ValidationError(_("Time must be between 0 and 24 hours."))
 
-    @api.constrains('day_of_week', 'start_time', 'end_time', 'teacher_id', 'classroom')
+    @api.constrains('day_of_week', 'period', 'start_time', 'end_time', 'teacher_id', 'classroom')
     def _check_conflicts(self):
         for line in self:
+            if not line.teacher_id:
+                continue  # free period
             teacher_conflict = self.search([
                 ('id', '!=', line.id),
                 ('day_of_week', '=', line.day_of_week),

@@ -166,6 +166,28 @@ class SchoolExamClass(models.Model):
             'target': 'current',
         }
 
+    @api.onchange('class_id')
+    def _onchange_class_id_subjects(self):
+        for rec in self:
+            # Clear previous class papers
+            rec.exam_subject_ids = [fields.Command.clear()]
+
+            if not rec.class_id or rec.state != 'draft':
+                continue
+
+            # Fetch subjects belonging to selected class
+            subjects = self.env['school.subject'].search([
+                ('class_ids', 'in', [rec.class_id.id])
+            ])
+
+            # Populate selected class subjects
+            rec.exam_subject_ids = [
+                fields.Command.create({
+                    'subject_id': subject.id,
+                })
+                for subject in subjects
+            ]
+
 
 class SchoolExamSubject(models.Model):
     """One paper of a class schedule: subject, date, time, marks and room."""

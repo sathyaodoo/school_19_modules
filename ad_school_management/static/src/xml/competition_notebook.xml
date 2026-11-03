@@ -1,0 +1,197 @@
+<templates xml:space="preserve">
+
+    <t t-name="ad_school_management.CompetitionNotebook">
+
+        <div class="o_competition_notebook o_notebook d-flex w-100 flex-column mt-3">
+
+            <t t-if="competitions.length">
+
+                <!-- Competition tabs -->
+                <div class="o_notebook_headers">
+                    <ul class="nav nav-tabs flex-row flex-nowrap">
+
+                        <li class="nav-item flex-nowrap cursor-pointer"
+                            t-foreach="competitions"
+                            t-as="comp"
+                            t-key="comp.id">
+
+                            <a class="nav-link"
+                               href="#"
+                               role="tab"
+                               t-att-class="{
+                                   active: activeCompetition and activeCompetition.id === comp.id
+                               }"
+                               t-on-click.prevent="() => this.selectTab(comp)">
+
+                                <t t-esc="comp.name"/>
+
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+
+                <!-- Active competition participants -->
+                <div class="o_notebook_content tab-content">
+                    <div class="tab-pane active">
+
+                        <table class="o_list_table table table-sm table-hover mb-0 w-100">
+
+                            <thead>
+                                <tr>
+                                    <th class="o_list_header">Class</th>
+                                    <th class="o_list_header">Student Name</th>
+                                    <th class="o_list_header">Position</th>
+                                    <th class="o_list_header">Certificate</th>
+                                    <th style="width: 40px;"></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr t-foreach="rows"
+                                    t-as="row"
+                                    t-key="row.id">
+
+                                    <!-- Class dropdown -->
+                                    <td class="align-middle">
+
+                                        <select class="o_input form-select"
+                                                t-on-change="(ev) => this.updateClass(row, ev)">
+
+                                            <option value="">-- Select class --</option>
+
+                                            <t t-foreach="classOptions"
+                                               t-as="cls"
+                                               t-key="cls.id">
+
+                                                <option t-att-value="cls.id"
+                                                        t-att-selected="cls.id === classId(row)">
+
+                                                    <t t-esc="cls.name"/>
+
+                                                </option>
+                                            </t>
+
+                                        </select>
+                                    </td>
+
+                                    <!-- Student dropdown filtered by selected class -->
+                                    <td>
+
+                                        <select class="o_input form-select"
+                                                t-att-disabled="!classId(row)"
+                                                t-on-change="(ev) => this.updateStudent(row, ev)">
+
+                                            <option value="">-- Select student --</option>
+
+                                            <t t-foreach="studentsForRow(row)"
+                                               t-as="student"
+                                               t-key="student.id">
+
+                                                <option t-att-value="student.id"
+                                                        t-att-selected="student.id === studentId(row)">
+
+                                                    <t t-esc="student.name"/>
+
+                                                </option>
+                                            </t>
+
+                                        </select>
+                                    </td>
+
+                                    <!-- Position dropdown -->
+                                    <td>
+
+                                        <select class="o_input form-select"
+                                                t-att-value="textValue(row, 'result')"
+                                                t-on-change="(ev) => this.updateText(row, 'result', ev)">
+
+                                            <option value="">-- Select position --</option>
+                                            <option value="first">First</option>
+                                            <option value="second">Second</option>
+                                            <option value="third">Third</option>
+
+                                        </select>
+
+                                    </td>
+
+                                    <!-- Certificate -->
+                                    <td>
+
+                                        <t t-if="row.data.certificate_filename">
+
+                                            <a t-if="certificateUrl(row)"
+                                               t-att-href="certificateUrl(row)">
+
+                                                <t t-esc="row.data.certificate_filename"/>
+
+                                            </a>
+
+                                            <span t-else="">
+                                                <t t-esc="row.data.certificate_filename"/>
+                                            </span>
+
+                                            <button type="button"
+                                                    class="btn btn-link text-danger p-0 ms-2"
+                                                    t-on-click="() => this.clearCertificate(row)">
+
+                                                <i class="fa fa-times"/>
+
+                                            </button>
+
+                                        </t>
+
+                                        <input t-else=""
+                                               type="file"
+                                               class="form-control"
+                                               t-on-change="(ev) => this.onCertificateSelected(row, ev)"/>
+
+                                    </td>
+
+                                    <!-- Delete participant -->
+                                    <td class="align-middle text-center">
+
+                                        <button type="button"
+                                                class="btn btn-link text-danger p-0"
+                                                t-on-click="() => this.removeRow(row)">
+
+                                            <i class="fa fa-trash-o"/>
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                                <!-- Add participant -->
+                                <tr>
+                                    <td colspan="5">
+
+                                        <a href="#"
+                                           t-on-click.prevent="() => this.addRow()">
+
+                                            Add a line
+
+                                        </a>
+
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            </t>
+
+            <div t-else="" class="text-muted mt-2">
+                Select a competition to create its page.
+            </div>
+
+        </div>
+
+    </t>
+
+</templates>

@@ -28,6 +28,11 @@ class ResPartner(models.Model):
         ('O+', 'O+'), ('O-', 'O-'),
         ('AB+', 'AB+'), ('AB-', 'AB-')
     ], string='Blood Group')
+    blood_group_id = fields.Many2one(
+    'school.blood.group',
+    string='Blood Group',
+    ondelete='restrict'
+)
     date_of_birth = fields.Date(string='Date of Birth')
     gender = fields.Selection([
         ('male', 'Male'),

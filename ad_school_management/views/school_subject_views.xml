@@ -7,7 +7,6 @@
             <list>
                 <field name="name"/>
                 <field name="code"/>
-                <field name="credits"/>
             </list>
         </field>
     </record>
@@ -27,9 +26,6 @@
                     <group>
                         <group>
                             <field name="code" placeholder="e.g. MATH101"/>
-                        </group>
-                        <group>
-                            <field name="credits"/>
                         </group>
                     </group>
                     <notebook>

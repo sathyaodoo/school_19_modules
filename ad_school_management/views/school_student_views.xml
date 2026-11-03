@@ -64,7 +64,7 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <field name="student_status" widget="statusbar" statusbar_visible="draft,approved,enrolled,promoted"/>
+                    <field name="student_status" widget="statusbar" statusbar_visible="enrolled"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -119,7 +119,7 @@
                                 <group>
                                     <field name="date_of_birth"/>
                                     <field name="gender"/>
-                                    <field name="blood_group"/>
+                                    <field name="blood_group_id" options="{'no_create': False, 'no_quick_create': False, 'no_create_edit': False}"/>
                                     <field name="nationality_id"/>
                                 </group>
                                 <group>
@@ -344,6 +344,8 @@
         <field name="res_model">school.student</field>
         <field name="view_mode">list,kanban,form</field>
         <field name="search_view_id" ref="view_school_student_search"/>
+        <!-- This register lists every student, alumni included -->
+        <field name="context">{'include_alumni': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Register a new student!

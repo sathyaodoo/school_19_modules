@@ -10,7 +10,6 @@ class SchoolSubject(models.Model):
     code = fields.Char(string='Code', required=True)
     class_ids = fields.Many2many('school.class', 'school_subject_class_rel', 'subject_id', 'class_id', string='Classes')
     teacher_ids = fields.Many2many('school.teacher', 'school_subject_teacher_rel', 'subject_id', 'teacher_id', string='Teachers')
-    credits = fields.Float(string='Credits', default=1.0)
 
     _code_uniq = models.Constraint(
         'unique(code)', 'The subject code must be unique!'
@@ -40,8 +39,3 @@ class SchoolSubject(models.Model):
     def _sync_all_teacher_classes(self):
         # run on upgrade: fix subjects that already have classes and teachers
         self.with_context(active_test=False).search([])._sync_teacher_classes()
-    @api.constrains('credits')
-    def _check_credits(self):
-        for subject in self:
-            if subject.credits <= 0:
-                raise ValidationError(_("Subject credits must be greater than zero!"))

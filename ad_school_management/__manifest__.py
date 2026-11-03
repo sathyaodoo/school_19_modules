@@ -113,6 +113,8 @@
             'ad_school_management/static/src/xml/teacher_growth_dashboard.xml',
             'ad_school_management/static/src/js/student_360.js',
             'ad_school_management/static/src/xml/student_360.xml',
+            'ad_school_management/static/src/js/competition_notebook.js',
+        	'ad_school_management/static/src/xml/competition_notebook.xml',
         ],
     },
     'demo': [
