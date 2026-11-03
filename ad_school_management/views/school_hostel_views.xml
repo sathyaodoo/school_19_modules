@@ -298,9 +298,10 @@
     </record>
 
     <!-- ===================================================================
-         MENUS: Facilities > Hostel
+         MENUS: Hostel app (own entry in the main app switcher)
          =================================================================== -->
-    <menuitem id="menu_school_hostel_sub" name="Hostel" parent="menu_school_facilities" sequence="25"
+    <menuitem id="menu_school_hostel_sub" name="Hostel" sequence="13"
+              action="action_school_hostel"
               groups="ad_school_management.group_hostel_user"/>
     <menuitem id="menu_school_hostel" name="Hostels" parent="menu_school_hostel_sub"
               action="action_school_hostel" sequence="10"/>

@@ -46,12 +46,17 @@
     <menuitem id="menu_school_fee_generate" name="Generate Class Fees" parent="menu_school_financials" action="action_school_fee_generate" sequence="25"/>
     <menuitem id="menu_school_student_transport_fee" name="Transport Fees" parent="menu_school_financials" action="action_school_student_transport_fee" sequence="30"/>
 
-    <menuitem id="menu_school_transport_sub" name="Transport" parent="menu_school_facilities" sequence="20"/>
-    <menuitem id="menu_school_transport_staff" name="Drivers &amp; Caretakers" parent="menu_school_transport_sub" action="action_school_transport_staff" sequence="5"/>
-    <menuitem id="menu_school_vehicle" name="Vehicles" parent="menu_school_transport_sub" action="action_school_vehicle" sequence="10"/>
-    <menuitem id="menu_school_transport_route" name="Routes &amp; Stops" parent="menu_school_transport_sub" action="action_school_transport_route" sequence="20"/>
-    <menuitem id="menu_school_route_change_request" name="Route Change Requests" parent="menu_school_transport_sub" action="action_school_route_change_request" sequence="30"/>
-     <menuitem id="menu_school_transport_attendance" name="Transport Attendance" parent="menu_school_transport_sub" action="action_school_transport_attendance" sequence="40"/>
+    <!-- Transport app (own entry in the main app switcher). The Tracking /
+         Reports / Configuration dropdowns are added by school_smart_transport. -->
+    <menuitem id="menu_school_transport_sub" name="Transport" sequence="12"
+              action="action_school_vehicle"/>
+    <menuitem id="menu_school_transport_fleet" name="Fleet" parent="menu_school_transport_sub" sequence="10"/>
+    <menuitem id="menu_school_transport_staff" name="Drivers &amp; Caretakers" parent="menu_school_transport_fleet" action="action_school_transport_staff" sequence="5"/>
+    <menuitem id="menu_school_vehicle" name="Vehicles" parent="menu_school_transport_fleet" action="action_school_vehicle" sequence="10"/>
+    <menuitem id="menu_school_transport_operations" name="Operations" parent="menu_school_transport_sub" sequence="20"/>
+    <menuitem id="menu_school_transport_route" name="Routes &amp; Stops" parent="menu_school_transport_operations" action="action_school_transport_route" sequence="20"/>
+    <menuitem id="menu_school_route_change_request" name="Route Change Requests" parent="menu_school_transport_operations" action="action_school_route_change_request" sequence="30"/>
+    <menuitem id="menu_school_transport_attendance" name="Transport Attendance" parent="menu_school_transport_operations" action="action_school_transport_attendance" sequence="40"/>
 
     <menuitem id="menu_school_bulk_admission" name="Bulk Admissions" parent="menu_school_wizards" action="action_school_bulk_admission" sequence="10"/>
     <menuitem id="menu_school_bulk_student_import" name="Bulk Student Import" parent="menu_school_wizards" action="action_school_bulk_student_import" sequence="20"/>
