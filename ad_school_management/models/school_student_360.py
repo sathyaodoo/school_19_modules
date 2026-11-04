@@ -123,6 +123,8 @@ class SchoolStudentBehaviour(models.Model):
                             help='First day of the review period.')
     date_to = fields.Date(string='To Date', required=True, default=fields.Date.context_today,
                           help='Last day of the review period.')
+    period = fields.Char(string='Period', compute='_compute_period',
+                     help='The review period, shown as "From Date to To Date".')
     date = fields.Date(string='Reviewed On', required=True, default=fields.Date.context_today)
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year',
                                        compute='_compute_academic_year', store=True, index=True)
@@ -140,6 +142,7 @@ class SchoolStudentBehaviour(models.Model):
         string='Show in Portal', default=True,
         help='When ticked, the students and their parents/guardians can see this review in their portal. '
              'Untick to keep a draft review visible to staff only.')
+    
 
     # --- one feedback row for EVERY student of the review ------------------
     @api.model_create_multi
