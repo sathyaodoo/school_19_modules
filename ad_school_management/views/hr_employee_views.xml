@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Teacher form fields and tabs on the Employee form (all employees).
+         Assigned Classes / Subjects are stored on the linked Teacher record,
+         so they are read-only (and empty) for employees without one.
+         Fields reading school.teacher are limited to the groups that can read
+         school.teacher. The tabs and class_teacher_for also read school.class /
+         school.subject / school.timetable.line, which hr.group_hr_user cannot
+         read, so those are limited to the school groups only.
+         Assigned Classes / Subjects are editable only for School Admin, School
+         Principal and hr.group_hr_user (first field); everyone else gets the
+         read-only copy (second field, "!" = not in any of these groups). -->
+    <record id="view_hr_employee_form_school_teacher" model="ir.ui.view">
+        <field name="name">hr.employee.form.school.teacher</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_properties']" position="after">
+                <field name="teacher_id" invisible="1" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher,ad_school_management.group_school_accountant,ad_school_management.group_school_parent,ad_school_management.group_school_student,hr.group_hr_user"/>
+                <group>
+                    <group string="Academic Information">
+                        <field name="teacher_code" readonly="1"/>
+                        <field name="teacher_type"/>
+                        <field name="qualification"/>
+                        <field name="specialization"/>
+                        <field name="joining_date"/>
+                        <field name="school_class_teacher_for_text" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher,ad_school_management.group_school_accountant,ad_school_management.group_school_parent,ad_school_management.group_school_student,hr.group_hr_user"/>
+                    </group>
+                    <group string="Contact Info">
+                        <field name="is_own_driver"/>
+                        <field name="class_teacher_for" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher,ad_school_management.group_school_accountant,ad_school_management.group_school_parent,ad_school_management.group_school_student"/>
+                        <field name="meal_entitled"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Assigned Classes" name="school_classes" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher,ad_school_management.group_school_accountant,ad_school_management.group_school_parent,ad_school_management.group_school_student">
+                    <field name="school_class_ids" widget="many2many_tags" readonly="not teacher_id"
+                           groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,hr.group_hr_user"/>
+                    <field name="school_class_ids" widget="many2many_tags" readonly="1"
+                           groups="!ad_school_management.group_school_admin,!ad_school_management.group_school_principal,!hr.group_hr_user"/>
+                </page>
+                <page string="Assigned Subjects" name="school_subjects" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher,ad_school_management.group_school_accountant,ad_school_management.group_school_parent,ad_school_management.group_school_student">
+                    <field name="school_subject_ids" widget="many2many_tags" readonly="not teacher_id"
+                           groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,hr.group_hr_user"/>
+                    <field name="school_subject_ids" widget="many2many_tags" readonly="1"
+                           groups="!ad_school_management.group_school_admin,!ad_school_management.group_school_principal,!hr.group_hr_user"/>
+                </page>
+                <page string="Timetable" name="school_timetable" groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_teacher,ad_school_management.group_school_accountant,ad_school_management.group_school_parent,ad_school_management.group_school_student">
+                    <field name="school_timetable_line_ids" readonly="1">
+                        <list>
+                            <field name="day_of_week"/>
+                            <field name="start_time" widget="float_time"/>
+                            <field name="end_time" widget="float_time"/>
+                            <field name="subject_id"/>
+                            <field name="class_name"/>
+                            <field name="classroom"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

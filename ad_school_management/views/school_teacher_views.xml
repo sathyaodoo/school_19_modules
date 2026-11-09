@@ -4,7 +4,7 @@
         <field name="name">school.teacher.tree</field>
         <field name="model">school.teacher</field>
         <field name="arch" type="xml">
-            <list>
+            <list create="0" edit="0">
                 <field name="teacher_code"/>
                 <field name="name"/>
                 <field name="teacher_type"/>
@@ -20,7 +20,7 @@
         <field name="name">school.teacher.form</field>
         <field name="model">school.teacher</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="0" edit="0">
                 <sheet>
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only"/>

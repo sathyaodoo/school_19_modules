@@ -49,6 +49,7 @@ access_school_teacher_teacher,school.teacher.teacher,model_school_teacher,group_
 access_school_teacher_accountant,school.teacher.accountant,model_school_teacher,group_school_accountant,1,0,0,0
 access_school_teacher_parent,school.teacher.parent,model_school_teacher,group_school_parent,1,0,0,0
 access_school_teacher_student,school.teacher.student,model_school_teacher,group_school_student,1,0,0,0
+access_school_teacher_hr_user,school.teacher.hr.user,model_school_teacher,hr.group_hr_user,1,1,1,0
 access_school_admission_admin,school.admission.admin,model_school_admission,group_school_admin,1,1,1,1
 access_school_admission_principal,school.admission.principal,model_school_admission,group_school_principal,1,1,1,1
 access_school_admission_teacher,school.admission.teacher,model_school_admission,group_school_teacher,1,0,0,0

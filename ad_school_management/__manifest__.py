@@ -57,6 +57,7 @@
         'views/school_student_views.xml',
         'views/school_parent_views.xml',
         'views/school_teacher_views.xml',
+        'views/hr_employee_views.xml',
         'views/school_admission_views.xml',
         'views/school_timetable_views.xml',
         'views/school_attendance_views.xml',
