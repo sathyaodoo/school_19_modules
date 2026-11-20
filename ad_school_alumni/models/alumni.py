@@ -8,6 +8,35 @@ STAGES = [
     ('mentor', 'Mentor'),
 ]
 
+# School achievements imported into the alumni profile (see
+# school.alumni._import_school_achievements)
+ACTIVITY_CATEGORY = {'sports': 'sports', 'arts': 'arts', 'cultural': 'arts', 'academic': 'academic'}
+AREA_CATEGORY = {'sports': 'sports', 'arts': 'arts', 'cultural': 'arts', 'academic': 'academic',
+                 'technology': 'academic', 'social': 'social', 'other': 'other'}
+CLUB_CATEGORY = {'sports': 'sports', 'arts': 'arts', 'cultural': 'arts', 'literary': 'arts',
+                 'academic': 'academic', 'technology': 'academic', 'eco': 'academic',
+                 'service': 'social', 'other': 'other'}
+RECORD_LEVEL = {'class': 'local', 'school': 'local', 'inter_school': 'local', 'district': 'local',
+                'state': 'state', 'national': 'national', 'international': 'international'}
+# Development records: every kind is imported. Short prefix for the name and
+# the category to use when the record has no area.
+RECORD_KIND_PREFIX = {'competition': 'Competition', 'project': 'Project', 'skill': 'Skill',
+                      'certification': 'Certification', 'achievement': 'Achievement',
+                      'leadership': 'Leadership', 'community_service': 'Community Service',
+                      'environmental': 'Environmental', 'volunteering': 'Volunteering',
+                      'service_achievement': 'Service Achievement'}
+RECORD_KIND_CATEGORY = {'community_service': 'social', 'volunteering': 'social',
+                        'service_achievement': 'social', 'environmental': 'social',
+                        'project': 'academic', 'skill': 'academic', 'certification': 'academic'}
+SCHOOL_SOURCE_MODELS = [
+    ('event.registration', 'Activity Prize'),
+    ('school.student.record', 'Development Record'),
+    ('school.student.competition.participant', 'Competition Result'),
+    ('school.student.competition.detail', 'Competition Detail'),
+    ('school.reading.challenge.participant', 'Reading Challenge'),
+    ('school.club.membership', 'Club Role'),
+]
+
 
 class SchoolAlumni(models.Model):
     """An alumni of the school.
@@ -49,6 +78,11 @@ class SchoolAlumni(models.Model):
     graduation_date = fields.Date(string='Graduation Date')
     batch = fields.Char(string='Batch', compute='_compute_batch', store=True,
                         help='e.g. "Batch of 2026"')
+    admission_academic_year_id = fields.Many2one(
+        'school.academic.year', string='Batch (Admission Year)', compute='_compute_admission_academic_year',
+        store=True, readonly=False, index=True,
+        help='Academic year in which the alumnus was admitted, taken from the admission record of the '
+             'linked student. Set it manually when there is no admission record.')
 
     # ----- Personal / contact extras -----
     gender = fields.Selection([('male', 'Male'), ('female', 'Female'), ('other', 'Other')], string='Gender')
@@ -115,6 +149,23 @@ class SchoolAlumni(models.Model):
         for rec in self:
             rec.batch = _('Batch of %s', rec.graduation_year) if rec.graduation_year else False
 
+    @api.depends('student_id')
+    def _compute_admission_academic_year(self):
+        """Admission year from the student's (earliest) admission record. No
+        fallback to student.academic_year_id: that is the CURRENT year and
+        changes on promotion. Without an admission record the value is kept
+        as is (empty for a new alumnus, or what staff entered)."""
+        students = self.student_id
+        first_year = {}
+        if students:
+            admissions = self.env['school.admission'].sudo().search(
+                [('student_id', 'in', students.ids), ('academic_year_id', '!=', False)],
+                order='admission_date asc, id asc')
+            for adm in admissions:
+                first_year.setdefault(adm.student_id.id, adm.academic_year_id)
+        for rec in self:
+            rec.admission_academic_year_id = first_year.get(rec.student_id.id) or rec.admission_academic_year_id
+
     @api.depends('education_ids.degree', 'education_ids.end_year', 'education_ids.sequence')
     def _compute_highest_qualification(self):
         for rec in self:
@@ -145,7 +196,169 @@ class SchoolAlumni(models.Model):
         for vals in vals_list:
             if not vals.get('code') or vals['code'] == '/':
                 vals['code'] = self.env['ir.sequence'].next_by_code('school.alumni') or '/'
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        # every creation path (graduate wizard, Graduate button, import, RPC)
+        records.filtered('student_id')._import_school_achievements()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if vals.get('student_id'):
+            self.filtered('student_id')._import_school_achievements()
+        return res
+
+    # ------------------------------------------------------------------
+    # School achievements -> alumni Achievements tab
+    # ------------------------------------------------------------------
+    def action_import_school_achievements(self):
+        """Header button: add the school achievements that are still missing."""
+        for rec in self:
+            if not rec.student_id:
+                raise UserError(_("%s has no student record to import from.", rec.name))
+        created = self._import_school_achievements()
+        for rec in self:
+            count = len(created.filtered(lambda a, r=rec: a.alumni_id == r))
+            rec.message_post(body=_("%s school achievement(s) imported.", count))
+        return True
+
+    def _import_school_achievements(self):
+        """Copy the student's school achievements into the Achievements tab.
+        Only what is missing is added (one row per school record, see
+        school.alumni.achievement.school_source); manual rows are untouched."""
+        Achievement = self.env['school.alumni.achievement'].sudo()
+        created = Achievement
+        for rec in self.sudo():
+            student = rec.student_id
+            if not student:
+                continue
+            existing = {'%s,%s' % (r._name, r.id) for r in Achievement.search(
+                [('alumni_id', '=', rec.id), ('school_source', '!=', False)]).mapped('school_source') if r}
+            vals_list = []
+            for vals in rec._school_achievement_values(student):
+                ref = vals['school_source']
+                if ref not in existing:
+                    existing.add(ref)
+                    vals_list.append(dict(vals, alumni_id=rec.id, featured=False))
+            if vals_list:
+                created |= Achievement.create(vals_list)
+        return created
+
+    def _school_achievement_values(self, student):
+        """[vals] of every school achievement of `student` (sources A-F)."""
+        env = self.env
+        result = []
+
+        def src(record):
+            return '%s,%s' % (record._name, record.id)
+
+        def describe(*parts):
+            return ' · '.join(p for p in parts if p) or False
+
+        def labels(record, fname):
+            return dict(record._fields[fname]._description_selection(env))
+
+        class_txt = ' - '.join(filter(None, [student.class_id.name, student.section_id.name]))
+
+        # A. activity prizes (1st / 2nd / 3rd place)
+        if 'event.registration' in env and 'school_position' in env['event.registration']._fields:
+            regs = env['event.registration'].sudo().search([
+                ('student_id', '=', student.id), ('is_school_activity', '=', True),
+                ('school_position', '!=', False), ('state', '!=', 'cancel')])
+            for reg in regs:
+                position = labels(reg, 'school_position').get(reg.school_position)
+                result.append({
+                    'school_source': src(reg),
+                    'name': '%s – %s' % (position, reg.event_id.name),
+                    'category': ACTIVITY_CATEGORY.get(reg.school_activity_type, 'other'),
+                    'level': False,
+                    'date': reg.school_activity_date or (reg.event_id.date_begin and reg.event_id.date_begin.date()),
+                    'description': describe(reg.school_class_id.name and _("Class: %s", reg.school_class_id.name),
+                                            reg.school_house_id and _("Group: %s", reg.school_house_id.name),
+                                            _("Position: %s", position),
+                                            reg.school_score and _("Score: %s", reg.school_score)),
+                })
+
+        # C. competition results (First / Second / Third) and D. competition details
+        part_keys = set()
+        if 'school.student.competition.participant' in env:
+            for part in env['school.student.competition.participant'].sudo().search(
+                    [('student_id', '=', student.id), ('result', '!=', False)]):
+                record = part.record_id
+                part_keys.add(record.id)
+                position = labels(part, 'result').get(part.result)
+                result.append({
+                    'school_source': src(part),
+                    'name': '%s – %s' % (position, part.competition_id.name),
+                    'category': AREA_CATEGORY.get(record.area, 'other'),
+                    'level': RECORD_LEVEL.get(record.level, False),
+                    'date': record.date,
+                    'description': describe(record.name, part.class_id.name and _("Class: %s", part.class_id.name),
+                                            _("Position: %s", position)),
+                })
+        if 'school.student.competition.detail' in env:
+            for det in env['school.student.competition.detail'].sudo().search([('student_id', '=', student.id)]):
+                if not (det.result or det.award):
+                    continue
+                record = det.student_record_id
+                part_keys.add(record.id)
+                result.append({
+                    'school_source': src(det),
+                    'name': '%s – %s' % (det.award or det.result, det.competition_id.name),
+                    'category': AREA_CATEGORY.get(record.area, 'other'),
+                    'level': RECORD_LEVEL.get(record.level, False),
+                    'date': det.competition_date or record.date,
+                    'description': describe(record.name, det.result and _("Result: %s", det.result),
+                                            det.award and _("Award: %s", det.award), det.remarks),
+                })
+
+        # B. development records (every kind)
+        if 'school.student.record' in env:
+            records = env['school.student.record'].sudo().search([('student_ids', 'in', student.id)])
+            for record in records:
+                if record.kind == 'competition' and record.id in part_keys:
+                    continue    # the student's own result / detail (C / D) is imported instead
+                prefix = RECORD_KIND_PREFIX.get(record.kind) or labels(record, 'kind').get(record.kind)
+                result.append({
+                    'school_source': src(record),
+                    'name': ' – '.join(filter(None, [prefix, record.name, record.result])),
+                    'category': AREA_CATEGORY.get(record.area) or RECORD_KIND_CATEGORY.get(record.kind, 'other'),
+                    'level': RECORD_LEVEL.get(record.level, False),
+                    'date': record.date,
+                    'description': describe(labels(record, 'kind').get(record.kind),
+                                            record.level and _("Level: %s", labels(record, 'level').get(record.level)),
+                                            class_txt and _("Class: %s", class_txt)),
+                })
+
+        # E. completed reading challenges
+        if 'school.reading.challenge.participant' in env:
+            for part in env['school.reading.challenge.participant'].sudo().search(
+                    [('student_id', '=', student.id), ('completed', '=', True)]):
+                ch = part.challenge_id
+                result.append({
+                    'school_source': src(part),
+                    'name': _("Completed Reading Challenge – %s", ch.name),
+                    'category': 'academic',
+                    'level': False,
+                    'date': ch.date_end,
+                    'description': describe(_("%s book(s) read", part.books_read),
+                                            ch.target_books and _("Target: %s", ch.target_books)),
+                })
+
+        # F. club leadership roles
+        if 'school.club.membership' in env:
+            for mem in env['school.club.membership'].sudo().search(
+                    [('student_id', '=', student.id), ('role', 'not in', (False, 'member'))]):
+                role = labels(mem, 'role').get(mem.role)
+                result.append({
+                    'school_source': src(mem),
+                    'name': '%s – %s' % (role, mem.club_id.name),
+                    'category': CLUB_CATEGORY.get(mem.club_type, 'other'),
+                    'level': False,
+                    'date': mem.date_start,
+                    'description': describe(_("From %s", mem.date_start),
+                                            mem.date_end and _("to %s", mem.date_end)),
+                })
+        return result
 
     @api.constrains('graduation_year')
     def _check_graduation_year(self):
@@ -336,3 +549,28 @@ class SchoolAlumniAchievement(models.Model):
     date = fields.Date(string='Date')
     description = fields.Text(string='Description')
     featured = fields.Boolean(string='Featured', help='Show as a highlight of the alumni network.')
+    # set only for rows copied from the school records (never for manual rows)
+    school_source = fields.Reference(SCHOOL_SOURCE_MODELS, string='School Record', readonly=True, copy=False)
+    from_school_records = fields.Boolean(string='From School Records', compute='_compute_from_school_records',
+                                         store=True)
+
+    _school_source_uniq = models.Constraint(
+        'unique(alumni_id, school_source)', 'This school record is already in the achievements.')
+
+    _SCHOOL_LOCKED_FIELDS = {'name', 'category', 'date', 'level', 'school_source', 'alumni_id'}
+
+    @api.depends('school_source')
+    def _compute_from_school_records(self):
+        for rec in self:
+            rec.from_school_records = bool(rec.school_source)
+
+    def write(self, vals):
+        if self._SCHOOL_LOCKED_FIELDS & set(vals) and self.filtered('from_school_records'):
+            raise UserError(_("This achievement comes from school records: only the Description and "
+                              "Featured can be changed."))
+        return super().write(vals)
+
+    def unlink(self):
+        if self.filtered('from_school_records'):
+            raise UserError(_("This achievement comes from school records and can't be deleted."))
+        return super().unlink()

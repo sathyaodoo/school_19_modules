@@ -42,10 +42,16 @@ class SaleOrder(models.Model):
             if walk_in:
                 self.partner_id = walk_in
 
+    @api.model
+    def _canteen_student_partner(self, student):
+        """Students are billed to their first parent/guardian, or to the
+        student's own contact when no parent is linked."""
+        return student.parent_ids[:1].partner_id or student.partner_id
+
     @api.onchange('canteen_student_id')
     def _onchange_canteen_student_id(self):
         if self.canteen_student_id:
-            self.partner_id = self.canteen_student_id.partner_id
+            self.partner_id = self._canteen_student_partner(self.canteen_student_id)
 
     @api.onchange('canteen_employee_id')
     def _onchange_canteen_employee_id(self):
@@ -99,39 +105,99 @@ class SaleOrder(models.Model):
                     meal=order.canteen_meal_id.name, date=order.canteen_date))
         return True
 
+    def _canteen_check_lines(self):
+        for order in self:
+            if not order.is_canteen_sale:
+                raise UserError(_("%s is not a canteen sale.", order.name))
+            if not order.order_line.filtered(lambda l: not l.display_type and l.product_uom_qty > 0):
+                raise UserError(_("Add at least one dish."))
+            not_dishes = order.order_line.filtered(
+                lambda l: not l.display_type and not l.product_id.product_tmpl_id.is_canteen_dish)
+            if not_dishes:
+                raise UserError(_(
+                    "Only dishes are sold at the canteen counter. Remove: %s",
+                    ', '.join(not_dishes.product_id.mapped('name'))))
+
+    def _canteen_check_accounting(self):
+        """Clear message instead of an accounting error when the company has
+        no Sales journal or the dishes have no income account."""
+        for company, orders in self.grouped('company_id').items():
+            journal = self.env['account.journal'].search([
+                ('type', '=', 'sale'), ('company_id', 'parent_of', company.id),
+            ], limit=1)
+            dishes = orders.order_line.filtered(lambda l: not l.display_type).product_id
+            no_income = dishes.filtered(
+                lambda p: not p.product_tmpl_id.with_company(company)._get_product_accounts()['income'])
+            if not journal or no_income:
+                raise UserError(_(
+                    "Accounting is not set up for %(company)s, so the canteen bill cannot be created. "
+                    "Set the company's country and install its accounting localisation "
+                    "(e.g. India - Accounting) so it has a Sales journal and income accounts, "
+                    "or set an Income Account on the dish or its product category.%(details)s",
+                    company=company.name,
+                    details=(_(" Dishes without an income account: %s.", ', '.join(no_income.mapped('name')))
+                             if journal and no_income else _(" There is no Sales journal."))))
+
+    def _canteen_confirm_and_deliver(self):
+        """Confirm the Sales Order (standard) and close its Delivery: the
+        dishes have been served. A dish WITH a recipe is a Kit, so its
+        delivery moves are the recipe's ingredients and they leave stock. A
+        dish WITHOUT a recipe has nothing to take out of stock: its move is
+        cancelled (it is invoiced on the ordered quantity anyway)."""
+        for order in self:
+            if order.state in ('draft', 'sent'):
+                order.action_confirm()
+            for picking in order.picking_ids.filtered(lambda p: p.state not in ('done', 'cancel')):
+                moves = picking.move_ids.filtered(lambda m: m.state not in ('done', 'cancel'))
+                recipe_moves = moves.filtered(lambda m: m.bom_line_id)
+                (moves - recipe_moves)._action_cancel()
+                if not recipe_moves:
+                    continue
+                for move in recipe_moves:
+                    move.quantity = move.product_uom_qty
+                    move.picked = True
+                picking.with_context(skip_backorder=True, skip_sms=True, skip_immediate=True).button_validate()
+
+    def action_canteen_confirm_later(self):
+        """'Confirm (bill later)' button: confirm and deliver now, invoice
+        later with 'Bill Selected' (one invoice per customer)."""
+        self._canteen_check_lines()
+        self._canteen_confirm_and_deliver()
+        return True
+
+    def action_canteen_bill_selected(self):
+        """'Bill Selected' (Canteen Sales list): one DRAFT customer invoice
+        per customer for the selected confirmed orders that are still to
+        invoice (standard sale invoicing groups them by customer)."""
+        orders = self.filtered(lambda o: o.is_canteen_sale and o.state == 'sale'
+                               and o.invoice_status == 'to invoice')
+        if not orders:
+            raise UserError(_("Nothing to bill: the selected canteen sales are not confirmed yet or "
+                              "are already invoiced."))
+        orders._canteen_check_accounting()
+        invoices = orders._create_invoices()
+        action = self.env['ir.actions.act_window']._for_xml_id('account.action_move_out_invoice_type')
+        action.update({
+            'domain': [('id', 'in', invoices.ids)],
+            'context': {'default_move_type': 'out_invoice'},
+        })
+        if len(invoices) == 1:
+            action.update({'views': [(False, 'form')], 'view_mode': 'form', 'res_id': invoices.id})
+        return action
+
     def action_canteen_checkout(self):
         """'Confirm & Invoice' button: one click at the counter.
 
-        Confirms the Sales Order (standard), validates its Delivery so the
-        food items leave stock (standard Inventory), creates and posts the
-        Customer Invoice (standard Accounting), then opens the invoice so the
-        cashier can click Register Payment."""
+        Confirms the Sales Order (standard), closes its Delivery (ingredients
+        of dishes with a recipe leave stock), creates and posts the Customer
+        Invoice (standard Accounting), then opens the invoice so the cashier
+        can click Register Payment."""
         self.ensure_one()
-        if not self.is_canteen_sale:
-            raise UserError(_("This is not a canteen sale."))
-        if not self.order_line.filtered(lambda l: not l.display_type and l.product_uom_qty > 0):
-            raise UserError(_("Add at least one dish."))
-        not_dishes = self.order_line.filtered(
-            lambda l: not l.display_type and not l.product_id.product_tmpl_id.is_canteen_dish)
-        if not_dishes:
-            raise UserError(_(
-                "Only dishes are sold at the canteen counter. Remove: %s",
-                ', '.join(not_dishes.product_id.mapped('name'))))
-        no_recipe = self.order_line.product_id.product_tmpl_id.filtered(lambda t: not t.canteen_recipe_bom_id)
-        if no_recipe:
-            raise UserError(_(
-                "These dishes have no recipe yet, so their ingredients cannot be taken out of "
-                "stock: %s. Open Dishes and click Recipe.", ', '.join(no_recipe.mapped('name'))))
-        if self.state in ('draft', 'sent'):
-            self.action_confirm()
-        # Delivery: the dishes have been served. Each dish is a Kit, so the
-        # delivery moves are its recipe's ingredients.
-        for picking in self.picking_ids.filtered(lambda p: p.state not in ('done', 'cancel')):
-            for move in picking.move_ids.filtered(lambda m: m.state not in ('done', 'cancel')):
-                move.quantity = move.product_uom_qty
-                move.picked = True
-            picking.with_context(skip_backorder=True, skip_sms=True, skip_immediate=True).button_validate()
+        self._canteen_check_lines()
         invoices = self.invoice_ids.filtered(lambda m: m.state != 'cancel')
+        if not invoices:
+            self._canteen_check_accounting()
+        self._canteen_confirm_and_deliver()
         if not invoices:
             invoices = self._create_invoices()
         invoices.filtered(lambda m: m.state == 'draft').action_post()

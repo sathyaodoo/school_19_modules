@@ -28,6 +28,7 @@ from . import school_staff_resignation
 from . import school_exit_interview
 from . import school_canteen_meal
 from . import school_canteen_food_item
+from . import school_canteen_sale
 from . import school_canteen_menu
 from . import school_canteen_daily_planning
 from . import school_purchase_order

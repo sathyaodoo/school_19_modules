@@ -101,7 +101,9 @@ class SchoolCanteenDailyPlanning(models.Model):
             # than a true day-by-day present/absent staff attendance
             # check. Revisit this if/when a staff attendance module is
             # added to the system.
-            rec.staff_count = self.env['hr.employee'].search_count([
+            # sudo(): only a COUNT is read. hr.employee is readable by HR
+            # officers only, and canteen staff must still see the number.
+            rec.staff_count = self.env['hr.employee'].sudo().search_count([
                 ('meal_entitled', '=', True),
             ])
 

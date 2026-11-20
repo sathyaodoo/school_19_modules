@@ -41,6 +41,22 @@ class SchoolCanteenMenu(models.Model):
         for rec in self:
             rec.week_end_date = rec.week_start_date + timedelta(days=6) if rec.week_start_date else False
 
+    @api.model
+    def default_get(self, fields_list):
+        """Open a new menu with every day (Monday to Sunday) already listed
+        once per active meal of the Meal Master, in meal order (start time):
+        the user only picks the dishes."""
+        res = super().default_get(fields_list)
+        if 'menu_line_ids' in fields_list and not res.get('menu_line_ids'):
+            meals = self.env['school.canteen.meal'].search([], order='start_time, name, id')
+            days = [key for key, _label in self.env['school.canteen.menu.line']._fields['day'].selection]
+            res['menu_line_ids'] = [
+                fields.Command.create({'day': day, 'meal_id': meal.id, 'sequence': (index + 1) * 10})
+                for day in days
+                for index, meal in enumerate(meals)
+            ]
+        return res
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -52,6 +68,8 @@ class SchoolCanteenMenu(models.Model):
         for rec in self:
             if rec.state != 'draft':
                 raise UserError(_("Only a Draft menu can be published."))
+            # pre-filled meal slots that were not used (no dishes, no remarks)
+            rec.menu_line_ids.filtered(lambda l: not l.food_item_ids and not l.remarks).unlink()
             if not rec.menu_line_ids:
                 raise UserError(_("Please add at least one menu line before publishing."))
             rec.write({
@@ -71,7 +89,7 @@ class SchoolCanteenMenu(models.Model):
 class SchoolCanteenMenuLine(models.Model):
     _name = 'school.canteen.menu.line'
     _description = 'Canteen Menu Line (Daily Menu Item)'
-    _order = 'sequence, id'
+    _order = 'day_sequence, sequence, id'
 
     sequence = fields.Integer(default=10)
     menu_id = fields.Many2one(
@@ -84,6 +102,8 @@ class SchoolCanteenMenuLine(models.Model):
         ],
         string='Day', required=True,
     )
+    # Monday = 1 ... Sunday = 7: keeps the lines in day order (see _order)
+    day_sequence = fields.Integer(string='Day Order', compute='_compute_day_sequence', store=True)
     meal_id = fields.Many2one('school.canteen.meal', string='Meal', required=True)
     # Dishes served (Sambar Rice, Bread Omelette ...): standard products
     # marked "Can be Sold" (Sales app). Their recipes are standard Bills of
@@ -101,6 +121,12 @@ class SchoolCanteenMenuLine(models.Model):
         help="Sum of the Selling Prices of this meal's dishes (one plate of each). The actual "
              "bill depends on the dishes and quantities the customer takes.")
     remarks = fields.Char(string='Remarks')
+
+    @api.depends('day')
+    def _compute_day_sequence(self):
+        order = {key: index for index, (key, _label) in enumerate(self._fields['day'].selection, start=1)}
+        for line in self:
+            line.day_sequence = order.get(line.day, 0)
 
     @api.depends('food_item_ids.list_price', 'food_item_ids.name')
     def _compute_menu_price(self):

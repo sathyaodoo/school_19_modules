@@ -49,6 +49,7 @@ access_school_teacher_teacher,school.teacher.teacher,model_school_teacher,group_
 access_school_teacher_accountant,school.teacher.accountant,model_school_teacher,group_school_accountant,1,0,0,0
 access_school_teacher_parent,school.teacher.parent,model_school_teacher,group_school_parent,1,0,0,0
 access_school_teacher_student,school.teacher.student,model_school_teacher,group_school_student,1,0,0,0
+access_school_teacher_hr_user,school.teacher.hr.user,model_school_teacher,hr.group_hr_user,1,1,1,0
 access_school_admission_admin,school.admission.admin,model_school_admission,group_school_admin,1,1,1,1
 access_school_admission_principal,school.admission.principal,model_school_admission,group_school_principal,1,1,1,1
 access_school_admission_teacher,school.admission.teacher,model_school_admission,group_school_teacher,1,0,0,0
@@ -256,12 +257,6 @@ access_school_maintenance_approval_rule_user,school.maintenance.approval.rule.us
 access_school_maintenance_sla_admin,school.maintenance.sla.admin,model_school_maintenance_sla,group_school_admin,1,1,1,1
 access_school_maintenance_sla_principal,school.maintenance.sla.principal,model_school_maintenance_sla,group_school_principal,1,1,1,1
 access_school_maintenance_sla_user,school.maintenance.sla.user,model_school_maintenance_sla,base.group_user,1,0,0,0
-access_school_purchase_request_admin,school.purchase.request.admin,model_school_purchase_request,group_school_admin,1,1,1,1
-access_school_purchase_request_principal,school.purchase.request.principal,model_school_purchase_request,group_school_principal,1,1,1,1
-access_school_purchase_request_user,school.purchase.request.user,model_school_purchase_request,base.group_user,1,1,1,0
-access_school_purchase_request_line_admin,school.purchase.request.line.admin,model_school_purchase_request_line,group_school_admin,1,1,1,1
-access_school_purchase_request_line_principal,school.purchase.request.line.principal,model_school_purchase_request_line,group_school_principal,1,1,1,1
-access_school_purchase_request_line_user,school.purchase.request.line.user,model_school_purchase_request_line,base.group_user,1,1,1,1
 access_school_staff_resignation_admin,school.staff.resignation.admin,model_school_staff_resignation,group_school_admin,1,1,1,1
 access_school_staff_resignation_principal,school.staff.resignation.principal,model_school_staff_resignation,group_school_principal,1,1,0,0
 access_school_staff_resignation_hr_manager,school.staff.resignation.hr_manager,model_school_staff_resignation,group_school_hr_manager,1,1,0,0

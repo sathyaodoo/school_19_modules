@@ -30,7 +30,7 @@
                         <strong><field name="student_id"/></strong>
                         <div class="text-muted">Mentor: <field name="mentor_id"/></div>
                         <div><field name="area"/></div>
-                        <div class="small text-muted"><field name="session_count"/> session(s)</div>
+                        <div class="small text-muted"><field name="completed_session_count"/>/<field name="session_count"/> session(s) done</div>
                     </t>
                 </templates>
             </kanban>
@@ -46,7 +46,7 @@
                     <button name="action_start" type="object" string="Start" class="oe_highlight"
                             invisible="state != 'draft'"/>
                     <button name="action_complete" type="object" string="Complete" class="oe_highlight"
-                            invisible="state != 'active'"/>
+                            invisible="not can_complete"/>
                     <button name="action_cancel" type="object" string="Cancel"
                             invisible="state in ('completed', 'cancelled')"/>
                     <button name="action_reset_draft" type="object" string="Reset to Draft"
@@ -77,20 +77,38 @@
                             <field name="end_date"/>
                         </group>
                         <group>
-                            <field name="session_count"/>
-                            <field name="total_hours" widget="float_time"/>
+                            <field name="can_complete" invisible="1"/>
+                            <label for="completed_session_count" string="Sessions"/>
+                            <div class="o_row">
+                                <field name="completed_session_count" class="oe_inline"/> /
+                                <field name="session_count" class="oe_inline"/> completed
+                            </div>
+                            <field name="planned_session_count" decoration-warning="planned_session_count &gt; 0"
+                                   invisible="state != 'active' or not planned_session_count"/>
+                            <field name="total_hours" widget="float_time" string="Total Hours (completed)"/>
                             <field name="student_feedback" widget="priority" invisible="state not in ('active', 'completed')"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Sessions" name="sessions">
                             <field name="session_ids" readonly="state in ('completed', 'cancelled')">
-                                <list editable="bottom">
-                                    <field name="date"/>
-                                    <field name="topic"/>
-                                    <field name="mode"/>
-                                    <field name="duration" widget="float_time" sum="Total"/>
+                                <list editable="bottom" decoration-muted="state == 'cancelled'">
+                                    <field name="date" readonly="state == 'completed'"/>
+                                    <field name="topic" readonly="state == 'completed'"/>
+                                    <field name="mode" readonly="state == 'completed'"/>
+                                    <field name="duration" widget="float_time" sum="Total" readonly="state == 'completed'"/>
                                     <field name="notes" optional="show"/>
+                                    <field name="state" widget="badge" readonly="1"
+                                           decoration-info="state == 'planned'" decoration-success="state == 'completed'"/>
+                                    <button name="action_complete_session" type="object" string="Complete"
+                                            icon="fa-check" class="btn-link text-success"
+                                            invisible="state != 'planned' or parent.state != 'active'"/>
+                                    <button name="action_cancel_session" type="object" string="Cancel"
+                                            icon="fa-times" class="btn-link text-danger"
+                                            invisible="state != 'planned' or parent.state != 'active'"/>
+                                    <button name="action_reset_planned" type="object" string="Reset to Planned"
+                                            icon="fa-undo" class="btn-link"
+                                            invisible="state != 'cancelled' or parent.state in ('completed', 'cancelled')"/>
                                 </list>
                             </field>
                         </page>

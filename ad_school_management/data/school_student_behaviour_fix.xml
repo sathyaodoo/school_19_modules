@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Not noupdate: runs on every update of the module. The method is
+         idempotent and changes nothing when the data is already correct. -->
+    <function model="school.student.behaviour" name="_fix_behaviour_feedback_lines"/>
+</odoo>
