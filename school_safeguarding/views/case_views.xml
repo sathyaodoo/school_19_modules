@@ -30,19 +30,13 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_start_triage" string="Start Assessment" type="object" class="btn-primary"
-                            invisible="state != 'new'"/>
-                    <button name="action_start_investigation" string="Start Investigation" type="object"
-                            class="btn-primary" invisible="state != 'triage'"/>
-                    <button name="action_to_follow_up" string="Move to Follow-up" type="object" class="btn-primary"
-                            invisible="state != 'investigation'"/>
                     <button name="action_close" string="Close Case" type="object"
-                            invisible="state not in ('triage', 'investigation', 'follow_up')"
-                            confirm="Close this case? Make sure the outcome, closure notes and follow-up actions are complete."/>
+                            class="btn-primary" invisible="state == 'closed'"
+                            confirm="Close this case? Make sure the outcome and closure notes are written."/>
                     <button name="action_escalate" string="Escalate" type="object" invisible="state == 'closed'"/>
                     <button name="action_reopen" string="Reopen" type="object" invisible="state != 'closed'"
                             groups="school_safeguarding.group_sg_lead"/>
-                    <field name="state" widget="statusbar" statusbar_visible="new,triage,investigation,follow_up,closed"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,closed"/>
                 </header>
                 <sheet>
                     <div class="alert alert-secondary" role="alert">
@@ -76,8 +70,8 @@
                             <field name="reporter_label"/>
                             <field name="is_anonymous" invisible="1"/>
                             <field name="days_open"/>
-                            <field name="action_open_count"/>
-                            <field name="action_overdue_count"/>
+                            <field name="action_open_count" invisible="not action_open_count"/>
+                            <field name="action_overdue_count" invisible="not action_overdue_count"/>
                         </group>
                     </group>
                     <notebook>
@@ -86,8 +80,6 @@
                                 <group>
                                     <field name="incident_date"/>
                                     <field name="location"/>
-                                    <field name="is_online"/>
-                                    <field name="platform" invisible="not is_online"/>
                                 </group>
                                 <group>
                                     <field name="affected_student_ids" widget="many2many_tags"
@@ -101,21 +93,19 @@
                                 <field name="description"/>
                             </group>
                         </page>
-                        <page string="Assessment" name="assessment">
+                        <page string="Assessment" name="assessment" invisible="not triage_notes">
                             <group>
                                 <field name="triage_notes"/>
                                 <field name="triage_datetime"/>
                                 <field name="triage_by"/>
                             </group>
                         </page>
-                        <page string="Investigation" name="investigation">
+                                                <page string="Investigation" name="investigation"
+                              invisible="not findings and state not in ('investigation', 'follow_up')">
                             <group>
                                 <group>
                                     <field name="investigator_id" options="{'no_create': True}"/>
                                     <field name="investigation_start"/>
-                                </group>
-                                <group>
-                                    <field name="outcome"/>
                                 </group>
                             </group>
                             <group>
@@ -131,7 +121,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Follow-up" name="follow_up">
+                        <page string="Follow-up" name="follow_up" invisible="not action_ids">
                             <field name="action_ids">
                                 <list editable="bottom" decoration-danger="overdue" decoration-muted="state != 'todo'">
                                     <field name="action_type"/>
@@ -148,7 +138,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Escalation" name="escalation">
+                        <page string="Escalation" name="escalation" invisible="not escalated">
                             <field name="escalation_ids">
                                 <list>
                                     <field name="escalated_datetime"/>
@@ -160,9 +150,10 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Closure &amp; Reporter" name="closure">
+                        <page string="Resolution" name="closure">
                             <group>
                                 <group string="Closure">
+                                    <field name="outcome"/>
                                     <field name="closure_notes"/>
                                     <field name="closed_datetime"/>
                                     <field name="closed_by"/>
@@ -175,18 +166,6 @@
                                     <field name="access_code"/>
                                 </group>
                             </group>
-                        </page>
-                        <page string="Evidence" name="evidence">
-                            <field name="attachment_ids" widget="many2many_binary"/>
-                        </page>
-                        <page string="Who Opened This Case" name="access_log"
-                              groups="school_safeguarding.group_sg_lead">
-                            <field name="access_log_ids">
-                                <list create="0" edit="0" delete="0">
-                                    <field name="viewed_datetime"/>
-                                    <field name="user_id"/>
-                                </list>
-                            </field>
                         </page>
                     </notebook>
                 </sheet>

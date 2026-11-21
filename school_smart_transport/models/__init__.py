@@ -5,3 +5,4 @@ from . import stop_vehicle
 from . import event
 from . import trip
 from . import boarding
+from . import route_live_seats

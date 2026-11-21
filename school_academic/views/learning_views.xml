@@ -352,24 +352,12 @@
     <!-- ================================================================
          HOMEWORK (= Online Exam assignment of type Homework)
          ================================================================ -->
-    <record id="view_school_oe_assignment_form_homework" model="ir.ui.view">
-        <field name="name">school.oe.assignment.form.homework</field>
-        <field name="model">school.oe.assignment</field>
-        <field name="inherit_id" ref="school_online_exam.view_school_oe_assignment_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='school_exam_id']" position="after">
-                <field name="diary_id" options="{'no_create': True}"/>
-                <field name="outcome_ids" widget="many2many_tags" options="{'no_create': True}"/>
-            </xpath>
-        </field>
-    </record>
-
     <record id="action_school_homework" model="ir.actions.act_window">
         <field name="name">Homework</field>
         <field name="res_model">school.oe.assignment</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('kind', '=', 'homework')]</field>
-        <field name="context">{'default_kind': 'homework', 'default_max_marks': 10.0}</field>
+        <field name="context">{'default_kind': 'homework', 'default_max_marks': 10.0, 'hide_descriptive_kind_view_ref': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No homework yet</p>
             <p>Open a class diary entry and press <b>Give Homework</b>, or create it here. Students upload their

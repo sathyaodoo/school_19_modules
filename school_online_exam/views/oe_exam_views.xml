@@ -42,8 +42,11 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_open_descriptive" type="object" class="oe_stat_button"
+                                icon="fa-pencil-square-o" string="Question Paper &amp; Submissions"
+                                invisible="exam_type != 'descriptive'"/>
                         <button name="action_view_questions" type="object" class="oe_stat_button"
-                                icon="fa-question-circle">
+                                icon="fa-question-circle" invisible="exam_type == 'descriptive'">
                             <field name="pool_count" widget="statinfo" string="Questions in Bank"/>
                         </button>
                         <button name="action_view_students" type="object" class="oe_stat_button"
@@ -55,41 +58,50 @@
                             <field name="mark_entry_count" widget="statinfo" string="Marks Approval"/>
                         </button>
                         <button name="action_view_attempts" type="object" class="oe_stat_button"
-                                icon="fa-list-alt">
+                                icon="fa-list-alt" invisible="exam_type == 'descriptive'">
                             <field name="attempt_count" widget="statinfo" string="Attempts"/>
                         </button>
                     </div>
                     <div class="oe_title">
                         <label for="name"/>
-                        <h1><field name="name" placeholder="e.g. Maths Quick Test - Chapter 1"/></h1>
+                        <h1><field name="name" readonly="state != 'draft'" placeholder="e.g. Maths Quick Test - Chapter 1"/></h1>
+                    </div>
+                    <div class="alert alert-info" role="status" invisible="exam_type != 'descriptive'">
+                        Descriptive exam: students write their answers and upload them; teachers evaluate them.
+                        Set the due date in <b>Available Until</b> and save, then click
+                        <b>Question Paper &amp; Submissions</b> to add the question / instructions, question paper
+                        files and max marks, and to evaluate the submissions.
                     </div>
                     <group>
                         <group string="Who / What">
-                            <field name="exam_type"/>
-                            <field name="class_id"/>
-                            <field name="section_id" placeholder="Whole class"/>
-                            <field name="subject_id"/>
-                            <field name="chapter_ids" widget="many2many_tags"/>
-                            <field name="topic_ids" widget="many2many_tags"/>
+                            <field name="exam_type" readonly="state != 'draft'"/>
+                            <field name="class_id" readonly="state != 'draft'"/>
+                            <field name="section_id" readonly="state != 'draft'" placeholder="Whole class"/>
+                            <field name="subject_id" readonly="state != 'draft'"/>
+                            <field name="chapter_ids" readonly="state != 'draft'" widget="many2many_tags"
+                                   invisible="exam_type == 'descriptive'"/>
+                            <field name="topic_ids" readonly="state != 'draft'" widget="many2many_tags"
+                                   invisible="exam_type == 'descriptive'"/>
+                            <field name="assignment_id" invisible="exam_type != 'descriptive' or not assignment_id"/>
+                            <field name="assignment_state" invisible="exam_type != 'descriptive' or not assignment_id"/>
                         </group>
-                        <group string="Attempt Rules">
-                            <field name="questions_per_attempt"/>
-                            <field name="duration_minutes"/>
-                            <field name="max_attempts"/>
-                            <field name="avoid_repeat"/>
-                            <field name="shuffle_options"/>
+                        <group string="Attempt Rules" invisible="exam_type == 'descriptive'">
+                            <field name="questions_per_attempt" readonly="state != 'draft'"/>
+                            <field name="duration_minutes" readonly="state != 'draft'"/>
+                            <field name="max_attempts" readonly="state != 'draft'"/>
+                            <field name="avoid_repeat" readonly="state != 'draft'"/>
+                            <field name="shuffle_options" readonly="state != 'draft'"/>
                         </group>
                     </group>
                     <group>
                         <group string="Result">
-                            <field name="pass_percentage"/>
-                            <field name="score_policy"/>
-                            <field name="show_answers"/>
-                            <field name="school_exam_id" invisible="exam_type != 'exam'"/>
+                            <field name="pass_percentage" readonly="state != 'draft'" invisible="exam_type == 'descriptive'"/>
+                            <field name="show_answers" readonly="state != 'draft'" invisible="exam_type == 'descriptive'"/>
+                            <field name="school_exam_id" readonly="state != 'draft'" invisible="exam_type not in ('exam', 'descriptive')"/>
                         </group>
                         <group string="Availability (optional)">
-                            <field name="date_start"/>
-                            <field name="date_end"/>
+                            <field name="date_start" readonly="state != 'draft'" invisible="exam_type == 'descriptive'"/>
+                            <field name="date_end" readonly="state != 'draft'" required="exam_type == 'descriptive'"/>
                         </group>
                     </group>
                     <notebook>
@@ -125,11 +137,13 @@
                 <field name="subject_id"/>
                 <filter name="type_exam" string="Exams" domain="[('exam_type', '=', 'exam')]"/>
                 <filter name="type_mock" string="Mock Tests" domain="[('exam_type', '=', 'mock')]"/>
+                <filter name="type_descriptive" string="Descriptive Exams" domain="[('exam_type', '=', 'descriptive')]"/>
                 <separator/>
                 <filter name="published" string="Published" domain="[('state', '=', 'published')]"/>
                 <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
                 <filter name="closed" string="Closed" domain="[('state', '=', 'closed')]"/>
                 <group>
+                    <filter name="group_type" string="Type" context="{'group_by': 'exam_type'}"/>
                     <filter name="group_class" string="Class" context="{'group_by': 'class_id'}"/>
                     <filter name="group_section" string="Section" context="{'group_by': 'section_id'}"/>
                     <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
@@ -143,7 +157,7 @@
         <field name="name">Online Exams</field>
         <field name="res_model">school.oe.exam</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('exam_type', '=', 'exam')]</field>
+        <field name="domain">[('exam_type', 'in', ('exam', 'mock', 'descriptive'))]</field>
         <field name="context">{'default_exam_type': 'exam'}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Create your first online exam</p>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ============ Assignments / Descriptive exams ============ -->
+    <!-- ============ Assignments / Projects ============ -->
     <record id="view_school_oe_assignment_list" model="ir.ui.view">
         <field name="name">school.oe.assignment.list</field>
         <field name="model">school.oe.assignment</field>
@@ -48,28 +48,28 @@
                     </div>
                     <div class="oe_title">
                         <label for="name"/>
-                        <h1><field name="name" placeholder="e.g. Science Unit 2 - Answer Paper"/></h1>
+                        <h1><field name="name" readonly="state != 'draft'" placeholder="e.g. Science Unit 2 - Answer Paper"/></h1>
                     </div>
                     <group>
                         <group string="Who / What">
-                            <field name="kind"/>
-                            <field name="class_id"/>
-                            <field name="section_id" placeholder="Whole class"/>
-                            <field name="subject_id"/>
+                            <field name="kind" readonly="state != 'draft'"/>
+                            <field name="class_id" readonly="state != 'draft'"/>
+                            <field name="section_id" readonly="state != 'draft'" placeholder="Whole class"/>
+                            <field name="subject_id" readonly="state != 'draft'"/>
                         </group>
                         <group string="Rules">
-                            <field name="due_datetime"/>
-                            <field name="duration_minutes"/>
-                            <field name="allow_late"/>
-                            <field name="max_marks"/>
-                            <field name="school_exam_id"/>
+                            <field name="start_datetime" readonly="state != 'draft'"/>
+                            <field name="due_datetime" readonly="state != 'draft'"/>
+                            <field name="allow_late" readonly="state != 'draft'"/>
+                            <field name="max_marks" readonly="state != 'draft'"/>
+                            <field name="school_exam_id" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Question / Instructions" name="question">
-                            <field name="instructions" placeholder="Type the question or instructions here..."/>
+                            <field name="instructions" readonly="state != 'draft'" placeholder="Type the question or instructions here..."/>
                             <group string="Question paper files (PDF / images)">
-                                <field name="question_attachment_ids" widget="many2many_binary" nolabel="1"/>
+                                <field name="question_attachment_ids" readonly="state != 'draft'" widget="many2many_binary" nolabel="1"/>
                             </group>
                         </page>
                         <page string="Students" name="students">
@@ -109,12 +109,14 @@
     </record>
 
     <record id="action_school_oe_assignment" model="ir.actions.act_window">
-        <field name="name">Descriptive / Assignments</field>
+        <field name="name">Project</field>
         <field name="res_model">school.oe.assignment</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('kind', '!=', 'descriptive')]</field>
+        <field name="context">{'default_kind': 'project', 'hide_descriptive_kind_view_ref': True}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Create a descriptive exam or assignment</p>
-            <p>Students upload their handwritten answer sheet (PDF / photos) from the portal,
+            <p class="o_view_nocontent_smiling_face">Create a project or assignment</p>
+            <p>Students upload their work (PDF / photos) from the portal,
                you give marks and feedback.</p>
         </field>
     </record>

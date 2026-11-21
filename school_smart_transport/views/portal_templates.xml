@@ -2,6 +2,7 @@
 <odoo>
     <!-- Live Trip buttons on the driver's "My Trips" page -->
     <template id="portal_driver_home_live" inherit_id="ad_school_management.portal_driver_home">
+        <xpath expr="//div[hasclass('d-grid')]/t[@t-as='trip']" position="replace"/>
         <xpath expr="//div[hasclass('d-grid')]" position="inside">
             <t t-foreach="[('morning', 'Morning Live Trip'), ('evening', 'Evening Live Trip')]" t-as="live">
                 <a t-attf-href="/my/driver/live/#{route.id}/#{live[0]}" class="btn btn-lg btn-primary">
@@ -106,7 +107,8 @@
                                 <span>
                                     <t t-out="student.name"/>
                                     <span t-if="student in on_board" class="badge bg-success ms-1">On board</span>
-                                    <span t-elif="student in boarded" class="badge bg-secondary ms-1">Dropped</span>
+                                    <span t-elif="student in absent" class="badge bg-danger ms-1">Absent</span>
+                                <span t-elif="student in boarded" class="badge bg-secondary ms-1">Dropped</span>
                                 </span>
                                 <t t-if="trip.state == 'running'">
                                     <form t-if="student in on_board" method="post"
@@ -116,18 +118,60 @@
                                             <t t-if="trip.trip_type == 'morning'">Reached school</t><t t-else="">Dropped</t>
                                         </button>
                                     </form>
-                                    <form t-elif="student not in boarded" method="post"
-                                          t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/board">
-                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                        <button type="submit" class="btn btn-sm btn-success">Boarded</button>
-                                    </form>
+                                    <div t-elif="student not in boarded" class="d-flex gap-1">
+                                        <form t-if="student not in absent" method="post"
+                                              t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/absent">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Absent</button>
+                                        </form>
+                                        <form method="post" t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/board">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <button type="submit" class="btn btn-sm btn-success">Boarded</button>
+                                        </form>
+                                    </div>
                                 </t>
                             </div>
                         </div>
                     </div>
                 </t>
-                <div t-if="no_stop" class="small text-muted mb-2">
-                    Students without a boarding point: <t t-out="', '.join(no_stop.mapped('name'))"/>
+                <!-- no-boarding-point-card: students the office has not given a stop yet can still be boarded -->
+                <div t-if="no_stop" class="card shadow-sm border-0 mb-2">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between">
+                            <b>No boarding point</b>
+                            <span class="small text-warning"><i class="fa fa-exclamation-triangle" title="Missing boarding point"/> ask the office to set a stop</span>
+                        </div>
+                        <div t-foreach="no_stop" t-as="student" class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
+                            <span>
+                                <t t-out="student.name"/>
+                                <span t-if="student in on_board" class="badge bg-success ms-1">On board</span>
+                                <span t-elif="student in absent" class="badge bg-danger ms-1">Absent</span>
+                                <span t-elif="student in boarded" class="badge bg-secondary ms-1">
+                                    <t t-if="trip.trip_type == 'morning'">At school</t><t t-else="">Dropped</t>
+                                </span>
+                            </span>
+                            <t t-if="trip.state == 'running'">
+                                <form t-if="student in on_board" method="post"
+                                      t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/offboard">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <t t-if="trip.trip_type == 'morning'">Reached school</t><t t-else="">Dropped</t>
+                                    </button>
+                                </form>
+                                <div t-elif="student not in boarded" class="d-flex gap-1">
+                                    <form t-if="student not in absent" method="post"
+                                          t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/absent">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Absent</button>
+                                    </form>
+                                    <form method="post" t-attf-action="/my/driver/trip-action/#{trip.id}/student/#{student.id}/board">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-success">Boarded</button>
+                                    </form>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
                 </div>
 
                 <t t-if="trip.state == 'running'">
@@ -241,5 +285,37 @@
                 </a>
             </div>
         </t>
+    </template>
+
+    <!-- Driver / caretaker: the portal home shows only "My Trips" -->
+    <template id="portal_my_home_transport_staff" inherit_id="portal.portal_my_home" priority="99">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="transport_partner" t-value="request.env.user.partner_id"/>
+            <t t-set="is_transport_staff"
+               t-value="transport_partner.is_school_driver or transport_partner.is_school_caretaker"/>
+            <div t-if="is_transport_staff" class="mb-4">
+                <a href="/my/driver" class="text-decoration-none">
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body d-flex align-items-center p-4">
+                            <i class="fa fa-bus fa-3x text-primary me-4"/>
+                            <div>
+                                <h4 class="mb-1 text-body">My Trips</h4>
+                                <div class="text-muted">
+                                    Start today's trip, mark students boarded / got off, and share the van location.
+                                </div>
+                            </div>
+                            <i class="fa fa-chevron-right ms-auto text-muted"/>
+                        </div>
+                    </div>
+                </a>
+                <div class="small">
+                    <a href="/my/account" class="me-3"><i class="fa fa-user me-1"/>My details</a>
+                    <a href="/my/security"><i class="fa fa-lock me-1"/>Change password</a>
+                </div>
+            </div>
+        </xpath>
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="attributes">
+            <attribute name="t-if">not is_transport_staff</attribute>
+        </xpath>
     </template>
 </odoo>

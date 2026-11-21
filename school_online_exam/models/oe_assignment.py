@@ -19,7 +19,7 @@ class SchoolOeAssignment(models.Model):
     name = fields.Char(string='Title', required=True)
     kind = fields.Selection(
         [('descriptive', 'Descriptive Exam'), ('assignment', 'Assignment'), ('project', 'Project')],
-        string='Type', default='descriptive', required=True)
+        string='Type', default='project', required=True)
     state = fields.Selection(
         [('draft', 'Draft'), ('published', 'Published'), ('closed', 'Closed')],
         string='Status', default='draft', required=True)
@@ -33,6 +33,10 @@ class SchoolOeAssignment(models.Model):
         'ir.attachment', 'school_oe_assignment_qatt_rel', 'assignment_id', 'attachment_id',
         string='Question Paper / Files')
     max_marks = fields.Float(string='Max Marks', default=100.0, required=True)
+    start_datetime = fields.Datetime(
+        string='Start Date & Time',
+        help="Students see this work in their portal only from this date & time. "
+             "Leave empty to open it as soon as it is published.")
     due_datetime = fields.Datetime(string='Due Date & Time', required=True)
     duration_minutes = fields.Integer(
         string='Time Limit (minutes)', default=0,
@@ -52,6 +56,19 @@ class SchoolOeAssignment(models.Model):
     student_count = fields.Integer(compute='_compute_students', string='Student Count')
 
     # ------------------------------------------------------------------
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        """'Descriptive Exam' records are created from Online Exams
+        (Type = Descriptive Exam), so hide that option in the Project menu.
+
+        The web client sends only 'lang' and '*_view_ref' keys of the action
+        context when it loads a view, so the flag must end with '_view_ref'."""
+        res = super().fields_get(allfields, attributes)
+        if self.env.context.get('hide_descriptive_kind_view_ref') and res.get('kind', {}).get('selection'):
+            res['kind']['selection'] = [
+                opt for opt in res['kind']['selection'] if opt[0] != 'descriptive']
+        return res
+
     @api.constrains('max_marks', 'duration_minutes')
     def _check_values(self):
         for rec in self:
@@ -59,6 +76,12 @@ class SchoolOeAssignment(models.Model):
                 raise ValidationError(_("Max marks must be greater than zero."))
             if rec.duration_minutes < 0:
                 raise ValidationError(_("Time limit cannot be negative (0 = no timer)."))
+
+    @api.constrains('start_datetime', 'due_datetime')
+    def _check_start_due(self):
+        for rec in self:
+            if rec.start_datetime and rec.due_datetime and rec.start_datetime >= rec.due_datetime:
+                raise ValidationError(_("'Start Date & Time' must be before 'Due Date & Time'."))
 
     @api.constrains('class_id', 'section_id')
     def _check_section(self):
@@ -102,7 +125,18 @@ class SchoolOeAssignment(models.Model):
         recs._link_question_files()
         return recs
 
+    _LOCKED_AFTER_PUBLISH = {
+        'name', 'kind', 'class_id', 'section_id', 'subject_id', 'start_datetime',
+        'due_datetime', 'allow_late', 'max_marks', 'duration_minutes', 'school_exam_id',
+        'instructions', 'question_attachment_ids'}
+
     def write(self, vals):
+        if (self._LOCKED_AFTER_PUBLISH & set(vals)
+                and not self.env.context.get('force_assignment_edit')
+                and any(rec.state != 'draft' for rec in self)):
+            raise UserError(_(
+                "A published or closed assignment cannot be edited. "
+                "Click 'Back to Draft' first to make changes."))
         res = super().write(vals)
         if 'question_attachment_ids' in vals:
             self._link_question_files()
@@ -165,7 +199,8 @@ class SchoolOeAssignment(models.Model):
         """True when this (published) assignment is meant for the student."""
         self.ensure_one()
         return (self.state == 'published' and student.class_id == self.class_id
-                and (not self.section_id or student.section_id == self.section_id))
+                and (not self.section_id or student.section_id == self.section_id)
+                and (not self.start_datetime or fields.Datetime.now() >= self.start_datetime))
 
     def _submission_for(self, student, create=False, start=False):
         self.ensure_one()
@@ -298,6 +333,21 @@ class SchoolOeSubmission(models.Model):
                 raise UserError(_("The student has not submitted this work yet."))
             rec.write({'state': 'evaluated', 'evaluated_by': self.env.user.id,
                        'evaluated_datetime': fields.Datetime.now()})
+        self._auto_send_for_approval()
+
+    def _auto_send_for_approval(self):
+        """Evaluated marks go to the principal's 'Marks Approval' automatically.
+
+        Only for work linked to a School Exam (that is where approved marks are
+        posted). Re-evaluating a student updates / re-sends that student's entry."""
+        Entry = self.env['school.oe.mark.entry']
+        for rec in self.filtered(lambda r: r.state == 'evaluated'):
+            assignment = rec.assignment_id
+            if not assignment.school_exam_id:
+                continue
+            Entry._submit_for_approval(
+                assignment, assignment.school_exam_id, assignment.subject_id,
+                [(rec.student_id, rec.marks, assignment.max_marks)])
 
     def action_reopen_evaluation(self):
         self.write({'state': 'submitted'})

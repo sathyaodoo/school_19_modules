@@ -70,10 +70,15 @@ class SafeguardingCase(models.Model):
     immediate_risk = fields.Boolean(string='Someone may be in danger right now', tracking=True)
     reported_datetime = fields.Datetime(string='Reported On', default=fields.Datetime.now, readonly=True, copy=False)
 
-    # ---- who reported (never stored for an anonymous report) ----
+    # ---- who reported (hidden from the Safeguarding team for an anonymous report) ----
     source = fields.Selection(SOURCES, string='Reported By', default='officer', required=True)
     is_anonymous = fields.Boolean(string='Anonymous Report', readonly=True, copy=False)
     reporter_partner_id = fields.Many2one('res.partner', string='Reporter', readonly=True, copy=False)
+    # Portal user who sent the report (named or anonymous), used ONLY to show the sender
+    # their own reports in the portal. Hidden from the Safeguarding team (administrators only).
+    submitter_user_id = fields.Many2one(
+        'res.users', string='Submitted By (hidden)', readonly=True, copy=False, index=True,
+        groups='base.group_system')
     reporter_label = fields.Char(compute='_compute_reporter_label', string='Reported By (name)')
     access_code = fields.Char(string='Reporter Code', readonly=True, copy=False, default=lambda self: new_access_code(),
                               help="The reporter uses this code and the reference to look at the status of the report.")
@@ -286,8 +291,8 @@ class SafeguardingCase(models.Model):
 
     def action_close(self):
         for case in self:
-            if case.state not in ('triage', 'investigation', 'follow_up'):
-                raise UserError(_("Assess the case before closing it."))
+            if case.state == 'closed':
+                raise UserError(_("This case is already closed."))
             if not case.outcome:
                 raise UserError(_("Choose the outcome before closing the case."))
             if not (case.closure_notes or '').strip():
@@ -314,14 +319,20 @@ class SafeguardingCase(models.Model):
                 'view_mode': 'form', 'target': 'new', 'context': {'default_case_id': self.id}}
 
     def _notify_reporter_closed(self):
-        """A known reporter hears that the report was looked at and closed (no details, ever)."""
+        """The person who raised the concern (student / teacher) hears that it is solved.
+        Never the details; only the short message the team wrote for the reporter."""
         for case in self:
             if case.reporter_partner_id and not case.is_anonymous:
+                note = (case.public_update or '').strip()
+                extra = Markup("<p>%s</p>") % note if note else Markup("")
+                body = (Markup(_("<p>Thank you for speaking up. Your concern <b>%s</b> has been looked at "
+                                 "and is now solved / closed.</p>")) % case.name
+                        + extra
+                        + Markup(_("<p>If you are worried again, please tell the Safeguarding Officer "
+                                   "or raise a new concern.</p>")))
                 self.env['mail.thread'].sudo().message_notify(
-                    partner_ids=case.reporter_partner_id.ids, subject=_("Your report %s", case.name),
-                    body=Markup(_("<p>Thank you for speaking up. Your report <b>%s</b> has been looked at and is now "
-                                  "closed. If you are worried again, please tell the Safeguarding Officer or report "
-                                  "again.</p>")) % case.name)
+                    partner_ids=case.reporter_partner_id.ids,
+                    subject=_("Your concern %s is solved", case.name), body=body)
 
     # ------------------------------------------------------------------ reminders (cron)
     @api.model
