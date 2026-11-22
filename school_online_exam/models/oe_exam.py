@@ -19,7 +19,8 @@ class SchoolOeExam(models.Model):
         [('draft', 'Draft'), ('published', 'Published'), ('closed', 'Closed')],
         string='Status', default='draft', required=True)
     exam_type = fields.Selection(
-        [('exam', 'Exam'), ('mock', 'Mock Test'), ('practice', 'Self Practice')],
+        [('exam', 'Exam'), ('mock', 'Mock Test'), ('descriptive', 'Descriptive Exam'),
+         ('practice', 'Self Practice')],
         string='Type', default='exam', required=True, index=True,
         help="Mock test = practice only. Scores are saved in the attempt history "
              "but are never pushed to the marks register. Correct answers are "
@@ -72,6 +73,14 @@ class SchoolOeExam(models.Model):
     student_count = fields.Integer(string='Student Count', compute='_compute_students')
     pool_count = fields.Integer(string='Questions in Bank', compute='_compute_counts')
     attempt_count = fields.Integer(string='Attempts', compute='_compute_counts')
+
+    # Descriptive exams use the descriptive engine (school.oe.assignment):
+    # a linked record is created automatically and kept in sync.
+    assignment_id = fields.Many2one(
+        'school.oe.assignment', string='Linked Descriptive Exam',
+        readonly=True, copy=False, ondelete='set null')
+    assignment_state = fields.Selection(
+        related='assignment_id.state', string='Descriptive Exam Status')
 
     # ------------------------------------------------------------------
     # computes / constraints
@@ -129,6 +138,76 @@ class SchoolOeExam(models.Model):
                 raise ValidationError(_("'Available From' must be before 'Available Until'."))
 
     # ------------------------------------------------------------------
+    # descriptive exams (linked school.oe.assignment)
+    # ------------------------------------------------------------------
+    _DESCRIPTIVE_SYNC_FIELDS = {'exam_type', 'name', 'class_id', 'section_id',
+                                'subject_id', 'date_end', 'school_exam_id'}
+
+    @api.constrains('exam_type', 'date_end')
+    def _check_descriptive(self):
+        for rec in self:
+            if rec.exam_type == 'descriptive' and not rec.date_end:
+                raise ValidationError(_(
+                    "Set 'Available Until' for a descriptive exam: it is the due date "
+                    "for the students' answers."))
+
+    def _descriptive_vals(self):
+        self.ensure_one()
+        return {
+            'name': self.name,
+            'kind': 'descriptive',
+            'class_id': self.class_id.id,
+            'section_id': self.section_id.id or False,
+            'subject_id': self.subject_id.id,
+            'due_datetime': self.date_end,
+            'school_exam_id': self.school_exam_id.id or False,
+        }
+
+    def _sync_descriptive(self):
+        for rec in self.filtered(lambda r: r.exam_type == 'descriptive'):
+            vals = rec._descriptive_vals()
+            if rec.assignment_id:
+                rec.assignment_id.with_context(force_assignment_edit=True).write(vals)
+            else:
+                rec.assignment_id = self.env['school.oe.assignment'].create(vals)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._sync_descriptive()
+        return records
+
+    _LOCKED_AFTER_PUBLISH = {
+        'name', 'exam_type', 'class_id', 'section_id', 'subject_id', 'chapter_ids',
+        'topic_ids', 'questions_per_attempt', 'duration_minutes', 'max_attempts',
+        'avoid_repeat', 'shuffle_options', 'pass_percentage', 'score_policy',
+        'show_answers', 'school_exam_id', 'date_start', 'date_end'}
+
+    def write(self, vals):
+        locked = self._LOCKED_AFTER_PUBLISH & set(vals)
+        if locked and not self.env.context.get('force_exam_edit'):
+            if any(rec.state != 'draft' for rec in self):
+                raise UserError(_(
+                    "A published or closed exam cannot be edited. "
+                    "Click 'Back to Draft' first to make changes."))
+        res = super().write(vals)
+        if set(vals) & self._DESCRIPTIVE_SYNC_FIELDS:
+            self._sync_descriptive()
+        return res
+
+    def action_open_descriptive(self):
+        self.ensure_one()
+        self._sync_descriptive()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Descriptive Exam'),
+            'res_model': 'school.oe.assignment',
+            'res_id': self.assignment_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+
+    # ------------------------------------------------------------------
     # question pool
     # ------------------------------------------------------------------
     def _pool_domain(self):
@@ -151,6 +230,11 @@ class SchoolOeExam(models.Model):
     # ------------------------------------------------------------------
     def action_publish(self):
         for rec in self:
+            if rec.exam_type == 'descriptive':
+                rec._sync_descriptive()
+                rec.assignment_id.action_publish()
+                rec.state = 'published'
+                continue
             pool = rec.pool_count
             if pool < rec.questions_per_attempt:
                 raise UserError(_(
@@ -160,21 +244,30 @@ class SchoolOeExam(models.Model):
             rec.state = 'published'
 
     def action_close(self):
+        self.filtered(lambda r: r.exam_type == 'descriptive').assignment_id.action_close()
         self.write({'state': 'closed'})
 
     def action_draft(self):
+        self.filtered(lambda r: r.exam_type == 'descriptive').assignment_id.action_draft()
         self.write({'state': 'draft'})
 
     def action_view_questions(self):
         self.ensure_one()
+        context = {'default_class_id': self.class_id.id,
+                   'default_subject_id': self.subject_id.id}
+        # carry the exam's chapter / topic into new questions (only when it is unambiguous)
+        if len(self.topic_ids) == 1:
+            context['default_topic_id'] = self.topic_ids.id
+            context['default_chapter_id'] = self.topic_ids.chapter_id.id
+        elif len(self.chapter_ids) == 1 and not self.topic_ids:
+            context['default_chapter_id'] = self.chapter_ids.id
         return {
             'type': 'ir.actions.act_window',
             'name': _('Questions'),
             'res_model': 'school.oe.question',
             'view_mode': 'list,form',
             'domain': self._pool_domain(),
-            'context': {'default_class_id': self.class_id.id,
-                        'default_subject_id': self.subject_id.id},
+            'context': context,
         }
 
     def action_view_students(self):

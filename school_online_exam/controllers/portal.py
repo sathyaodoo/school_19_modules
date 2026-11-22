@@ -34,7 +34,7 @@ class OnlineExamPortal(CustomerPortal):
 
     def _oe_published_exams(self, students):
         exams = request.env['school.oe.exam'].sudo().search(
-            [('state', '=', 'published'), ('exam_type', '!=', 'practice'),
+             [('state', '=', 'published'), ('exam_type', 'not in', ('practice', 'descriptive')),
              ('class_id', 'in', students.mapped('class_id').ids)])
         # an exam with a section is only for the students of that section
         return exams.filtered(

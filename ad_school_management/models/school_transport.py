@@ -33,6 +33,8 @@ class SchoolVehicle(models.Model):
     location_map_url = fields.Char(string='Map', compute='_compute_location_map_url')
     location_ids = fields.One2many('school.vehicle.location', 'vehicle_id', string='Location History')
     route_ids = fields.One2many('school.transport.route', 'vehicle_id', string='Routes')
+    replacing_route_ids = fields.One2many('school.transport.route', 'replacement_vehicle_id',
+                                          string='Standing In For')
     student_ids = fields.One2many('school.student', 'vehicle_id', string='Students', readonly=True)
     student_count = fields.Integer(string='Students', compute='_compute_student_count')
     is_over_capacity = fields.Boolean(compute='_compute_student_count')
@@ -145,7 +147,8 @@ class SchoolTransportRoute(models.Model):
     student_ids = fields.One2many('school.student', 'transport_route_id', string='Assigned Students')
     transport_fee_ids = fields.One2many('school.student.transport.fee', 'route_id', string='Generated Bills')
     caretaker_id = fields.Many2one('res.partner', string='Caretaker', related='vehicle_id.caretaker_id', readonly=True)
-    backup_driver_id = fields.Many2one('res.partner', string='Backup Driver', domain="[('is_school_driver', '=', True)]",
+    backup_driver_id = fields.Many2one('res.partner', string='Backup Driver',
+                                        domain="[('is_school_driver', '=', True), ('id', '!=', driver_id)]",
                                         help="Substitute driver to use when the assigned driver is on leave.")
     is_driver_on_leave = fields.Boolean(string='Driver on Leave', tracking=True)
     effective_driver_id = fields.Many2one('res.partner', string='Current Active Driver',
@@ -155,7 +158,8 @@ class SchoolTransportRoute(models.Model):
     is_vehicle_replaced = fields.Boolean(string='Vehicle Replaced', readonly=True, tracking=True)
     replacement_vehicle_id = fields.Many2one('school.vehicle', string='Replacement Vehicle', tracking=True)
     replacement_driver_id = fields.Many2one(
-        'res.partner', string='Replacement Driver', tracking=True, domain="[('is_school_driver', '=', True)]",
+        'res.partner', string='Replacement Driver', tracking=True,
+        domain="[('is_school_driver', '=', True), ('id', '!=', driver_id)]",
         help="Driver of the replacement vehicle. Leave empty if the regular driver drives the replacement vehicle.")
     replacement_reason = fields.Selection([
         ('breakdown', 'Breakdown'),
@@ -163,6 +167,40 @@ class SchoolTransportRoute(models.Model):
         ('other', 'Other'),
     ], string='Replacement Reason', tracking=True)
     replacement_note = fields.Char(string='Replacement Note')
+    replacement_capacity = fields.Integer(string='Seats (Replacement)', compute='_compute_replacement_seats')
+    replacement_seats_used = fields.Integer(string='Seats Already Used', compute='_compute_replacement_seats')
+    replacement_free_seats = fields.Integer(string='Free Seats', compute='_compute_replacement_seats')
+    route_student_count = fields.Integer(string='Students to Move', compute='_compute_replacement_seats')
+    replacement_seat_shortage = fields.Boolean(compute='_compute_replacement_seats')
+    replacement_seat_basis = fields.Char(string='Counted From', compute='_compute_replacement_seats')
+
+    # Seat helpers. Planned = assigned students. school_smart_transport overrides them with the
+    # live count (students on board now) while a trip is running, so a dropped student frees a seat.
+    def _replacement_seats_used(self, vehicle):
+        self.ensure_one()
+        used = len(vehicle.student_ids)
+        if self.is_vehicle_replaced and self.effective_vehicle_id == vehicle:
+            used -= len(self.student_ids)
+        return used
+
+    def _students_to_move(self):
+        self.ensure_one()
+        return len(self.student_ids)
+
+    def _seat_basis(self, vehicle):
+        return _("Assigned students (planned)")
+
+    @api.depends('replacement_vehicle_id', 'student_ids', 'is_vehicle_replaced')
+    def _compute_replacement_seats(self):
+        for route in self:
+            vehicle = route.replacement_vehicle_id
+            route.route_student_count = route._students_to_move()
+            route.replacement_capacity = vehicle.capacity
+            used = route._replacement_seats_used(vehicle) if vehicle else 0
+            route.replacement_seat_basis = route._seat_basis(vehicle) if vehicle else False
+            route.replacement_seats_used = used
+            route.replacement_free_seats = vehicle.capacity - used if vehicle else 0
+            route.replacement_seat_shortage = bool(vehicle) and route.route_student_count > route.replacement_free_seats
     effective_vehicle_id = fields.Many2one('school.vehicle', string='Current Vehicle',
                                             compute='_compute_effective_vehicle', store=True, tracking=True)
 
@@ -187,8 +225,22 @@ class SchoolTransportRoute(models.Model):
 
     @api.onchange('replacement_vehicle_id')
     def _onchange_replacement_vehicle_id(self):
-        if self.replacement_vehicle_id.driver_id:
-            self.replacement_driver_id = self.replacement_vehicle_id.driver_id
+        vehicle = self.replacement_vehicle_id
+        warning = False
+        if vehicle:
+            used, count = self._replacement_seats_used(vehicle), self._students_to_move()
+            free = vehicle.capacity - used
+            if count > free:
+                warning = {'title': _("Not enough seats"), 'message': _(
+                    "%(vehicle)s has %(capacity)s seats, %(used)s are in use, so only %(free)s are free. "
+                    "%(count)s students need to move (%(basis)s).",
+                    vehicle=vehicle.name, capacity=vehicle.capacity, used=used,
+                    free=max(free, 0), count=count, basis=self._seat_basis(vehicle))}
+        driver = self.replacement_vehicle_id.driver_id
+        # the regular driver driving the replacement vehicle: leave Replacement Driver empty
+        self.replacement_driver_id = driver if driver and driver != self.driver_id else False
+        if warning:
+            return {'warning': warning}
 
     def write(self, vals):
         res = super().write(vals)
@@ -204,6 +256,23 @@ class SchoolTransportRoute(models.Model):
                         "%(count)s draft bill(s) for %(month)s updated to %(amount)s.",
                         count=len(drafts), month=month.strftime('%B %Y'), amount=route.cost))
         return res
+
+    @api.constrains('driver_id', 'backup_driver_id')
+    def _check_backup_driver(self):
+        for route in self:
+            if route.backup_driver_id and route.backup_driver_id == route.driver_id:
+                raise ValidationError(_(
+                    "The Backup Driver of route %s cannot be the same person as the Driver (%s).",
+                    route.name, route.driver_id.name))
+
+    @api.constrains('driver_id', 'replacement_driver_id')
+    def _check_replacement_driver(self):
+        for route in self:
+            if route.replacement_driver_id and route.replacement_driver_id == route.driver_id:
+                raise ValidationError(_(
+                    "The Replacement Driver of route %s cannot be the regular Driver (%s). "
+                    "Leave it empty if the regular driver drives the replacement vehicle.",
+                    route.name, route.driver_id.name))
 
     @api.constrains('cost')
     def _check_cost(self):
@@ -224,6 +293,8 @@ class SchoolTransportRoute(models.Model):
                 raise ValidationError(_("Route %s has no driver assigned.") % route.name)
             if not route.backup_driver_id:
                 raise ValidationError(_("Please set a Backup Driver before marking the driver on leave."))
+            if route.backup_driver_id == route.driver_id:
+                raise ValidationError(_("The Backup Driver cannot be the same person as the Driver on leave."))
         # A driver on leave is absent for every route he drives, not just this one.
         routes = self._get_same_driver_routes().filtered(lambda r: not r.is_driver_on_leave)
         for route in routes:
@@ -256,6 +327,16 @@ class SchoolTransportRoute(models.Model):
                 raise ValidationError(_("Replacement Vehicle must be different from the assigned vehicle."))
             if not route.replacement_reason:
                 raise ValidationError(_("Please select a Replacement Reason."))
+            spare = route.replacement_vehicle_id
+            if spare.route_ids:
+                raise ValidationError(_(
+                    "%(vehicle)s already runs route(s) %(routes)s. Choose a spare vehicle that has no route.",
+                    vehicle=spare.name, routes=', '.join(spare.route_ids.mapped('name'))))
+            busy = spare.replacing_route_ids.filtered(lambda r: r.is_vehicle_replaced and r.vehicle_id != route.vehicle_id)
+            if busy:
+                raise ValidationError(_(
+                    "%(vehicle)s is already standing in for route(s) %(routes)s.",
+                    vehicle=spare.name, routes=', '.join(busy.mapped('name'))))
         # A broken-down vehicle is unavailable for every route it serves, not just this one.
         routes = self._get_same_vehicle_routes().filtered(lambda r: not r.is_vehicle_replaced)
         for route in routes:
@@ -267,13 +348,16 @@ class SchoolTransportRoute(models.Model):
                     'replacement_reason': source.replacement_reason,
                     'replacement_note': source.replacement_note,
                 })
-            if len(route.student_ids) > route.replacement_vehicle_id.capacity:
+        for vehicle in routes.mapped('replacement_vehicle_id'):
+            moving = routes.filtered(lambda r: r.replacement_vehicle_id == vehicle)
+            needed = sum(r._students_to_move() for r in moving)
+            used = moving[:1]._replacement_seats_used(vehicle)
+            free = vehicle.capacity - used
+            if needed > free:
                 raise ValidationError(_(
-                    "Replacement vehicle %(vehicle)s has capacity %(capacity)s, but route %(route)s "
-                    "has %(count)s students.",
-                    vehicle=route.replacement_vehicle_id.name,
-                    capacity=route.replacement_vehicle_id.capacity,
-                    route=route.name, count=len(route.student_ids)))
+                    "Not enough seats in %(vehicle)s: %(capacity)s seats, %(used)s in use, so only %(free)s free. Route(s) %(routes)s need %(needed)s seats.",
+                    vehicle=vehicle.name, capacity=vehicle.capacity, used=used, free=max(free, 0),
+                    routes=', '.join(moving.mapped('name')), needed=needed))
         routes.write({'is_vehicle_replaced': True})
         routes._notify_parents_transport_change('vehicle')
 
@@ -526,6 +610,7 @@ class SchoolTransportRouteChangeRequest(models.Model):
         ('submitted', 'Submitted'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
+        ('cancelled', 'Withdrawn'),
     ], string='Status', default='draft', required=True, tracking=True)
     approved_by = fields.Many2one('res.users', string='Approved By', readonly=True, copy=False)
     decision_date = fields.Datetime(string='Decision Date', readonly=True, copy=False)
@@ -546,6 +631,12 @@ class SchoolTransportRouteChangeRequest(models.Model):
 
     def action_submit(self):
         self.write({'state': 'submitted'})
+
+    def action_withdraw(self):
+        """Parent / student takes back a request the school has not decided yet."""
+        pending = self.filtered(lambda r: r.state in ('draft', 'submitted'))
+        pending.write({'state': 'cancelled', 'decision_date': fields.Datetime.now()})
+        return True
 
     def action_approve(self):
         for rec in self:

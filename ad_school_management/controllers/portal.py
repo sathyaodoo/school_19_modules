@@ -119,6 +119,7 @@ class SchoolCustomerPortal(CustomerPortal):
             'behaviour_reviews': behaviour_reviews,
             'behaviour_feedback': behaviour_feedback,
             'behaviour_rating_labels': dict(request.env['school.student.behaviour.feedback']._fields['behaviour'].selection),
+            'behaviour_rating_labels': dict(Behaviour._fields['behaviour'].selection),
             'behaviour_is_student': is_student,
             'behaviour_is_parent': is_parent,
             'behaviour_saved': kw.get('behaviour_saved'),
