@@ -22,7 +22,9 @@ class SchoolAlumniEvent(models.Model):
     date_start = fields.Datetime(string='Start', required=True, tracking=True)
     date_end = fields.Datetime(string='End')
     venue = fields.Char(string='Venue / Link')
-    batch_years = fields.Char(string='For Batches', help='e.g. "2015-2020" or "All batches"')
+    batch_year_ids = fields.Many2many(
+        'school.academic.year', string='For Batches',
+        help='Academic years (admission year) of the alumni this event is for. Leave empty for all batches.')
     organizer_id = fields.Many2one('res.users', string='Organizer', default=lambda self: self.env.user)
     description = fields.Html(string='Description')
     state = fields.Selection([
@@ -74,6 +76,41 @@ class SchoolAlumniEvent(models.Model):
 
     def action_reset(self):
         self.write({'state': 'draft'})
+
+    def action_invite_batch(self):
+        """Add every active alumnus of the selected batches (admission year),
+        or all active alumni when no batch is selected, as Invited guests.
+        Alumni already in the event are skipped."""
+        self.ensure_one()
+        if self.state not in ('draft', 'confirmed'):
+            raise UserError(_("Alumni can only be invited to a Draft or Confirmed event."))
+        Alumni = self.env['school.alumni']
+        no_year_count = 0
+        if self.batch_year_ids:
+            alumni = Alumni.search([('admission_academic_year_id', 'in', self.batch_year_ids.ids)])
+            no_year_count = Alumni.search_count([('admission_academic_year_id', '=', False)])
+        else:
+            alumni = Alumni.search([])
+        new_alumni = alumni - self.attendee_ids.alumni_id
+        skipped = (_(" %s alumni without a Batch (Admission Year) were not included.", no_year_count)
+                   if no_year_count else '')
+        if not new_alumni:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'type': 'warning',
+                    'title': _("Nobody new to invite"),
+                    'message': _("All matching alumni are already participants.") + skipped,
+                    'sticky': False,
+                },
+            }
+        self.write({'attendee_ids': [(0, 0, {'alumni_id': a.id, 'status': 'invited', 'role': 'guest'})
+                                     for a in new_alumni]})
+        batches = ', '.join(self.batch_year_ids.mapped('name')) or _("all batches")
+        self.message_post(body=_("%(count)s alumni invited (%(batches)s).", count=len(new_alumni),
+                                 batches=batches) + skipped)
+        return True
 
     def action_view_donations(self):
         self.ensure_one()

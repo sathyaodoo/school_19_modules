@@ -1,6 +1,6 @@
 {
     'name': 'School Management System',
-    'version': '19.0.1.11',
+    'version': '19.0.1.12',
     'summary': 'Comprehensive School Management System for Odoo 19',
     'website': 'https://adreaminnovations.odoo.com',
     'description': """
@@ -39,6 +39,7 @@
         'data/ir_sequence_exit_interview.xml',
         'data/ir_sequence_canteen.xml',
         'data/ir_cron_canteen_daily_planning.xml',
+        'data/canteen_data.xml',
         'data/hr_leave_type_data.xml',
         'data/mail_template_leave.xml',
         'data/mail_template_timetable.xml',  # body of the in-app timetable notification
@@ -57,6 +58,7 @@
         'views/school_student_views.xml',
         'views/school_parent_views.xml',
         'views/school_teacher_views.xml',
+        'views/hr_employee_views.xml',
         'views/school_admission_views.xml',
         'views/school_timetable_views.xml',
         'views/school_attendance_views.xml',
@@ -74,6 +76,8 @@
         'views/school_canteen_meal_views.xml',
         'views/school_canteen_menu_views.xml',
         'views/school_canteen_daily_planning_views.xml',
+        'views/school_canteen_food_item_views.xml',
+        'views/school_canteen_sale_views.xml',
         'views/school_menus.xml',
         'views/school_library_views.xml',
         'views/school_early_warning_views.xml',
@@ -103,6 +107,8 @@
         'views/school_substitution_views.xml',
         'views/res_config_settings_views.xml',
         'data/mail_template_substitution.xml',
+        'data/school_student_behaviour_fix.xml',
+        'data/school_activity_winners_recompute.xml',
     ],
     'assets': {
         'web.assets_backend': [

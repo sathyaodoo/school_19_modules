@@ -1,8 +1,11 @@
+import logging
 from collections import defaultdict
 from datetime import timedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, ValidationError
+
+_logger = logging.getLogger(__name__)
 
 STRENGTH_PCT = 75.0          # subject average at or above = strength
 SUPPORT_PCT = 50.0           # subject average below = needs support
@@ -110,15 +113,19 @@ class SchoolStudentBehaviour(models.Model):
     _description = 'Student Behaviour & Participation Review'
     _order = 'academic_year_id desc, date_from desc, id desc'
 
+    # the rows of the table below are the source of truth; student_ids mirrors
+    # them (same relation table as before, so student.behaviour_review_ids,
+    # record rules and portal checks keep working)
     student_ids = fields.Many2many(
         'school.student', 'school_student_behaviour_student_rel', 'behaviour_id', 'student_id',
-        string='Students', required=True,
-        help='All the students this review applies to. They can belong to different classes.')
+        string='Students', compute='_compute_student_ids', store=True,
+        help='The students of this review: one per row of the table.')
+    student_count = fields.Integer(string='No. of Students', compute='_compute_student_count')
     class_ids = fields.Many2many(
         'school.class', 'school_student_behaviour_class_rel', 'behaviour_id', 'class_id',
-        string='Classes', compute='_compute_class_ids', store=True, readonly=False,
-        help="Pick a class to list only its students. Classes of the selected "
-             "students are added automatically.")
+        string='Classes',
+        help="Pick a class to list only its students in the table. The classes of the "
+             "students added are saved with the review automatically.")
     date_from = fields.Date(string='From Date', required=True, default=fields.Date.context_today,
                             help='First day of the review period.')
     date_to = fields.Date(string='To Date', required=True, default=fields.Date.context_today,
@@ -128,62 +135,118 @@ class SchoolStudentBehaviour(models.Model):
     date = fields.Date(string='Reviewed On', required=True, default=fields.Date.context_today)
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year',
                                        compute='_compute_academic_year', store=True, index=True)
-    # the six BRS items
-    behaviour = fields.Selection(BEHAVIOUR_RATINGS, string='Behaviour', required=True, default='3')
-    discipline = fields.Selection(BEHAVIOUR_RATINGS, string='Discipline', required=True, default='3')
-    participation = fields.Selection(BEHAVIOUR_RATINGS, string='Participation', required=True, default='3')
-    teacher_observation = fields.Text(string='Teacher Observations')
+    # ratings + teacher observations: one row per student
     feedback_ids = fields.One2many('school.student.behaviour.feedback', 'review_id',
                                    string='Student Self-Reflection & Parent Feedback')
-    average_rating = fields.Float(string='Average (out of 4)', compute='_compute_average', store=True, digits=(3, 1))
     reviewed_by = fields.Many2one('res.users', string='Reviewed By', default=lambda self: self.env.user,
                                   readonly=True)
     portal_published = fields.Boolean(
         string='Show in Portal', default=True,
         help='When ticked, the students and their parents/guardians can see this review in their portal. '
              'Untick to keep a draft review visible to staff only.')
-    
 
-    # --- one feedback row for EVERY student of the review ------------------
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
-        records._sync_feedback_lines()
+        records._after_save_checks()
         return records
 
     def write(self, vals):
         res = super().write(vals)
-        if 'student_ids' in vals:
-            self._sync_feedback_lines()
+        self._after_save_checks()
         return res
 
-    def _sync_feedback_lines(self):
-        """Keep exactly one feedback row per student of the review: add the
-        missing ones, drop the rows of students taken off the review."""
-        Feedback = self.env['school.student.behaviour.feedback']
+    def _after_save_checks(self):
+        """At least one student row; store the classes of the row students
+        (the teacher record rule works on class_ids); no overlapping review."""
         for rec in self:
-            stale = rec.feedback_ids.filtered(lambda f: f.student_id not in rec.student_ids)
-            stale.unlink()
-            missing = rec.student_ids - (rec.feedback_ids - stale).student_id
-            if missing:
-                Feedback.create([{'review_id': rec.id, 'student_id': s.id} for s in missing])
+            if not rec.feedback_ids:
+                raise ValidationError(_("Add at least one student to the review."))
+            missing_classes = rec.feedback_ids.student_id.class_id - rec.class_ids
+            if missing_classes:
+                super(SchoolStudentBehaviour, rec).write(
+                    {'class_ids': [fields.Command.link(c.id) for c in missing_classes]})
+        # student_ids is computed, so its @api.constrains is not reliably triggered
+        self._check_one_review_per_period()
 
-    @api.depends('student_ids.class_id')
-    def _compute_class_ids(self):
-        # editable: keep the classes the user picked, add those of the students
+    @api.depends('feedback_ids.student_id')
+    def _compute_student_ids(self):
         for rec in self:
-            rec.class_ids = rec.class_ids | rec.student_ids.class_id
+            rec.student_ids = rec.feedback_ids.student_id
+
+    @api.depends('feedback_ids')
+    def _compute_student_count(self):
+        for rec in self:
+            rec.student_count = len(rec.feedback_ids)
+
+    @api.model
+    def _fix_behaviour_feedback_lines(self):
+        """Data repair, run on every module update (data/school_student_behaviour_fix.xml).
+        Idempotent: it changes nothing when the data is already correct.
+
+        1. a student linked to a review (relation table) without a row gets one
+           (copying the old header ratings when those DB columns still exist);
+        2. empty row ratings become '3' (Good);
+        3. student_ids is recomputed where it differs from the rows;
+        4. the stored row average is recomputed where it is wrong;
+        5. the classes of the row students are added to class_ids.
+        """
+        cr = self.env.cr
+        Feedback = self.env['school.student.behaviour.feedback'].sudo()
+        self.env.flush_all()
+        # 1. linked students without a row
+        cr.execute("""
+            SELECT rel.behaviour_id, rel.student_id
+              FROM school_student_behaviour_student_rel rel
+             WHERE NOT EXISTS (SELECT 1 FROM school_student_behaviour_feedback f
+                                WHERE f.review_id = rel.behaviour_id AND f.student_id = rel.student_id)
+        """)
+        missing = cr.fetchall()
+        if missing:
+            cr.execute("""SELECT column_name FROM information_schema.columns
+                           WHERE table_name = 'school_student_behaviour'
+                             AND column_name IN ('behaviour', 'discipline', 'participation', 'teacher_observation')""")
+            old_cols = [r[0] for r in cr.fetchall()]
+            header = {}
+            if old_cols:
+                cr.execute("SELECT id, %s FROM school_student_behaviour WHERE id IN %%s" % ', '.join(old_cols),
+                           [tuple({m[0] for m in missing})])
+                header = {row[0]: dict(zip(old_cols, row[1:])) for row in cr.fetchall()}
+            Feedback.create([dict({k: v for k, v in header.get(review_id, {}).items() if v},
+                                  review_id=review_id, student_id=student_id)
+                             for review_id, student_id in missing])
+            _logger.info("Behaviour reviews: created %s missing student row(s)", len(missing))
+        # 2. empty ratings
+        for fname in ('behaviour', 'discipline', 'participation'):
+            empty = Feedback.search([(fname, '=', False)])
+            if empty:
+                empty.write({fname: '3'})
+                _logger.info("Behaviour reviews: set empty %s to Good on %s row(s)", fname, len(empty))
+        # 3. student_ids out of sync with the rows
+        reviews = self.sudo().search([])
+        wrong = reviews.filtered(lambda r: r.student_ids != r.feedback_ids.student_id)
+        if wrong:
+            self.env.add_to_compute(self._fields['student_ids'], wrong)
+            _logger.info("Behaviour reviews: recomputed the students of %s review(s)", len(wrong))
+        # 4. stored averages
+        lines = Feedback.search([])
+        wrong_avg = lines.filtered(lambda f: round(f._expected_average(), 1) != round(f.average_rating, 1))
+        if wrong_avg:
+            self.env.add_to_compute(Feedback._fields['average_rating'], wrong_avg)
+            _logger.info("Behaviour reviews: recomputed the average of %s row(s)", len(wrong_avg))
+        self.env.flush_all()
+        # 5. classes of the row students
+        for rec in reviews:
+            missing_classes = rec.feedback_ids.student_id.class_id - rec.class_ids
+            if missing_classes:
+                super(SchoolStudentBehaviour, rec).write(
+                    {'class_ids': [fields.Command.link(c.id) for c in missing_classes]})
+        return True
 
     @api.depends('date')
     def _compute_academic_year(self):
         for rec in self:
             rec.academic_year_id = _year_of(self.env, rec.date)
-
-    @api.depends('behaviour', 'discipline', 'participation')
-    def _compute_average(self):
-        for rec in self:
-            vals = [int(v) for v in (rec.behaviour, rec.discipline, rec.participation) if v]
-            rec.average_rating = sum(vals) / len(vals) if vals else 0.0
 
     @api.constrains('date_from', 'date_to')
     def _check_dates(self):
@@ -259,15 +322,30 @@ class SchoolStudentBehaviourFeedback(models.Model):
     self_reflection = fields.Text(string='Student Self-Reflection',
                                   help="The student's own words about how the period went.")
     parent_feedback = fields.Text(string='Parent Feedback')
+    # per-student ratings (staff only; never writable from the portal)
+    behaviour = fields.Selection(BEHAVIOUR_RATINGS, string='Behaviour', required=True, default='3')
+    discipline = fields.Selection(BEHAVIOUR_RATINGS, string='Discipline', required=True, default='3')
+    participation = fields.Selection(BEHAVIOUR_RATINGS, string='Participation', required=True, default='3')
+    teacher_observation = fields.Text(string='Teacher Observations')
+    average_rating = fields.Float(string='Average (out of 4)', compute='_compute_average', store=True, digits=(3, 1))
+    # review info, for the student 360 page list
+    review_date_from = fields.Date(related='review_id.date_from', string='From Date')
+    review_date_to = fields.Date(related='review_id.date_to', string='To Date')
+    review_academic_year_id = fields.Many2one(related='review_id.academic_year_id', string='Academic Year')
 
     _review_student_uniq = models.Constraint(
         'unique(review_id, student_id)', 'This student already has a feedback line on this review.')
 
-    @api.constrains('review_id', 'student_id')
-    def _check_student_in_review(self):
+    def _expected_average(self):
+        self.ensure_one()
+        vals = [int(v) for v in (self.behaviour, self.discipline, self.participation) if v]
+        return sum(vals) / len(vals) if vals else 0.0
+
+    @api.depends('behaviour', 'discipline', 'participation')
+    def _compute_average(self):
         for rec in self:
-            if rec.student_id not in rec.review_id.student_ids:
-                raise ValidationError(_("%s is not one of the students of this review.", rec.student_id.name))
+            rec.average_rating = rec._expected_average()
+
 
 
 # ======================================================================
@@ -544,6 +622,9 @@ class SchoolStudent360(models.Model):
     behaviour_review_ids = fields.Many2many(
         'school.student.behaviour', 'school_student_behaviour_student_rel', 'student_id', 'behaviour_id',
         string='Behaviour & Participation Reviews')
+    behaviour_feedback_ids = fields.One2many(
+        'school.student.behaviour.feedback', 'student_id',
+        string='Behaviour & Participation (own ratings)')
 
     def _compute_profile_360_html(self):
         year = _year_of(self.env, fields.Date.context_today(self))
@@ -796,19 +877,28 @@ class SchoolStudent360(models.Model):
         # this student's own self-reflection / parent feedback lines
         fb_by_review = {f.review_id.id: f for f in env['school.student.behaviour.feedback'].sudo().search(
             [('student_id', '=', self.id), ('review_id', 'in', reviews.ids)])}
-        behaviour_reviews = [{
-            'id': r.id,
-            'period': ' to '.join(d.strftime('%d %b %Y') for d in (r.date_from, r.date_to) if d),
-            'date_from': r.date_from.strftime('%d %b %Y') if r.date_from else '',
-            'date_to': r.date_to.strftime('%d %b %Y') if r.date_to else '',
-            'behaviour': int(r.behaviour), 'behaviour_label': rating_labels.get(r.behaviour),
-            'discipline': int(r.discipline), 'discipline_label': rating_labels.get(r.discipline),
-            'participation': int(r.participation), 'participation_label': rating_labels.get(r.participation),
-            'observation': r.teacher_observation or '',
-            'reflection': (fb_by_review.get(r.id).self_reflection if fb_by_review.get(r.id) else '') or '',
-            'parent_feedback': (fb_by_review.get(r.id).parent_feedback if fb_by_review.get(r.id) else '') or '',
-            'date': r.date.strftime('%d %b %Y'),
-        } for r in reviews.sorted(lambda r: (r.date_from or fields.Date.today(), r.id))]
+        def _rating(r, fname):
+            # this student's own row
+            fb = fb_by_review.get(r.id)
+            return fb[fname] if fb else False
+
+        behaviour_reviews = []
+        for r in reviews.sorted(lambda r: (r.date_from or fields.Date.today(), r.id)):
+            fb = fb_by_review.get(r.id)
+            beh, dis, par = _rating(r, 'behaviour'), _rating(r, 'discipline'), _rating(r, 'participation')
+            behaviour_reviews.append({
+                'id': r.id,
+                'period': ' to '.join(d.strftime('%d %b %Y') for d in (r.date_from, r.date_to) if d),
+                'date_from': r.date_from.strftime('%d %b %Y') if r.date_from else '',
+                'date_to': r.date_to.strftime('%d %b %Y') if r.date_to else '',
+                'behaviour': int(beh or 0), 'behaviour_label': rating_labels.get(beh),
+                'discipline': int(dis or 0), 'discipline_label': rating_labels.get(dis),
+                'participation': int(par or 0), 'participation_label': rating_labels.get(par),
+                'observation': _rating(r, 'teacher_observation') or '',
+                'reflection': (fb.self_reflection if fb else '') or '',
+                'parent_feedback': (fb.parent_feedback if fb else '') or '',
+                'date': r.date.strftime('%d %b %Y'),
+            })
 
         profile = {
             'student': {'id': self.id, 'name': self.name,

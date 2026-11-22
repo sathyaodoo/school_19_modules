@@ -17,6 +17,9 @@
                 <button name="action_canteen_checkout" type="object" string="Confirm &amp; Invoice"
                         class="oe_highlight" icon="fa-check"
                         invisible="not is_canteen_sale or state not in ('draft', 'sent')"/>
+                <button name="action_canteen_confirm_later" type="object" string="Confirm (bill later)"
+                        icon="fa-clock-o"
+                        invisible="not is_canteen_sale or state not in ('draft', 'sent')"/>
             </xpath>
             <xpath expr="//group[@name='partner_details']/field[@name='partner_id']" position="before">
                 <field name="canteen_customer_type" widget="radio" options="{'horizontal': true}"
@@ -43,6 +46,11 @@
         <field name="priority">90</field>
         <field name="arch" type="xml">
             <list decoration-muted="state == 'cancel'" decoration-info="state in ('draft', 'sent')">
+                <header>
+                    <!-- monthly billing: one draft invoice per customer -->
+                    <button name="action_canteen_bill_selected" type="object" string="Bill Selected"
+                            class="btn-primary"/>
+                </header>
                 <field name="name" string="Number"/>
                 <field name="canteen_date"/>
                 <field name="canteen_meal_id"/>
@@ -102,8 +110,11 @@
             <p class="o_view_nocontent_smiling_face">Record a canteen sale</p>
             <p>
                 Choose the customer and the meal: today's menu dishes are added with their prices.
-                Change quantities or remove what was not taken, then click <b>Confirm &amp; Invoice</b>.
-                The bill is the total of the dishes actually bought; their ingredients leave stock.
+                Change quantities or remove what was not taken, then click <b>Confirm &amp; Invoice</b>
+                (bill now) or <b>Confirm (bill later)</b>. For monthly bills, select the confirmed sales
+                and click <b>Bill Selected</b>: one draft invoice per customer.
+                The bill is the total of the dishes actually bought; ingredients of dishes with a recipe
+                leave stock.
             </p>
         </field>
     </record>

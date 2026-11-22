@@ -83,7 +83,6 @@
                 <field name="meal_start_time" widget="float_time"/>
                 <field name="meal_end_time" widget="float_time"/>
                 <field name="student_id"/>
-                <field name="admission_no"/>
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="created_by_id" optional="hide"/>
@@ -100,7 +99,6 @@
                     <group>
                         <group string="Student">
                             <field name="student_id" options="{'no_create': True}"/>
-                            <field name="admission_no"/>
                             <field name="class_id"/>
                             <field name="section_id"/>
                         </group>

@@ -14,10 +14,16 @@
               parent="menu_school_canteen_sub" action="action_school_canteen_meal" sequence="10"/>
     <menuitem id="menu_school_canteen_category" name="Categories"
               parent="menu_school_canteen_sub" action="action_school_canteen_category" sequence="20"/>
+    <menuitem id="menu_school_canteen_sale" name="Canteen Sales"
+              parent="menu_school_canteen_sub" action="action_school_canteen_sale" sequence="30"/>
+    <menuitem id="menu_school_canteen_dish" name="Dishes"
+              parent="menu_school_canteen_sub" action="action_school_canteen_dish" sequence="40"/>
     <menuitem id="menu_school_canteen_menu" name="Weekly/Monthly Menu"
               parent="menu_school_canteen_sub" action="action_school_canteen_menu" sequence="50"/>
     <menuitem id="menu_school_canteen_daily_planning" name="Daily Meal Planning"
               parent="menu_school_canteen_sub" action="action_school_canteen_daily_planning" sequence="60"/>
     <menuitem id="menu_school_canteen_meal_booking" name="Meal Bookings"
               parent="menu_school_canteen_sub" action="action_school_canteen_meal_booking" sequence="70"/>
+    <menuitem id="menu_school_canteen_sale_report" name="Canteen Sales Analysis"
+              parent="menu_school_canteen_sub" action="action_school_canteen_sale_report" sequence="80"/>
 </odoo>

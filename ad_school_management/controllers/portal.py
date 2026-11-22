@@ -59,8 +59,8 @@ class SchoolCustomerPortal(CustomerPortal):
             return request.redirect('/my')
 
         attendances = request.env['school.attendance'].sudo().search(
-            [('student_id', '=', student.id), ('session', '=', 'morning')], order='date desc', limit=30)
-        # One row per day: Present / Absent (last 15 days).
+            [('student_id', '=', student.id)], order='date desc, session', limit=30)
+        # One row per day with Morning and Afternoon side by side (last 15 days).
         attendance_days = request.env['school.attendance']._get_daily_summary(student, days=15)
         results = request.env['school.exam.result'].sudo().search([('student_id', '=', student.id)])
         
@@ -81,6 +81,13 @@ class SchoolCustomerPortal(CustomerPortal):
         reading_challenges = request.env['school.reading.challenge.participant'].sudo().search(
             [('student_id', '=', student.id), ('challenge_id.state', '=', 'running')])
         recommendations = student._get_recommended_books(limit=6)
+        # Digital Library: every digital resource of the student's branch
+        Book = request.env['school.book'].sudo()
+        digital_query = (kw.get('dq') or '').strip()[:100]
+        digital_domain = Book._portal_digital_domain(student)
+        if digital_query:
+            digital_domain += ['|', ('name', 'ilike', digital_query), ('genre_ids.name', 'ilike', digital_query)]
+        digital_books = Book.search(digital_domain, order='name', limit=100)
 
         # Books read (returned) and the student's own reviews. Only the
         # STUDENT may write / edit a review; parents see them read-only.
@@ -111,6 +118,7 @@ class SchoolCustomerPortal(CustomerPortal):
             'student': student,
             'behaviour_reviews': behaviour_reviews,
             'behaviour_feedback': behaviour_feedback,
+            'behaviour_rating_labels': dict(request.env['school.student.behaviour.feedback']._fields['behaviour'].selection),
             'behaviour_rating_labels': dict(Behaviour._fields['behaviour'].selection),
             'behaviour_is_student': is_student,
             'behaviour_is_parent': is_parent,
@@ -124,6 +132,8 @@ class SchoolCustomerPortal(CustomerPortal):
             'library_loans': library_loans,
             'reading_challenges': reading_challenges,
             'recommendations': recommendations,
+            'digital_books': digital_books,
+            'digital_query': digital_query,
             'books_read': books_read,
             'can_review': student.partner_id == partner,
             'active_tab': kw.get('tab') or 'profile',
@@ -132,7 +142,36 @@ class SchoolCustomerPortal(CustomerPortal):
             'page_name': 'school_student_profile',
         })
         return request.render("ad_school_management.portal_my_student_profile", values)
-    
+
+    # Inline only for types that cannot run scripts in the browser; anything
+    # else (html, svg, ...) is downloaded.
+    _DIGITAL_INLINE_PREFIXES = ('application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp',
+                                'audio/', 'video/')
+
+    @http.route(['/my/school/student/<int:student_id>/library/digital/<int:book_id>'],
+                type='http', auth="user", website=True)
+    def portal_open_digital_resource(self, student_id, book_id, **kw):
+        """Open a digital library resource for a student (or their parent).
+        The file is read with sudo and streamed here: /web/content stays
+        closed to portal users and the attachment stays private."""
+        partner = request.env.user.partner_id
+        student = request.env['school.student'].sudo().browse(student_id)
+        if not student.exists() or (student.partner_id != partner and partner not in student.parent_ids.partner_id):
+            return request.not_found()
+        Book = request.env['school.book'].sudo()
+        book = Book.search([('id', '=', book_id)] + Book._portal_digital_domain(student), limit=1)
+        if not book:
+            return request.not_found()
+        url = (book.digital_url or '').strip()
+        if not book.digital_file:
+            if url.lower().startswith(('http://', 'https://')):
+                return request.redirect(url, local=False)
+            return request.not_found()
+        stream = request.env['ir.binary']._get_stream_from(
+            book, 'digital_file', filename_field='digital_filename')
+        inline = (stream.mimetype or '').startswith(self._DIGITAL_INLINE_PREFIXES)
+        return stream.get_response(as_attachment=not inline)
+
     @http.route(['/my/school/student/<int:student_id>/review'], type='http', auth="user",
                 methods=['POST'], website=True)
     def portal_save_book_review(self, student_id, book_id=None, rating=None, review=None, **kw):
@@ -393,6 +432,16 @@ class SchoolCustomerPortal(CustomerPortal):
         route.effective_vehicle_id._register_location(lat, lon, speed=speed, source='driver_app')
         return self._json({'ok': True, 'vehicle': route.effective_vehicle_id.name})
 
+
+
+class SchoolStaffPortal(CustomerPortal):
+    """Staff portal: leave requests and related pages. (The student pages and
+    the /my home counters are in SchoolCustomerPortal above; this class used
+    to have the same name and silently replaced them.)"""
+
+    # ------------------------------------------------------------------
+    # Leave requests (teachers / staff)
+    # ------------------------------------------------------------------
     def _school_get_employee(self):
         return request.env['hr.employee'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)
 

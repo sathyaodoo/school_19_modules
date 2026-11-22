@@ -3,6 +3,8 @@ import logging
 from datetime import timedelta
 from urllib.parse import quote
 
+from markupsafe import Markup
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -226,8 +228,7 @@ class SchoolBook(models.Model):
             'res_model': 'school.book.copy',
             'view_mode': 'list,form',
             'domain': [('book_id', '=', self.id)],
-            'context': {'default_book_id': self.id, 'default_rack_id': self.rack_id.id,
-                        'default_price': self.price, 'default_vendor_id': self.vendor_id.id},
+            'context': {'default_book_id': self.id, 'default_rack_id': self.rack_id.id},
         }
 
     def action_open_digital(self):
@@ -239,6 +240,29 @@ class SchoolBook(models.Model):
                     'url': '/web/content/school.book/%s/digital_file/%s?download=true'
                            % (self.id, self.digital_filename or 'resource')}
         raise UserError(_("This resource has no digital link or file."))
+
+    # --- student portal: Digital Library -----------------------------------
+    @api.model
+    def _portal_digital_domain(self, student):
+        """Digital resources a student (or their parent) may open in the portal:
+        books of the whole school group of the student's class company (the
+        company itself, its parents and its child branches) or with no company."""
+        company = (student.class_id.company_id or self.env.user.company_id).sudo()
+        root_id = (company.parent_path or '').split('/')[0] or str(company.id)
+        group = self.env['res.company'].sudo().search(
+            ['|', ('id', '=', int(root_id)), ('parent_path', '=like', '%s/%%' % root_id)])
+        return [('is_digital', '=', True), '|', ('company_id', '=', False), ('company_id', 'in', group.ids)]
+
+    def _portal_open_url(self, student):
+        """URL of the portal "Open" button, or False ("Not available yet"):
+        the external link (http/https only), else the secure file route."""
+        self.ensure_one()
+        url = (self.digital_url or '').strip()
+        if url.lower().startswith(('http://', 'https://')):
+            return url
+        if self.digital_file:
+            return '/my/school/student/%s/library/digital/%s' % (student.id, self.id)
+        return False
 
 
 class SchoolBookCopy(models.Model):
@@ -383,8 +407,8 @@ class SchoolLibraryMembership(models.Model):
     student_id = fields.Many2one('school.student', string='Student', index=True)
     employee_id = fields.Many2one('hr.employee', string='Staff Member', index=True)
     member_name = fields.Char(string='Member', compute='_compute_member_name', store=True)
-    start_date = fields.Date(string='Valid From', required=True, default=fields.Date.context_today)
-    end_date = fields.Date(string='Valid Until')
+    start_date = fields.Date(string='Issued Date', required=True, default=fields.Date.context_today)
+    end_date = fields.Date(string='Expiry Date')
     max_books = fields.Integer(string='Max Books at a Time',
                                default=lambda self: _company_setting(self.env, 'library_max_books', 3))
     suspended = fields.Boolean(string='Suspended', tracking=True)
@@ -467,6 +491,12 @@ class SchoolBookReservation(models.Model):
     copy_id = fields.Many2one('school.book.copy', string='Held Copy', readonly=True)
     hold_until = fields.Date(string='Hold Until', readonly=True)
     queue_position = fields.Integer(string='Queue Position', compute='_compute_queue_position')
+    issue_id = fields.Many2one('school.book.issue', string='Book Issue', readonly=True, copy=False)
+
+    @api.depends('book_id.name', 'student_id.name')
+    def _compute_display_name(self):
+        for rec in self:
+            rec.display_name = ' – '.join(filter(None, [rec.book_id.name, rec.student_id.name])) or _("Reservation")
 
     def _compute_queue_position(self):
         for rec in self:
@@ -508,6 +538,46 @@ class SchoolBookReservation(models.Model):
             body=_("%(book)s is ready to collect (copy %(acc)s). It is held until %(date)s.",
                    book=self.book_id.name, acc=copy.accession_no, date=self.hold_until),
             partner_ids=partner.ids if partner.email else [])
+
+    def action_issue_book(self):
+        """Issue the held copy to the student. Reuses school.book.issue.action_issue
+        (library card + borrow limit checks, copy -> Issued, reservation ->
+        Collected). If it raises, nothing is kept: no draft issue is left."""
+        self.ensure_one()
+        if self.state != 'ready' or not self.copy_id:
+            raise UserError(_("Only a reservation that is Ready to Collect, with a held copy, can be issued."))
+        with self.env.cr.savepoint():
+            issue = self.env['school.book.issue'].create({
+                'borrower_type': 'student',
+                'student_id': self.student_id.id,
+                'book_id': self.book_id.id,
+                'copy_id': self.copy_id.id,
+            })
+            issue.action_issue()
+        # action_issue links both records when it fulfils the reservation;
+        # set it here too in case it matched another ready reservation
+        if not self.issue_id:
+            self.issue_id = issue
+        if not issue.reservation_id:
+            issue.reservation_id = self
+        self.message_post(body=Markup(_("Issued as %s.")) % issue._get_html_link())
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'school.book.issue',
+            'res_id': issue.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+
+    def action_open_issue(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'school.book.issue',
+            'res_id': self.issue_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
 
     def action_cancel(self):
         for rec in self:
@@ -552,6 +622,7 @@ class SchoolBookIssue(models.Model):
     partner_id = fields.Many2one('res.partner', string='Partner', compute='_compute_borrower', store=True)
     class_id = fields.Many2one(related='student_id.class_id', string='Class', store=True)
     membership_id = fields.Many2one('school.library.membership', string='Library Card', readonly=True)
+    reservation_id = fields.Many2one('school.book.reservation', string='Reservation', readonly=True, copy=False)
     issue_date = fields.Date(string='Issue Date', required=True, default=fields.Date.context_today, tracking=True)
     due_date = fields.Date(string='Due Date', required=True, tracking=True,
                            default=lambda self: fields.Date.context_today(self) + timedelta(
@@ -716,9 +787,11 @@ class SchoolBookIssue(models.Model):
                 raise ValidationError(_("Copy %(acc)s is %(state)s.", acc=copy.accession_no,
                                         state=dict(COPY_STATES)[copy.state]))
             copy.state = 'issued'
+            vals = {'state': 'issued', 'copy_id': copy.id, 'membership_id': membership.id}
             if reservation:
-                reservation.write({'state': 'fulfilled'})
-            rec.write({'state': 'issued', 'copy_id': copy.id, 'membership_id': membership.id})
+                reservation.write({'state': 'fulfilled', 'issue_id': rec.id})
+                vals['reservation_id'] = reservation.id
+            rec.write(vals)
 
     def _release_copy(self, copy_state='available'):
         for rec in self:
@@ -742,8 +815,8 @@ class SchoolBookIssue(models.Model):
 
     def action_mark_lost(self):
         for rec in self.filtered(lambda r: r.state in ('issued', 'overdue')):
-            rec.write({'return_date': fields.Date.context_today(rec), 'state': 'lost',
-                       'lost_fine': rec.book_id.price or rec.lost_fine})
+            # the librarian enters the Lost Book Fine on the issue afterwards
+            rec.write({'return_date': fields.Date.context_today(rec), 'state': 'lost'})
             rec._release_copy('lost')
 
     def action_renew(self):
@@ -808,7 +881,7 @@ class SchoolLibraryStockVerification(models.Model):
     expected_count = fields.Integer(compute='_compute_counts', string='Expected')
     found_count = fields.Integer(compute='_compute_counts', string='Found')
     missing_count = fields.Integer(compute='_compute_counts', string='Missing')
-    issued_count = fields.Integer(compute='_compute_counts', string='Out on Loan')
+    issued_count = fields.Integer(compute='_compute_counts', string='Books Issued')
 
     @api.model_create_multi
     def create(self, vals_list):

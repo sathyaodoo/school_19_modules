@@ -8,8 +8,6 @@
     <menuitem id="menu_alumni_main" name="Alumni" parent="menu_alumni_root" sequence="10"/>
     <menuitem id="menu_alumni_directory" name="Alumni Directory" parent="menu_alumni_main"
               action="action_school_alumni" sequence="10"/>
-    <menuitem id="menu_alumni_mentors" name="Mentors" parent="menu_alumni_main"
-              action="action_school_alumni_mentors" sequence="20"/>
     <menuitem id="menu_alumni_achievements" name="Achievements" parent="menu_alumni_main"
               action="action_school_alumni_achievements" sequence="30"/>
     <menuitem id="menu_alumni_graduate" name="Graduate Students" parent="menu_alumni_main"
@@ -29,8 +27,6 @@
               action="action_school_alumni_donation" sequence="10"/>
 
     <menuitem id="menu_alumni_reporting" name="Reporting" parent="menu_alumni_root" sequence="40"/>
-    <menuitem id="menu_alumni_report_alumni" name="Alumni Analysis" parent="menu_alumni_reporting"
-              action="action_school_alumni" sequence="10"/>
     <menuitem id="menu_alumni_report_donations" name="Donation Analysis" parent="menu_alumni_reporting"
               action="action_school_alumni_donation_analysis" sequence="20"/>
 

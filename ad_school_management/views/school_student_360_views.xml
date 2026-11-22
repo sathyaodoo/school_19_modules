@@ -433,12 +433,12 @@
                     </field>
 
                     <separator string="Behaviour &amp; Participation (quarterly / half-yearly)"/>
-                    <field name="behaviour_review_ids"
-                           context="{'default_student_id': id}">
+                    <field name="behaviour_feedback_ids" readonly="1">
                         <list>
-                            <field name="academic_year_id"/>
-                            <field name="date_from"/>
-                            <field name="date_to"/>
+                            <field name="review_id" column_invisible="1"/>
+                            <field name="review_academic_year_id"/>
+                            <field name="review_date_from"/>
+                            <field name="review_date_to"/>
                             <field name="behaviour" widget="badge"
                                    decoration-danger="behaviour == '1'"
                                    decoration-warning="behaviour == '2'"
@@ -483,22 +483,9 @@
                 <field name="academic_year_id"/>
                 <field name="date_from"/>
                 <field name="date_to"/>
-                <field name="behaviour" widget="badge"
-                       decoration-danger="behaviour == '1'"
-                       decoration-warning="behaviour == '2'"
-                       decoration-info="behaviour == '3'"
-                       decoration-success="behaviour == '4'"/>
-                <field name="discipline" widget="badge"
-                       decoration-danger="discipline == '1'"
-                       decoration-warning="discipline == '2'"
-                       decoration-info="discipline == '3'"
-                       decoration-success="discipline == '4'"/>
-                <field name="participation" widget="badge"
-                       decoration-danger="participation == '1'"
-                       decoration-warning="participation == '2'"
-                       decoration-info="participation == '3'"
-                       decoration-success="participation == '4'"/>
-                <field name="average_rating" optional="show"/>
+                <field name="class_ids" widget="many2many_tags" optional="show"/>
+                <field name="student_ids" widget="many2many_tags" optional="show"/>
+                <field name="student_count"/>
                 <field name="date" optional="hide"/>
                 <field name="reviewed_by" optional="hide"/>
             </list>
@@ -516,10 +503,7 @@
                             <field name="class_ids"
                                    widget="many2many_tags"
                                    options="{'no_create': True}"/>
-                            <field name="student_ids"
-                                   widget="many2many_tags"
-                                   options="{'no_create': True}"
-                                   domain="class_ids and [('class_id', 'in', class_ids)] or []"/>
+                            <field name="student_ids" invisible="1"/>
                             <field name="date_from"/>
                             <field name="date_to"/>
                         </group>
@@ -531,32 +515,20 @@
                         </group>
                     </group>
 
-                    <group string="Ratings">
-                        <group>
-                            <field name="behaviour" widget="radio"/>
-                            <field name="discipline" widget="radio"/>
-                        </group>
-                        <group>
-                            <field name="participation" widget="radio"/>
-                            <field name="average_rating"/>
-                        </group>
-                    </group>
-
-                    <group string="Comments">
-                        <field name="teacher_observation"
-                               placeholder="What did you observe this period?"/>
-                    </group>
-
                     <separator string="Student Self-Reflection &amp; Parent Feedback (one row per student)"/>
-                    <div class="text-muted mb-2" invisible="id">
-                        Save the review and a row will appear here for every selected student.
-                    </div>
                     <field name="feedback_ids"
                            nolabel="1"
                            colspan="2"
                            class="w-100">
-                        <list editable="bottom" create="false" delete="false">
-                            <field name="student_id" readonly="1"/>
+                        <list editable="bottom">
+                            <field name="student_id" required="1"
+                                   options="{'no_create': True, 'no_open': True}"
+                                   domain="[('id', 'not in', parent.student_ids)] + ([('class_id', 'in', parent.class_ids)] if parent.class_ids else [])"/>
+                            <field name="behaviour"/>
+                            <field name="participation"/>
+                            <field name="discipline"/>
+                            <field name="teacher_observation" widget="text"/>
+                            <field name="average_rating" readonly="1"/>
                             <field name="self_reflection" widget="text"/>
                             <field name="parent_feedback" widget="text"/>
                         </list>
@@ -575,7 +547,8 @@
                 <field name="class_ids" string="Class"/>
                 <field name="academic_year_id"/>
                 <filter string="Needs Improvement" name="needs_improvement"
-                        domain="['|', '|', ('behaviour', '=', '1'), ('discipline', '=', '1'), ('participation', '=', '1')]"/>
+                        domain="['|', '|', ('feedback_ids.behaviour', '=', '1'), ('feedback_ids.discipline', '=', '1'),
+                                 ('feedback_ids.participation', '=', '1')]"/>
                 <group>
                     <filter string="Student" name="group_student"
                             context="{'group_by': 'student_ids'}"/>

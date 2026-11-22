@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Not noupdate: runs on every update of the module. Recalculates the
+         1st / 2nd / 3rd Place Groups of group activities (stored computed
+         fields are not recomputed by Odoo for existing records) and rebuilds
+         the house points of activities whose places changed. Safe to repeat. -->
+    <function model="event.event" name="_school_recompute_winning_houses"/>
+</odoo>

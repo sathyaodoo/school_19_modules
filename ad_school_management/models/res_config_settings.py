@@ -93,6 +93,22 @@ class ResCompany(models.Model):
     student_score_second = fields.Integer(string='Second Place Bonus', default=0)
     student_score_third = fields.Integer(string='Third Place Bonus', default=0)
 
+    _SCHOOL_STUDENT_SCORE_FIELDS = {'student_score_participation', 'student_score_first',
+                                    'student_score_second', 'student_score_third'}
+
+    def write(self, vals):
+        res = super().write(vals)
+        if self._SCHOOL_STUDENT_SCORE_FIELDS & set(vals):
+            # students' Scores change -> the 1st / 2nd / 3rd Place Groups of
+            # group activities are recomputed -> rebuild their house points
+            domain = [('is_school_activity', '=', True), ('school_score_custom', '=', False)]
+            if self.env.company in self:
+                domain += ['|', ('company_id', 'in', self.ids), ('company_id', '=', False)]
+            else:
+                domain += [('company_id', 'in', self.ids)]
+            self.env['event.event'].sudo().search(domain)._school_queue_house_points()
+        return res
+
     @api.constrains('student_score_participation', 'student_score_first',
                     'student_score_second', 'student_score_third')
     def _check_student_score(self):

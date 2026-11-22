@@ -338,6 +338,46 @@
                             </div>
                             <p t-else="" class="text-muted mb-4">No books returned yet.</p>
 
+                            <!-- Digital Library: every digital resource of the student's branch -->
+                            <h5 class="text-secondary mb-3">Digital Library</h5>
+                            <form method="get" t-attf-action="/my/school/student/#{student.id}" class="row g-2 mb-3">
+                                <input type="hidden" name="tab" value="library"/>
+                                <div class="col-sm-8 col-md-6">
+                                    <input type="search" name="dq" class="form-control form-control-sm" maxlength="100"
+                                           placeholder="Search by title or genre" t-att-value="digital_query"/>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-sm btn-secondary">Search</button>
+                                    <a t-if="digital_query" t-attf-href="/my/school/student/#{student.id}?tab=library" class="btn btn-sm btn-link">Clear</a>
+                                </div>
+                            </form>
+                            <div class="table-responsive mb-4" t-if="digital_books">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead>
+                                        <tr><th>Title</th><th>Author</th><th>Type</th><th>Genres</th><th>Reading Level</th><th/></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="digital_books" t-as="dbook">
+                                            <t t-set="open_url" t-value="dbook._portal_open_url(student)"/>
+                                            <td t-out="dbook.name"/>
+                                            <td t-out="dbook.author or ''"/>
+                                            <td t-out="dict(dbook._fields['resource_type'].selection).get(dbook.resource_type)"/>
+                                            <td><t t-foreach="dbook.genre_ids" t-as="g"><span class="badge text-bg-light border me-1" t-out="g.name"/></t></td>
+                                            <td t-out="dict(dbook._fields['reading_level'].selection).get(dbook.reading_level) or ''"/>
+                                            <td class="text-end">
+                                                <a t-if="open_url" t-att-href="open_url" target="_blank" rel="noopener noreferrer"
+                                                   class="btn btn-sm btn-primary">Open</a>
+                                                <span t-else="" class="text-muted small">Not available yet</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p t-else="" class="text-muted mb-4">
+                                <t t-if="digital_query">No digital resources match your search.</t>
+                                <t t-else="">No digital resources yet.</t>
+                            </p>
+
                             <h5 class="text-secondary mb-3">Recommended for You</h5>
                             <div class="row" t-if="recommendations">
                                 <div class="col-md-6 col-lg-4 mb-3" t-foreach="recommendations" t-as="reco">
@@ -353,8 +393,9 @@
                                             <div class="small">
                                                 <span t-if="book.avg_rating">&#9733; <t t-out="'%.1f' % book.avg_rating"/> &#183; </span>
                                                 <t t-if="book.is_digital">
-                                                    <a t-if="book.digital_url" t-att-href="book.digital_url" target="_blank">Open digital resource</a>
-                                                    <span t-else="">Digital resource</span>
+                                                    <t t-set="open_url" t-value="book._portal_open_url(student)"/>
+                                                    <a t-if="open_url" t-att-href="open_url" target="_blank" rel="noopener noreferrer">Open digital resource</a>
+                                                    <span t-else="" class="text-muted">Digital resource – not available yet</span>
                                                 </t>
                                                 <span t-elif="book.qty_available" class="text-success">Available in the library</span>
                                                 <span t-else="" class="text-muted">All copies out – ask to reserve</span>
@@ -376,6 +417,12 @@
                             <t t-set="rating_colors" t-value="{'4': 'success', '3': 'info', '2': 'warning', '1': 'danger'}"/>
                             <t t-foreach="behaviour_reviews" t-as="rev">
                                 <t t-set="fb" t-value="behaviour_feedback.get(rev.id)"/>
+                                <!-- this student's OWN row -->
+                                <t t-set="r_beh" t-value="fb and fb.behaviour"/>
+                                <t t-set="r_dis" t-value="fb and fb.discipline"/>
+                                <t t-set="r_par" t-value="fb and fb.participation"/>
+                                <t t-set="r_avg" t-value="(fb and fb.average_rating) or 0.0"/>
+                                <t t-set="r_obs" t-value="fb and fb.teacher_observation"/>
                                 <div class="card mb-3">
                                     <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
                                         <strong>
@@ -391,24 +438,24 @@
                                         <div class="row text-center mb-3">
                                             <div class="col-6 col-md-3 mb-2">
                                                 <div class="text-muted small">Behaviour</div>
-                                                <span t-attf-class="badge bg-#{rating_colors.get(rev.behaviour, 'secondary')}"><t t-out="behaviour_rating_labels.get(rev.behaviour)"/></span>
+                                                <span t-attf-class="badge bg-#{rating_colors.get(r_beh, 'secondary')}"><t t-out="behaviour_rating_labels.get(r_beh)"/></span>
                                             </div>
                                             <div class="col-6 col-md-3 mb-2">
                                                 <div class="text-muted small">Discipline</div>
-                                                <span t-attf-class="badge bg-#{rating_colors.get(rev.discipline, 'secondary')}"><t t-out="behaviour_rating_labels.get(rev.discipline)"/></span>
+                                                <span t-attf-class="badge bg-#{rating_colors.get(r_dis, 'secondary')}"><t t-out="behaviour_rating_labels.get(r_dis)"/></span>
                                             </div>
                                             <div class="col-6 col-md-3 mb-2">
                                                 <div class="text-muted small">Participation</div>
-                                                <span t-attf-class="badge bg-#{rating_colors.get(rev.participation, 'secondary')}"><t t-out="behaviour_rating_labels.get(rev.participation)"/></span>
+                                                <span t-attf-class="badge bg-#{rating_colors.get(r_par, 'secondary')}"><t t-out="behaviour_rating_labels.get(r_par)"/></span>
                                             </div>
                                             <div class="col-6 col-md-3 mb-2">
                                                 <div class="text-muted small">Average (out of 4)</div>
-                                                <strong><t t-out="'%.1f' % rev.average_rating"/></strong>
+                                                <strong><t t-out="'%.1f' % r_avg"/></strong>
                                             </div>
                                         </div>
-                                        <div class="mb-3" t-if="rev.teacher_observation">
+                                        <div class="mb-3" t-if="r_obs">
                                             <div class="text-muted small">Teacher's Observations</div>
-                                            <div style="white-space: pre-wrap;"><t t-out="rev.teacher_observation"/></div>
+                                            <div style="white-space: pre-wrap;"><t t-out="r_obs"/></div>
                                         </div>
                                         <div class="mb-3" t-if="fb and fb.self_reflection and not behaviour_is_student">
                                             <div class="text-muted small">Student's Self-Reflection</div>

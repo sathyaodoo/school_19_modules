@@ -11,7 +11,6 @@
                 <field name="name"/>
                 <field name="graduation_year" options="{'format': false}"/>
                 <field name="last_class_id" optional="show"/>
-                <field name="highest_qualification" optional="show"/>
                 <field name="profession" optional="show"/>
                 <field name="organization" optional="show"/>
                 <field name="industry_id" optional="hide"/>
@@ -65,13 +64,16 @@
                             invisible="stage != 'mentor'"/>
                     <button name="action_back_to_graduate" type="object" string="Back to Graduate"
                             invisible="stage != 'alumni'" groups="ad_school_alumni.group_alumni_manager"/>
+                    <button name="action_import_school_achievements" type="object" string="Import School Achievements"
+                            invisible="not student_id or not id or stage == 'graduate'"/>
                     <field name="stage" widget="statusbar" statusbar_visible="graduate,alumni,mentor"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_student" type="object" class="oe_stat_button"
                                 icon="fa-graduation-cap" string="Student Record" invisible="not student_id"/>
-                        <button name="action_view_mentorships" type="object" class="oe_stat_button" icon="fa-handshake-o">
+                        <button name="action_view_mentorships" type="object" class="oe_stat_button" icon="fa-handshake-o"
+                                invisible="stage == 'graduate'">
                             <field name="mentorship_count" widget="statinfo" string="Mentorships"/>
                         </button>
                         <button name="action_view_guidance" type="object" class="oe_stat_button" icon="fa-compass">
@@ -80,7 +82,8 @@
                         <button name="action_view_events" type="object" class="oe_stat_button" icon="fa-calendar">
                             <field name="event_count" widget="statinfo" string="Events"/>
                         </button>
-                        <button name="action_view_donations" type="object" class="oe_stat_button" icon="fa-heart">
+                        <button name="action_view_donations" type="object" class="oe_stat_button" icon="fa-heart"
+                                invisible="stage == 'graduate'">
                             <field name="donation_total" widget="statinfo" string="Donated"/>
                         </button>
                     </div>
@@ -106,6 +109,8 @@
                             <field name="graduation_year" options="{'format': false}"/>
                             <field name="graduation_date"/>
                             <field name="graduation_academic_year_id"/>
+                            <field name="admission_academic_year_id" options="{'no_create': True}"
+                                   context="{'active_test': False}"/>
                             <field name="student_id" readonly="1" invisible="not student_id"/>
                             <field name="admission_no"/>
                             <field name="last_class_id"/>
@@ -114,23 +119,8 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Higher Education" name="education">
-                            <field name="highest_qualification" invisible="1"/>
-                            <field name="education_ids">
-                                <list editable="bottom">
-                                    <field name="sequence" widget="handle"/>
-                                    <field name="level"/>
-                                    <field name="degree"/>
-                                    <field name="field_of_study" optional="show"/>
-                                    <field name="institution"/>
-                                    <field name="start_year" options="{'format': false}"/>
-                                    <field name="end_year" options="{'format': false}"/>
-                                    <field name="status"/>
-                                    <field name="score" optional="hide"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="Profession" name="profession">
+                        <!-- Higher Education tab removed (the data and model are kept) -->
+                        <page string="Profession" name="profession" invisible="stage == 'graduate'">
                             <group>
                                 <group>
                                     <field name="employment_status"/>
@@ -153,19 +143,23 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Achievements" name="achievements">
+                        <page string="Achievements" name="achievements" invisible="stage == 'graduate'">
                             <field name="achievement_ids">
-                                <list editable="bottom">
-                                    <field name="name"/>
-                                    <field name="category"/>
-                                    <field name="level"/>
-                                    <field name="date"/>
+                                <!-- rows copied from the school records: only Description and
+                                     Featured can be changed, and they can't be deleted -->
+                                <list editable="bottom" decoration-info="from_school_records">
+                                    <field name="from_school_records" column_invisible="1"/>
+                                    <field name="name" readonly="from_school_records"/>
+                                    <field name="category" readonly="from_school_records"/>
+                                    <field name="level" readonly="from_school_records"/>
+                                    <field name="date" readonly="from_school_records"/>
                                     <field name="featured"/>
                                     <field name="description" optional="hide"/>
+                                    <field name="school_source" string="Source" optional="hide"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="Mentorship" name="mentorship">
+                        <page string="Mentorship" name="mentorship" invisible="stage == 'graduate'">
                             <group>
                                 <group>
                                     <field name="expertise_ids" widget="many2many_tags"
@@ -189,7 +183,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Donations" name="donations">
+                        <page string="Donations" name="donations" invisible="stage == 'graduate'">
                             <field name="donation_ids" readonly="1">
                                 <list>
                                     <field name="name"/>
@@ -201,7 +195,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Notes" name="notes">
+                        <page string="Notes" name="notes" invisible="stage == 'graduate'">
                             <field name="notes"/>
                         </page>
                     </notebook>
@@ -223,7 +217,6 @@
                 <field name="organization"/>
                 <field name="industry_id"/>
                 <field name="expertise_ids"/>
-                <field name="highest_qualification"/>
                 <filter string="Graduates" name="graduates" domain="[('stage', '=', 'graduate')]"/>
                 <filter string="Alumni" name="alumni" domain="[('stage', '=', 'alumni')]"/>
                 <filter string="Mentors" name="mentors" domain="[('stage', '=', 'mentor')]"/>
@@ -235,6 +228,8 @@
                 <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
                 <group>
                     <filter string="Graduation Year" name="group_year" context="{'group_by': 'graduation_year'}"/>
+                    <filter string="Batch (Admission Year)" name="group_admission_year"
+                            context="{'group_by': 'admission_academic_year_id'}"/>
                     <filter string="Stage" name="group_stage" context="{'group_by': 'stage'}"/>
                     <filter string="Industry" name="group_industry" context="{'group_by': 'industry_id'}"/>
                     <filter string="Current Status" name="group_status" context="{'group_by': 'employment_status'}"/>
@@ -278,19 +273,6 @@
         </field>
     </record>
 
-    <record id="action_school_alumni_mentors" model="ir.actions.act_window">
-        <field name="name">Mentors</field>
-        <field name="res_model">school.alumni</field>
-        <field name="view_mode">kanban,list,form</field>
-        <field name="search_view_id" ref="view_school_alumni_search"/>
-        <field name="domain">[('stage', '=', 'mentor')]</field>
-        <field name="context">{'default_stage': 'mentor', 'search_default_available': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">No mentors yet.</p>
-            <p>Open an alumni, add Expertise Areas in the Mentorship tab and click "Make Mentor".</p>
-        </field>
-    </record>
-
     <record id="action_school_alumni_achievements" model="ir.actions.act_window">
         <field name="name">Achievements</field>
         <field name="res_model">school.alumni.achievement</field>
@@ -301,13 +283,15 @@
         <field name="name">school.alumni.achievement.list</field>
         <field name="model">school.alumni.achievement</field>
         <field name="arch" type="xml">
-            <list string="Achievements" editable="bottom">
-                <field name="alumni_id"/>
-                <field name="name"/>
-                <field name="category"/>
-                <field name="level"/>
-                <field name="date"/>
+            <list string="Achievements" editable="bottom" decoration-info="from_school_records">
+                <field name="from_school_records" column_invisible="1"/>
+                <field name="alumni_id" readonly="from_school_records"/>
+                <field name="name" readonly="from_school_records"/>
+                <field name="category" readonly="from_school_records"/>
+                <field name="level" readonly="from_school_records"/>
+                <field name="date" readonly="from_school_records"/>
                 <field name="featured"/>
+                <field name="school_source" string="Source" optional="hide"/>
             </list>
         </field>
     </record>
@@ -320,6 +304,7 @@
                 <field name="name"/>
                 <field name="alumni_id"/>
                 <filter string="Featured" name="featured" domain="[('featured', '=', True)]"/>
+                <filter string="From School Records" name="from_school" domain="[('from_school_records', '=', True)]"/>
                 <group>
                     <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
                     <filter string="Level" name="group_level" context="{'group_by': 'level'}"/>

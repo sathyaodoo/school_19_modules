@@ -9,6 +9,7 @@
                 <field name="name"/>
                 <field name="event_type"/>
                 <field name="venue" optional="show"/>
+                <field name="batch_year_ids" widget="many2many_tags" optional="show"/>
                 <field name="invited_count" optional="show"/>
                 <field name="registered_count"/>
                 <field name="attended_count"/>
@@ -30,6 +31,9 @@
                             invisible="state != 'draft'"/>
                     <button name="action_done" type="object" string="Mark as Done" class="oe_highlight"
                             invisible="state != 'confirmed'"/>
+                    <button name="action_invite_batch" type="object" string="Invite Batch"
+                            invisible="state not in ('draft', 'confirmed')"
+                            help="Add every alumnus of the selected batches (all alumni when empty) as Invited."/>
                     <button name="action_cancel" type="object" string="Cancel"
                             invisible="state in ('done', 'cancelled')"/>
                     <button name="action_reset" type="object" string="Reset to Draft"
@@ -54,7 +58,8 @@
                             <field name="venue"/>
                         </group>
                         <group>
-                            <field name="batch_years"/>
+                            <field name="batch_year_ids" widget="many2many_tags" placeholder="All batches"
+                                   options="{'no_create': True}" context="{'active_test': False}"/>
                             <field name="organizer_id"/>
                             <field name="invited_count"/>
                             <field name="registered_count"/>
@@ -105,10 +110,12 @@
             <search>
                 <field name="name"/>
                 <field name="attendee_ids" string="Alumni" filter_domain="[('attendee_ids.alumni_id', 'ilike', self)]"/>
+                <field name="batch_year_ids" string="For Batches" context="{'active_test': False}"/>
                 <filter string="Upcoming" name="upcoming" domain="[('state', 'in', ('draft', 'confirmed'))]"/>
                 <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
                 <group>
                     <filter string="Type" name="group_type" context="{'group_by': 'event_type'}"/>
+                    <filter string="Batch" name="group_batch" context="{'group_by': 'batch_year_ids'}"/>
                     <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Month" name="group_month" context="{'group_by': 'date_start:month'}"/>
                 </group>

@@ -8,7 +8,6 @@
     <menuitem id="menu_school_personnel" name="Students &amp; Faculty" parent="menu_school_root" sequence="10"/>
     <menuitem id="menu_school_operations" name="Operations &amp; Exams" parent="menu_school_root" sequence="20"/>
     <menuitem id="menu_school_financials" name="Fees" parent="menu_school_root" sequence="30"/>
-    <menuitem id="menu_school_facilities" name="Facilities" parent="menu_school_root" sequence="40"/>
     <menuitem id="menu_school_wizards" name="Bulk Records" parent="menu_school_root" sequence="50"/>
 
     <menuitem id="menu_school_admission" name="Admissions" parent="menu_school_personnel" action="action_school_admission" sequence="10"/>

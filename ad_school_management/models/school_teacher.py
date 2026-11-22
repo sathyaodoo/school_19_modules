@@ -22,9 +22,12 @@ class SchoolTeacher(models.Model):
     subject_ids = fields.Many2many('school.subject', 'school_subject_teacher_rel', 'teacher_id', 'subject_id', string='Assigned Subjects')
     class_teacher_class_ids = fields.One2many('school.class', 'class_teacher_id', string='Class Teacher For')
     class_teacher_section_ids = fields.One2many('school.section', 'class_teacher_id', string='Class Teacher Sections')
-    class_teacher_for_text = fields.Char(string='Class Teacher For', compute='_compute_class_teacher_for_text')
+    # compute_sudo: read-only display text built from school.section / school.class,
+    # which HR officers (shown this on the Employee form) cannot read
+    class_teacher_for_text = fields.Char(string='Class Teacher For', compute='_compute_class_teacher_for_text',
+                                         compute_sudo=True)
     meal_entitled = fields.Boolean(
-        string='Meal Entitled', default=False,
+        string='Meal Entitled', related='employee_id.meal_entitled', readonly=False,
         help='Staff entitled to a canteen meal (used by the Canteen Daily Planning count)',
     )
   # --- My Timetable ---------------------------------------------------
@@ -44,10 +47,12 @@ class SchoolTeacher(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        records = super(SchoolTeacher, self).create(vals_list)
+        # school_teacher_creating: the hr.employee created/updated here through
+        # _inherits must not create another Teacher (see hr.employee create/write).
+        records = super(SchoolTeacher, self.with_context(school_teacher_creating=True)).create(vals_list)
         for record in records:
             record.employee_id.write({'teacher_id': record.id})
-        return records
+        return records.with_env(self.env)
     
     def write(self, vals):
         res = super().write(vals)

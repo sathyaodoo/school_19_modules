@@ -70,7 +70,6 @@
                             <field name="genre_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
                             <field name="reading_level"/>
                             <field name="currency_id" invisible="1"/>
-                            <field name="price"/>
                             <field name="vendor_id"/>
                             <field name="rack_id" invisible="is_digital"/>
                             <field name="qty_available" invisible="is_digital"/>
@@ -79,7 +78,7 @@
                     </group>
                     <notebook>
                         <page string="Copies (Accession Register)" name="copies" invisible="is_digital">
-                            <field name="copy_ids" context="{'default_rack_id': rack_id, 'default_price': price, 'default_vendor_id': vendor_id}">
+                            <field name="copy_ids" context="{'default_rack_id': rack_id}">
                                 <list editable="bottom" decoration-muted="state in ('written_off', 'lost')"
                                       decoration-danger="state in ('missing', 'damaged')" decoration-info="state == 'issued'">
                                     <field name="accession_no"/>
@@ -89,10 +88,7 @@
                                     <field name="state" widget="badge"/>
                                     <field name="acquisition_date"/>
                                     <field name="acquisition_type" optional="hide"/>
-                                    <field name="vendor_id" optional="show"/>
                                     <field name="currency_id" column_invisible="1"/>
-                                    <field name="price" optional="show"/>
-                                    <field name="invoice_ref" optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -187,10 +183,7 @@
                 <field name="state" widget="badge"/>
                 <field name="acquisition_date" optional="show"/>
                 <field name="acquisition_type" optional="hide"/>
-                <field name="vendor_id" optional="show"/>
                 <field name="currency_id" column_invisible="1"/>
-                <field name="price" sum="Total" optional="show"/>
-                <field name="invoice_ref" optional="hide"/>
                 <field name="last_verified_date" optional="hide"/>
             </list>
         </field>
@@ -224,16 +217,12 @@
                             <field name="qr_img_url" widget="image_url" options="{'size': [100, 100]}" readonly="1"/>
                             <field name="rack_id"/>
                             <field name="current_issue_id" invisible="not current_issue_id"/>
-                            <field name="condition_note"/>
                             <field name="last_verified_date"/>
                         </group>
                         <group string="Acquisition">
                             <field name="acquisition_date"/>
                             <field name="acquisition_type"/>
-                            <field name="vendor_id"/>
                             <field name="currency_id" invisible="1"/>
-                            <field name="price"/>
-                            <field name="invoice_ref"/>
                         </group>
                         <group string="Write-off" invisible="state == 'issued'">
                             <field name="write_off_reason" readonly="state == 'written_off'"/>
@@ -265,7 +254,6 @@
                 <field name="barcode"/>
                 <field name="book_id"/>
                 <field name="rack_id"/>
-                <field name="vendor_id"/>
                 <filter string="Available" name="available" domain="[('state', '=', 'available')]"/>
                 <filter string="Issued" name="issued" domain="[('state', '=', 'issued')]"/>
                 <filter string="Damaged" name="damaged" domain="[('state', '=', 'damaged')]"/>
@@ -278,7 +266,6 @@
                     <filter string="Book" name="group_book" context="{'group_by': 'book_id'}"/>
                     <filter string="Rack / Shelf" name="group_rack" context="{'group_by': 'rack_id'}"/>
                     <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
-                    <filter string="Vendor / Donor" name="group_vendor" context="{'group_by': 'vendor_id'}"/>
                     <filter string="Acquired (Month)" name="group_acq_month" context="{'group_by': 'acquisition_date:month'}"/>
                 </group>
             </search>
@@ -438,11 +425,19 @@
         <field name="arch" type="xml">
             <form>
                 <header>
+                    <button name="action_issue_book" type="object" string="Issue Book" class="btn-primary"
+                            invisible="state != 'ready'"/>
                     <button name="action_cancel" type="object" string="Cancel Reservation"
                             invisible="state not in ('waiting', 'ready')"/>
                     <field name="state" widget="statusbar" statusbar_visible="waiting,ready,fulfilled"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_issue" type="object" class="oe_stat_button" icon="fa-book"
+                                invisible="not issue_id">
+                            <span class="o_stat_text">Book Issue</span>
+                        </button>
+                    </div>
                     <group>
                         <group>
                             <field name="book_id" readonly="id" domain="[('is_digital', '=', False)]" options="{'no_create': True}"/>
@@ -453,6 +448,7 @@
                             <field name="queue_position" invisible="state != 'waiting'"/>
                             <field name="copy_id" invisible="not copy_id"/>
                             <field name="hold_until" invisible="not hold_until"/>
+                            <field name="issue_id" invisible="not issue_id"/>
                         </group>
                     </group>
                 </sheet>
@@ -508,7 +504,7 @@
                     <button name="action_renew" type="object" string="Renew" invisible="state != 'issued'"/>
                     <button name="action_return_damaged" type="object" string="Return Damaged" invisible="state not in ('issued', 'overdue')"/>
                     <button name="action_mark_lost" type="object" string="Mark Lost" invisible="state not in ('issued', 'overdue')"
-                            confirm="Mark this book as lost? The book price is added as a fine."/>
+                            confirm="Mark this book as lost? Enter the Lost Book Fine on this issue afterwards."/>
                     <button name="action_pay_fine" type="object" string="Fine Paid" invisible="fine_state != 'due'"/>
                     <button name="action_waive_fine" type="object" string="Waive Fine" invisible="fine_state != 'due'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,issued,returned"/>
@@ -530,6 +526,7 @@
                             <field name="employee_id" invisible="borrower_type != 'staff'"
                                    required="borrower_type == 'staff'" readonly="state != 'draft'" options="{'no_create': True}"/>
                             <field name="membership_id" invisible="not membership_id"/>
+                            <field name="reservation_id" invisible="not reservation_id"/>
                         </group>
                         <group string="Dates">
                             <field name="issue_date" readonly="state != 'draft'"/>
@@ -980,8 +977,10 @@
     <menuitem id="menu_school_library_analysis" name="Library Analysis" parent="menu_school_library_reporting" action="action_school_library_analysis" sequence="50"/>
     <menuitem id="menu_school_book_acquisition" name="Acquisition History" parent="menu_school_library_reporting" action="action_school_book_acquisition" sequence="52"/>
 
-    <menuitem id="menu_school_library_rack" name="Library Racks / Shelves" parent="ad_school_management.menu_school_configuration"
-              action="action_school_library_rack" sequence="80"/>
-    <menuitem id="menu_school_book_genre" name="Book Genres" parent="ad_school_management.menu_school_configuration"
-              action="action_school_book_genre" sequence="81"/>
+    <menuitem id="menu_school_library_configuration" name="Configuration" parent="menu_school_library_sub" sequence="60"
+              groups="ad_school_management.group_library_manager,ad_school_management.group_school_admin"/>
+    <menuitem id="menu_school_library_rack" name="Library Racks / Shelves" parent="menu_school_library_configuration"
+              action="action_school_library_rack" sequence="10"/>
+    <menuitem id="menu_school_book_genre" name="Book Genres" parent="menu_school_library_configuration"
+              action="action_school_book_genre" sequence="20"/>
 </odoo>
