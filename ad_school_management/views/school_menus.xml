@@ -50,13 +50,12 @@
          Reports / Configuration dropdowns are added by school_smart_transport. -->
     <menuitem id="menu_school_transport_sub" name="Transport" sequence="12"
               action="action_school_vehicle"/>
-    <menuitem id="menu_school_transport_fleet" name="Fleet" parent="menu_school_transport_sub" sequence="10"/>
-    <menuitem id="menu_school_transport_staff" name="Drivers &amp; Caretakers" parent="menu_school_transport_fleet" action="action_school_transport_staff" sequence="5"/>
-    <menuitem id="menu_school_vehicle" name="Vehicles" parent="menu_school_transport_fleet" action="action_school_vehicle" sequence="10"/>
-    <menuitem id="menu_school_transport_operations" name="Operations" parent="menu_school_transport_sub" sequence="20"/>
-    <menuitem id="menu_school_transport_route" name="Routes &amp; Stops" parent="menu_school_transport_operations" action="action_school_transport_route" sequence="20"/>
-    <menuitem id="menu_school_route_change_request" name="Route Change Requests" parent="menu_school_transport_operations" action="action_school_route_change_request" sequence="30"/>
-    <menuitem id="menu_school_transport_attendance" name="Transport Attendance" parent="menu_school_transport_operations" action="action_school_transport_attendance" sequence="40"/>
+    <menuitem id="menu_school_vehicle" name="Vehicles" parent="menu_school_transport_sub" action="action_school_vehicle" sequence="10"/>
+    <menuitem id="menu_school_transport_route" name="Routes &amp; Stops" parent="menu_school_transport_sub" action="action_school_transport_route" sequence="20"/>
+    <menuitem id="menu_school_transport_attendance" name="Attendance" parent="menu_school_transport_sub" action="action_school_transport_attendance" sequence="25"/>
+    <menuitem id="menu_school_route_change_request" name="Requests" parent="menu_school_transport_sub" action="action_school_route_change_request" sequence="28"/>
+    <menuitem id="menu_school_transport_config" name="Configuration" parent="menu_school_transport_sub" sequence="90"/>
+    <menuitem id="menu_school_transport_staff" name="Drivers &amp; Caretakers" parent="menu_school_transport_config" action="action_school_transport_staff" sequence="5"/>
 
     <menuitem id="menu_school_bulk_admission" name="Bulk Admissions" parent="menu_school_wizards" action="action_school_bulk_admission" sequence="10"/>
     <menuitem id="menu_school_bulk_student_import" name="Bulk Student Import" parent="menu_school_wizards" action="action_school_bulk_student_import" sequence="20"/>

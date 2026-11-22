@@ -12,7 +12,7 @@ from odoo.exceptions import UserError, ValidationError, AccessError
 class SchoolCustomerPortal(CustomerPortal):
 
     def _prepare_home_portal_values(self, counters):
-        values = super(SchoolCustomerPortal, self)._prepare_home_portal_values(counters)
+        values = super()._prepare_home_portal_values(counters)
         partner = request.env.user.partner_id
         
         students = request.env['school.student'].sudo().search([
@@ -112,7 +112,6 @@ class SchoolCustomerPortal(CustomerPortal):
             'behaviour_reviews': behaviour_reviews,
             'behaviour_feedback': behaviour_feedback,
             'behaviour_rating_labels': dict(Behaviour._fields['behaviour'].selection),
-            'behaviour_period_labels': dict(Behaviour._fields['period'].selection),
             'behaviour_is_student': is_student,
             'behaviour_is_parent': is_parent,
             'behaviour_saved': kw.get('behaviour_saved'),
@@ -394,84 +393,6 @@ class SchoolCustomerPortal(CustomerPortal):
         route.effective_vehicle_id._register_location(lat, lon, speed=speed, source='driver_app')
         return self._json({'ok': True, 'vehicle': route.effective_vehicle_id.name})
 
-
-
-class SchoolCustomerPortal(CustomerPortal):
-
-    # ------------------------------------------------------------------
-    # Portal home counters
-    # ------------------------------------------------------------------
-    def _prepare_home_portal_values(self, counters):
-        values = super(SchoolCustomerPortal, self)._prepare_home_portal_values(counters)
-        partner = request.env.user.partner_id
-
-        if 'student_count' in counters:
-            students = request.env['school.student'].sudo().search([
-                '|', ('partner_id', '=', partner.id), ('parent_ids.partner_id', '=', partner.id)
-            ])
-            values['student_count'] = len(students)
-
-        if 'leave_count' in counters:
-            employee = self._school_get_employee()
-            values['leave_count'] = request.env['hr.leave'].sudo().search_count(
-                self._school_leave_domain(employee)) if employee else 0
-        return values
-
-    # ------------------------------------------------------------------
-    # Students (unchanged)
-    # ------------------------------------------------------------------
-    @http.route(['/my/school/students'], type='http', auth="user", website=True)
-    def portal_my_students(self, **kw):
-        partner = request.env.user.partner_id
-        students = request.env['school.student'].sudo().search([
-            '|', ('partner_id', '=', partner.id), ('parent_ids.partner_id', '=', partner.id)
-        ])
-        values = self._prepare_portal_layout_values()
-        values.update({
-            'students': students,
-            'page_name': 'school_students',
-        })
-        return request.render("ad_school_management.portal_my_students", values)
-
-    @http.route(['/my/school/student/<int:student_id>'], type='http', auth="user", website=True)
-    def portal_my_student_profile(self, student_id, **kw):
-        partner = request.env.user.partner_id
-        student = request.env['school.student'].sudo().browse(student_id)
-
-        if not student.exists() or (student.partner_id.id != partner.id and partner.id not in student.parent_ids.partner_id.ids):
-            return request.redirect('/my')
-
-        attendances = request.env['school.attendance'].sudo().search([('student_id', '=', student.id)], order='date desc, session', limit=30)
-        # One row per day with Morning and Afternoon side by side (last 15 days).
-        attendance_days = request.env['school.attendance']._get_daily_summary(student, days=15)
-        results = request.env['school.exam.result'].sudo().search([('student_id', '=', student.id)])
-
-        timetable = request.env['school.timetable'].sudo().search([
-            ('class_id', '=', student.class_id.id),
-            ('section_id', '=', student.section_id.id),
-            ('academic_year_id', '=', student.academic_year_id.id)
-        ], limit=1)
-
-        invoices = request.env['account.move'].sudo().search([
-            ('partner_id', '=', student.partner_id.id),
-            ('move_type', '=', 'out_invoice')
-        ])
-
-        values = self._prepare_portal_layout_values()
-        values.update({
-            'student': student,
-            'attendances': attendances,
-            'attendance_days': attendance_days,
-            'results': results,
-            'timetable': timetable,
-            'invoices': invoices,
-            'page_name': 'school_student_profile',
-        })
-        return request.render("ad_school_management.portal_my_student_profile", values)
-
-    # ------------------------------------------------------------------
-    # Leave requests (teachers / staff)
-    # ------------------------------------------------------------------
     def _school_get_employee(self):
         return request.env['hr.employee'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)
 

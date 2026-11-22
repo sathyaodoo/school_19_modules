@@ -217,8 +217,8 @@ class WellbeingCase(models.Model):
 
     def action_close(self):
         for case in self:
-            if case.state not in ('assessment', 'support', 'monitoring'):
-                raise UserError(_("Assess the case before closing it."))
+            if case.state == 'closed':
+                raise UserError(_("This case is already closed."))
             if not case.outcome:
                 raise UserError(_("Choose the outcome before closing the case."))
             if not (case.closure_notes or '').strip():
@@ -227,6 +227,17 @@ class WellbeingCase(models.Model):
                 raise UserError(_("%s intervention(s) are still open. Complete or cancel them first.", case.open_intervention_count))
             case.write({'state': 'closed', 'closed_datetime': fields.Datetime.now(), 'closed_by': self.env.uid})
             case._log(_("Case closed"))
+            case._notify_reporter_closed()
+
+    def _notify_reporter_closed(self):
+        """The person who raised the concern hears that it is solved (never the details)."""
+        for case in self:
+            if case.reporter_partner_id:
+                self.env['mail.thread'].sudo().message_notify(
+                    partner_ids=case.reporter_partner_id.ids, subject=_("Your concern %s is solved", case.name),
+                    body=Markup(_("<p>Thank you for speaking up. Your concern <b>%s</b> has been looked at and is now "
+                                  "solved / closed.</p><p>If you are worried again, please raise a new concern.</p>"))
+                    % case.name)
 
     def action_reopen(self):
         if not self._is_lead():

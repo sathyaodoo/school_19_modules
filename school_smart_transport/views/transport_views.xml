@@ -20,7 +20,7 @@
         <field name="model">school.vehicle</field>
         <field name="inherit_id" ref="ad_school_management.view_school_vehicle_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='capacity']" position="after">
+            <xpath expr="//field[@name='is_over_capacity']" position="before">
                 <field name="speed_limit_kmh"/>
             </xpath>
         </field>
@@ -33,48 +33,33 @@
         <field name="arch" type="xml">
             <form string="Transport Alert Settings">
                 <sheet>
-                    <div class="oe_title"><h1>Smart Transport Settings</h1></div>
+                    <div class="oe_title"><h1>Transport Settings</h1></div>
                     <group>
                         <field name="company_id" groups="base.group_multi_company"/>
                     </group>
                     <group>
-                        <group string="School location (geofence)">
+                        <group string="School Location">
                             <field name="campus_latitude"/>
                             <field name="campus_longitude"/>
-                            <field name="campus_radius_m"/>
+                            <field name="campus_radius_m" string="School Radius (m)"/>
                         </group>
                         <group string="Stops">
-                            <field name="approach_distance_m"/>
-                            <field name="arrival_radius_m"/>
+                            <field name="approach_distance_m" string="Tell parents when van is (m) away"/>
+                            <field name="arrival_radius_m" string="Stop radius (m)"/>
                         </group>
-                        <group string="Speed">
-                            <field name="speed_limit_kmh"/>
-                            <field name="speed_alert_pings"/>
-                            <field name="speed_alert_cooldown_min"/>
+                        <group string="Alerts to School">
+                            <field name="speed_limit_kmh" string="Default speed limit (km/h)"/>
+                            <field name="deviation_distance_m" string="Off-route alert after (m)"/>
+                            <field name="stationary_minutes" string="Van stopped alert after (min)"/>
+                            <field name="alert_user_ids" widget="many2many_tags" string="Also alert these users"/>
+                            <div class="text-muted small" colspan="2">School admin and principal are always alerted.</div>
                         </group>
-                        <group string="Route and stops of the van">
-                            <field name="deviation_distance_m"/>
-                            <field name="deviation_pings"/>
-                            <field name="stationary_minutes"/>
-                        </group>
-                        <group string="Driver behaviour">
-                            <field name="harsh_brake_kmh_s"/>
-                            <field name="harsh_accel_kmh_s"/>
-                        </group>
-                        <group string="Estimated arrival time">
-                            <field name="eta_default_speed_kmh"/>
-                            <field name="road_factor"/>
-                        </group>
-                        <group string="Parents are told when">
-                            <field name="notify_parent_approach"/>
-                            <field name="notify_parent_board"/>
-                            <field name="notify_parent_reached"/>
-                            <field name="notify_parent_breakdown"/>
-                            <field name="notify_parent_sos"/>
-                        </group>
-                        <group string="School staff alerts">
-                            <div class="text-muted">School admin and principal are always alerted.</div>
-                            <field name="alert_user_ids" widget="many2many_tags"/>
+                        <group string="Tell Parents When">
+                            <field name="notify_parent_approach" string="Van is approaching"/>
+                            <field name="notify_parent_board" string="Child boarded"/>
+                            <field name="notify_parent_reached" string="Child reached stop / school"/>
+                            <field name="notify_parent_breakdown" string="Vehicle breakdown"/>
+                            <field name="notify_parent_sos" string="Emergency SOS (automatically)"/>
                         </group>
                     </group>
                 </sheet>

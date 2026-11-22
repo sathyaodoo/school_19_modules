@@ -57,9 +57,26 @@
                                    t-att-value="values.get('location')"/>
                         </div>
                     </div>
+                    <div class="mb-3" t-if="classmates">
+                        <label class="form-label" for="involved_students">Which student(s) were involved? (optional)</label>
+                        <select name="involved_students" id="involved_students" class="form-select"
+                                multiple="multiple" size="6">
+                            <t t-foreach="classmates" t-as="mate">
+                                <option t-att-value="mate.id"
+                                        t-att-selected="'selected' if mate.id in selected_involved else None">
+                                    <t t-out="mate.name"/>
+                                    <t t-if="mate.section_id"> (<t t-out="mate.section_id.name"/>)</t>
+                                </option>
+                            </t>
+                        </select>
+                        <div class="form-text">
+                            Hold Ctrl (or long-press on a phone) to choose more than one student.
+                        </div>
+                    </div>
                     <div class="mb-3">
-                        <label class="form-label" for="involved">Who was involved? (optional)</label>
+                        <label class="form-label" for="involved">Others involved, who are not students (optional)</label>
                         <input type="text" name="involved" id="involved" class="form-control" maxlength="200"
+                               placeholder="e.g. a bus driver, someone outside school"
                                t-att-value="values.get('involved')"/>
                     </div>
                     <div class="form-check mb-3">
@@ -73,9 +90,9 @@
                                 <label class="form-check-label fw-bold" for="anonymous">Send this report anonymously</label>
                             </div>
                             <div class="small text-muted mb-2">
-                                Your name is <b>not stored</b> with an anonymous report, so the school cannot see who
-                                sent it and cannot link it to you or your child. You get a reference and a code to look
-                                at the status later.
+                                With an anonymous report, your name is <b>hidden from the Safeguarding team</b>:
+                                they cannot see who sent it or link it to you or your child.
+                                You can still see the report and its status in <b>My reports</b>.
                             </div>
                             <div class="form-check" t-if="students">
                                 <input type="checkbox" class="form-check-input" name="about_me" id="about_me"/>
@@ -96,7 +113,7 @@
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Send to the Safeguarding team</button>
-                    <a href="/my/safeguarding/status" class="btn btn-link">Check the status of a report</a>
+                    <a href="/my/safeguarding/status" class="btn btn-link">My reports and their status</a>
                 </form>
             </div>
         </t>
@@ -110,51 +127,40 @@
                     <p class="mb-0">The Safeguarding team will look at your report. You did the right thing.</p>
                 </div>
                 <t t-if="urgent"><t t-call="school_safeguarding.portal_sg_help"/></t>
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div>Reference: <b t-out="reference"/></div>
-                        <div>Code: <b class="fs-4" t-out="code"/></div>
-                        <div class="small text-muted mt-2">
-                            Keep these to look at the status of your report later.
-                            <t t-if="anonymous">This report is anonymous: the code is the <b>only</b> way to check it.</t>
-                        </div>
-                    </div>
-                </div>
-                <a href="/my/safeguarding/status" class="btn btn-outline-primary">Check the status</a>
+                <a href="/my/safeguarding/status" class="btn btn-outline-primary">My reports</a>
                 <a href="/my" class="btn btn-link">Back to my account</a>
             </div>
         </t>
     </template>
 
-    <template id="portal_sg_status" name="Safeguarding - status of a report">
+    <template id="portal_sg_status" name="Safeguarding - my reports">
         <t t-call="portal.portal_layout">
             <div class="container mt-3 mb-5" style="max-width: 760px;">
-                <h3>Status of a Report</h3>
-                <form action="/my/safeguarding/status" method="post" class="row g-2 mb-3">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div class="col-md-5">
-                        <input type="text" name="reference" class="form-control" placeholder="Reference (SG/2026/0001)"
-                               required="required"/>
-                    </div>
-                    <div class="col-md-4">
-                        <input type="text" name="code" class="form-control" placeholder="Code" required="required"
-                               autocomplete="off"/>
-                    </div>
-                    <div class="col-md-3"><button type="submit" class="btn btn-primary w-100">Check</button></div>
-                </form>
-                <div t-if="error" class="alert alert-warning" t-out="error"/>
-                <div t-if="case" class="card">
-                    <div class="card-body">
-                        <div class="text-muted small">Report</div>
-                        <div class="fw-bold" t-out="case.name"/>
-                        <div class="text-muted small mt-2">Status</div>
-                        <div class="fs-5" t-out="case.public_status"/>
-                        <div t-if="case.public_update" class="mt-2">
-                            <div class="text-muted small">Message from the school</div>
-                            <div style="white-space: pre-line;" t-out="case.public_update"/>
-                        </div>
-                    </div>
-                </div>
+                <h3>My Reports</h3>
+                <p class="mb-3">
+                    You have sent <b t-out="len(cases)"/> report<t t-if="len(cases) != 1">s</t>.
+                </p>
+                <div t-if="not cases" class="alert alert-info">You have not sent any report yet.</div>
+                <table t-else="" class="table table-sm align-middle">
+                    <thead>
+                        <tr><th>Date</th><th>What happened</th><th>Sent as</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="cases" t-as="case">
+                            <td><span t-out="case.create_date" t-options="{'widget': 'date'}"/></td>
+                            <td t-out="category_labels.get(case.category, '')"/>
+                            <td>
+                                <span t-if="case.is_anonymous" class="badge text-bg-secondary">Anonymous</span>
+                                <span t-else="" class="badge text-bg-light">With my name</span>
+                            </td>
+                            <td>
+                                <span t-out="case.public_status"/>
+                                <div t-if="case.public_update" class="small text-muted" style="white-space: pre-line;"
+                                     t-out="case.public_update"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
                 <a href="/my/safeguarding" class="btn btn-link mt-3">Report a concern</a>
             </div>
         </t>

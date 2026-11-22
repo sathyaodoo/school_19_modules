@@ -77,15 +77,12 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_start_assessment" string="Start Assessment" type="object" class="btn-primary" invisible="state != 'new'"/>
-                    <button name="action_start_support" string="Start Support" type="object" class="btn-primary" invisible="state != 'assessment'"/>
-                    <button name="action_monitor" string="Move to Monitoring" type="object" invisible="state != 'support'"/>
-                    <button name="action_close" string="Close Case" type="object" invisible="state not in ('assessment', 'support', 'monitoring')"/>
+                    <button name="action_close" string="Close Case" type="object" class="btn-primary" invisible="state == 'closed'"/>
                     <button name="action_share_with_safeguarding" string="Share with Safeguarding" type="object"
                             invisible="safeguarding_ref" help="Bullying or a child in danger: tell the Safeguarding team (the counselling notes are not copied)."/>
                     <button name="action_reopen" string="Reopen" type="object" invisible="state != 'closed'"
                             groups="school_safeguarding.group_wb_lead" confirm="Reopen this closed case?"/>
-                    <field name="state" widget="statusbar" statusbar_visible="new,assessment,support,monitoring,closed"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,closed"/>
                 </header>
                 <sheet>
                     <div class="alert alert-warning" role="alert">
@@ -96,10 +93,10 @@
                         The student asked to talk to a counsellor.
                     </div>
                     <div class="oe_button_box" name="button_box">
-                        <button name="action_view_checkins" type="object" class="oe_stat_button" icon="fa-smile-o">
+                        <button name="action_view_checkins" type="object" class="oe_stat_button" icon="fa-smile-o" invisible="not checkin_count">
                             <field name="checkin_count" widget="statinfo" string="Check-ins"/>
                         </button>
-                        <button name="action_view_assessments" type="object" class="oe_stat_button" icon="fa-line-chart">
+                        <button name="action_view_assessments" type="object" class="oe_stat_button" icon="fa-line-chart" invisible="not assessment_count">
                             <field name="assessment_count" widget="statinfo" string="Screenings"/>
                         </button>
                     </div>
@@ -126,13 +123,13 @@
                         <page string="Concern" name="concern">
                             <field name="concern_text" placeholder="What was noticed / shared..."/>
                         </page>
-                        <page string="Assessment &amp; Plan" name="plan">
+                        <page string="Assessment &amp; Plan" name="plan" invisible="not assessment_notes and not plan">
                             <group>
                                 <field name="assessment_notes"/>
                                 <field name="plan"/>
                             </group>
                         </page>
-                        <page string="Sessions" name="sessions">
+                        <page string="Sessions" name="sessions" invisible="not session_ids">
                             <field name="session_ids">
                                 <list>
                                     <field name="session_date"/>
@@ -144,7 +141,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Interventions" name="interventions">
+                        <page string="Interventions" name="interventions" invisible="not intervention_ids">
                             <field name="intervention_ids">
                                 <list editable="bottom" decoration-danger="overdue" decoration-muted="state != 'todo'">
                                     <field name="overdue" column_invisible="1"/>
@@ -158,7 +155,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Referrals" name="referrals">
+                        <page string="Referrals" name="referrals" invisible="not referral_ids">
                             <field name="referral_ids">
                                 <list>
                                     <field name="referral_date"/>

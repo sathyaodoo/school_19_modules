@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
+
     <record id="view_school_vehicle_tree" model="ir.ui.view">
         <field name="name">school.vehicle.tree</field>
         <field name="model">school.vehicle</field>
@@ -26,23 +26,25 @@
                     <div class="oe_title">
                         <label for="name"/>
                         <h1>
-                            <field name="name" placeholder="e.g. Bus 1"/>
+                            <field name="name" placeholder="e.g. Van-01"/>
                         </h1>
                     </div>
                     <div class="alert alert-danger" role="alert" invisible="not is_over_capacity">
-                        Assigned students (<field name="student_count" class="oe_inline"/>) exceed the vehicle capacity.
+                        <i class="fa fa-exclamation-triangle me-1"/>
+                        Too many students: <field name="student_count" class="oe_inline"/> students assigned,
+                        but only <field name="capacity" class="oe_inline" readonly="1"/> seats.
                     </div>
                     <group>
-                        <group>
-                            <field name="vehicle_number" placeholder="e.g. XY-123-AB"/>
-                            <field name="capacity"/>
-                            <field name="student_count"/>
+                        <group string="Vehicle">
+                            <field name="vehicle_number" placeholder="e.g. KL-09-AB-1234"/>
+                            <field name="capacity" string="Seats"/>
+                            <field name="student_count" string="Seats Used"/>
                             <field name="is_over_capacity" invisible="1"/>
                         </group>
-                        <group>
+                        <group string="Staff">
                             <field name="driver_id" context="{'default_is_school_driver': True}"/>
                             <field name="caretaker_id" context="{'default_is_school_caretaker': True}"/>
-                            <field name="gps_tracking_url" widget="url" placeholder="https://..."/>
+                            <field name="route_ids" string="Route" widget="many2many_tags" readonly="1"/>
                         </group>
                     </group>
                     <notebook>
@@ -50,53 +52,34 @@
                             <field name="student_ids" readonly="1">
                                 <list>
                                     <field name="name"/>
-                                    <field name="admission_no"/>
                                     <field name="class_id"/>
                                     <field name="section_id"/>
-                                    <field name="transport_route_id"/>
-                                    <field name="van_boarding_point_id"/>
-                                    <field name="parent_contact"/>
+                                    <field name="transport_route_id" string="Route"/>
+                                    <field name="van_boarding_point_id" string="Boarding Point"/>
+                                    <field name="parent_contact" string="Parent Phone"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="GPS Tracking" name="gps">
+                        <page string="GPS" name="gps">
                             <group>
-                                <group string="Device">
+                                <group string="Live Status">
+                                    <field name="last_location_at" string="Last Signal"/>
+                                    <field name="last_speed" string="Speed (km/h)"/>
+                                    <field name="location_map_url" widget="url" string="Location"
+                                           invisible="not location_map_url"/>
+                                </group>
+                                <group string="Device Setup" groups="ad_school_management.group_school_admin">
                                     <field name="gps_device_id"/>
-                                    <field name="gps_api_token" groups="ad_school_management.group_school_admin"/>
+                                    <field name="gps_api_token"/>
                                     <button name="action_generate_gps_token" type="object" string="Generate / Reset Token"
-                                            class="btn-secondary" groups="ad_school_management.group_school_admin"
+                                            class="btn-secondary" colspan="2"
                                             confirm="The old token will stop working. Continue?"/>
                                 </group>
-                                <group string="Last Known Position">
-                                    <field name="last_location_at"/>
-                                    <field name="last_latitude"/>
-                                    <field name="last_longitude"/>
-                                    <field name="last_speed"/>
-                                    <field name="location_map_url" widget="url" string="Open Map" invisible="not location_map_url"/>
-                                </group>
                             </group>
-                            <div class="text-muted small mb-2">
-                                Send locations to: <code>/school/transport/gps?token=TOKEN&amp;lat=..&amp;lon=..&amp;speed=..</code>
+                            <div class="text-muted small" groups="ad_school_management.group_school_admin">
+                                Device sends location to:
+                                <code>/school/transport/gps?token=TOKEN&amp;lat=..&amp;lon=..&amp;speed=..</code>
                             </div>
-                            <field name="location_ids" readonly="1">
-                                <list limit="20">
-                                    <field name="recorded_at"/>
-                                    <field name="latitude"/>
-                                    <field name="longitude"/>
-                                    <field name="speed"/>
-                                    <field name="source"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="Routes" name="routes">
-                            <field name="route_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                    <field name="effective_driver_id"/>
-                                    <field name="cost"/>
-                                </list>
-                            </field>
                         </page>
                     </notebook>
                 </sheet>
@@ -104,10 +87,49 @@
         </field>
     </record>
 
+    <record id="view_school_vehicle_kanban" model="ir.ui.view">
+        <field name="name">school.vehicle.kanban</field>
+        <field name="model">school.vehicle</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" sample="1">
+                <field name="capacity"/>
+                <field name="is_over_capacity"/>
+                <field name="last_location_at"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fa fa-bus fa-2x text-primary me-3"/>
+                            <div class="flex-grow-1">
+                                <field name="name" class="fw-bold fs-5"/>
+                                <div class="text-muted small"><field name="vehicle_number"/></div>
+                            </div>
+                            <span t-if="record.is_over_capacity.raw_value" class="badge text-bg-danger">Over capacity</span>
+                        </div>
+                        <div class="small mb-1">
+                            <i class="fa fa-user me-1 text-muted"/>Driver:
+                            <field name="driver_id"/>
+                        </div>
+                        <div class="small mb-2">
+                            <i class="fa fa-user-o me-1 text-muted"/>Caretaker:
+                            <field name="caretaker_id"/>
+                        </div>
+                        <div class="small text-muted">Seats used</div>
+                        <field name="student_count" widget="progressbar" options="{'max_value': 'capacity'}"/>
+                        <div class="small text-muted mt-2">
+                            <i class="fa fa-map-marker me-1"/>
+                            <t t-if="record.last_location_at.raw_value">Last GPS: <field name="last_location_at"/></t>
+                            <t t-else="">No GPS data yet</t>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <record id="action_school_vehicle" model="ir.actions.act_window">
-        <field name="name">School Vehicles</field>
+        <field name="name">Vehicles</field>
         <field name="res_model">school.vehicle</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Add a School Vehicle!
@@ -164,8 +186,17 @@
                     <group string="Vehicle Replacement (Breakdown / Service)">
                         <group>
                             <field name="replacement_vehicle_id" readonly="is_vehicle_replaced"
-                                   domain="[('id', '!=', vehicle_id)]"/>
+                                   domain="[('id', '!=', vehicle_id), ('route_ids', '=', False), '!', ('replacing_route_ids.is_vehicle_replaced', '=', True)]"
+                                   options="{'no_create': True}"
+                                   help="Only spare vehicles: no route of their own and not already standing in for another route."/>
                             <field name="replacement_driver_id" readonly="is_vehicle_replaced"/>
+                            <field name="replacement_capacity" invisible="not replacement_vehicle_id"/>
+                            <field name="replacement_seats_used" invisible="not replacement_vehicle_id"/>
+                            <field name="route_student_count" invisible="not replacement_vehicle_id"/>
+                            <field name="replacement_free_seats" invisible="not replacement_vehicle_id"
+                                   decoration-danger="replacement_seat_shortage" decoration-success="not replacement_seat_shortage"/>
+                            <field name="replacement_seat_basis" invisible="not replacement_vehicle_id"/>
+                            <field name="replacement_seat_shortage" invisible="1"/>
                         </group>
                         <group>
                             <field name="replacement_reason" readonly="is_vehicle_replaced"/>
@@ -441,7 +472,7 @@
                     <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'avatar_128'}"/>
                     <div class="oe_title">
                         <label for="name"/>
-                        <h1><field name="name" placeholder="e.g. Anlin"/></h1>
+                        <h1><field name="name" placeholder="Name"/></h1>
                     </div>
                     <group>
                         <group string="Role">
