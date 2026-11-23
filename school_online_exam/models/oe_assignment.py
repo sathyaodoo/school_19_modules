@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from datetime import timedelta
+from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
@@ -15,7 +16,12 @@ class SchoolOeAssignment(models.Model):
     _name = 'school.oe.assignment'
     _description = 'Descriptive Exam / Assignment / Project'
     _order = 'id desc'
+    _rec_names_search = ['work_code', 'name']
 
+    work_code = fields.Char(
+        string='Homework ID', readonly=True, copy=False, index=True,
+        help="Unique reference, assigned automatically when the record is saved "
+             "(HW... for homework, AS... for the other types).")
     name = fields.Char(string='Title', required=True)
     kind = fields.Selection(
         [('descriptive', 'Descriptive Exam'), ('assignment', 'Assignment'), ('project', 'Project')],
@@ -34,10 +40,13 @@ class SchoolOeAssignment(models.Model):
         string='Question Paper / Files')
     max_marks = fields.Float(string='Max Marks', default=100.0, required=True)
     start_datetime = fields.Datetime(
-        string='Start Date & Time',
+        string='Assigned Date',
         help="Students see this work in their portal only from this date & time. "
              "Leave empty to open it as soon as it is published.")
-    due_datetime = fields.Datetime(string='Due Date & Time', required=True)
+    due_datetime = fields.Datetime(string='Due Date & Time')
+    due_date = fields.Date(
+        string='Due Date', compute='_compute_due_date', inverse='_inverse_due_date',
+        help="Students can submit until the end of this day (23:59).")
     duration_minutes = fields.Integer(
         string='Time Limit (minutes)', default=0,
         help="0 = no timer, students can upload until the due date. "
@@ -81,7 +90,40 @@ class SchoolOeAssignment(models.Model):
     def _check_start_due(self):
         for rec in self:
             if rec.start_datetime and rec.due_datetime and rec.start_datetime >= rec.due_datetime:
-                raise ValidationError(_("'Start Date & Time' must be before 'Due Date & Time'."))
+                raise ValidationError(_("'Assigned Date' must be before the due date."))
+
+    @api.constrains('due_datetime')
+    def _check_due_set(self):
+        for rec in self:
+            if not rec.due_datetime:
+                raise ValidationError(_("Set the due date."))
+
+    # ------------------------------------------------------------------ due date (no time)
+    def _user_tz(self):
+        try:
+            return ZoneInfo(self.env.context.get('tz') or self.env.user.tz or 'UTC')
+        except Exception:
+            return timezone.utc
+
+    def _end_of_day_utc(self, day):
+        """23:59:59 of that day in the user's time zone, as naive UTC (how Odoo stores datetimes)."""
+        day = fields.Date.to_date(day)
+        local = datetime.combine(day, time(23, 59, 59), tzinfo=self._user_tz())
+        return local.astimezone(timezone.utc).replace(tzinfo=None)
+
+    @api.depends('due_datetime')
+    def _compute_due_date(self):
+        tz = self._user_tz()
+        for rec in self:
+            rec.due_date = (rec.due_datetime.replace(tzinfo=timezone.utc).astimezone(tz).date()
+                            if rec.due_datetime else False)
+
+    def _inverse_due_date(self):
+        for rec in self:
+            if rec.due_date:
+                end = rec._end_of_day_utc(rec.due_date)
+                if rec.due_datetime != end:
+                    rec.due_datetime = end
 
     @api.constrains('class_id', 'section_id')
     def _check_section(self):
@@ -119,15 +161,26 @@ class SchoolOeAssignment(models.Model):
             rec.question_attachment_ids.sudo().filtered(lambda a: not a.res_model).write(
                 {'res_model': rec._name, 'res_id': rec.id})
 
+    _work_code_uniq = models.Constraint(
+        'UNIQUE(work_code)', 'This Homework ID is already used!')
+
     @api.model_create_multi
     def create(self, vals_list):
+        Sequence = self.env['ir.sequence']
+        for vals in vals_list:
+            if vals.get('due_date') and not vals.get('due_datetime'):
+                vals['due_datetime'] = self._end_of_day_utc(vals['due_date'])
+            if not vals.get('work_code'):
+                code = ('school.oe.assignment.homework' if vals.get('kind') == 'homework'
+                        else 'school.oe.assignment')
+                vals['work_code'] = Sequence.next_by_code(code)
         recs = super().create(vals_list)
         recs._link_question_files()
         return recs
 
     _LOCKED_AFTER_PUBLISH = {
         'name', 'kind', 'class_id', 'section_id', 'subject_id', 'start_datetime',
-        'due_datetime', 'allow_late', 'max_marks', 'duration_minutes', 'school_exam_id',
+        'due_datetime', 'due_date', 'allow_late', 'max_marks', 'duration_minutes', 'school_exam_id',
         'instructions', 'question_attachment_ids'}
 
     def write(self, vals):

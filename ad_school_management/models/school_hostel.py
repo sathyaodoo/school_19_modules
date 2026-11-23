@@ -159,6 +159,10 @@ class SchoolHostelAllocation(models.Model):
                 )
                 if room.hostel_id.type != {'male': 'boys', 'female': 'girls'}.get(student.gender):
                     raise ValidationError(_('Student gender does not match hostel type.'))
+                if student.transport_route_id:
+                    raise ValidationError(_(
+                        '%s uses school transport (route %s). Remove the transport route before '
+                        'giving a hostel room.') % (student.name, student.transport_route_id.name))
                 if self.search_count([('student_id', '=', student.id), ('state', '=', 'allocated')]):
                     raise ValidationError(_('Student already has an active hostel allocation.'))
                 if self.search_count([('room_id', '=', room.id), ('state', '=', 'allocated')]) >= (room.capacity):
@@ -179,6 +183,10 @@ class SchoolHostelAllocation(models.Model):
                 )
                 if room.hostel_id.type != {'male': 'boys', 'female': 'girls'}.get(student.gender):
                     raise ValidationError(_('Student gender does not match hostel type.'))
+                if student.transport_route_id:
+                    raise ValidationError(_(
+                        '%s uses school transport (route %s). Remove the transport route before '
+                        'giving a hostel room.') % (student.name, student.transport_route_id.name))
                 if self.search_count([('student_id', '=', student.id), ('state', '=', 'allocated'), ('id', '!=', rec.id)]):
                     raise ValidationError(_('Student already has an active hostel allocation.'))
                 if self.search_count([('room_id', '=', room.id), ('state', '=', 'allocated'), ('id', '!=', rec.id)]) >= (room.capacity):
@@ -266,6 +274,14 @@ class SchoolStudent(models.Model):
         if 'hostel_room_id' in vals and not self.env.context.get('skip_hostel_sync'):
             self._sync_hostel_allocation()
         return result
+
+    @api.constrains('transport_route_id', 'hostel_room_id')
+    def _check_transport_or_hostel(self):
+        for student in self:
+            if student.transport_route_id and student.hostel_room_id:
+                raise ValidationError(_(
+                    '%s cannot have both school transport and a hostel room. '
+                    'Remove one of them first.') % student.name)
 
     def _compute_hostel_allocation_count(self):
         for student in self:

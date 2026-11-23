@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Question ID: QB00001, QB00002, ... -->
+        <record id="seq_school_oe_question" model="ir.sequence">
+            <field name="name">Online Exam Question ID</field>
+            <field name="code">school.oe.question</field>
+            <field name="prefix">QB</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

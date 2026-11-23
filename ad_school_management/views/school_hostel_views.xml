@@ -290,7 +290,10 @@
             <xpath expr="//page[@name='facilities']/group" position="inside">
                 <group string="Hostel" groups="ad_school_management.group_hostel_user">
                     <field name="student_gender" invisible="1"/>
-                    <field name="hostel_room_id" options="{'no_create': True}"
+                    <div class="text-muted small" colspan="2" invisible="not transport_route_id">
+                        This student uses school transport. Remove the transport route to give a hostel room.
+                    </div>
+                    <field name="hostel_room_id" options="{'no_create': True}" readonly="transport_route_id"
                            domain="[('availability', '&gt;', 0), ('hostel_id.type', '=', 'boys' if student_gender == 'male' else 'girls' if student_gender == 'female' else False)]"/>
                 </group>
             </xpath>

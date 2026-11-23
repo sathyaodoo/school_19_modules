@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Homework ID: HW00001, HW00002, ... -->
+        <record id="seq_school_oe_assignment_homework" model="ir.sequence">
+            <field name="name">Homework ID</field>
+            <field name="code">school.oe.assignment.homework</field>
+            <field name="prefix">HW</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Assignment / Project / Descriptive exam ID: AS00001, ... -->
+        <record id="seq_school_oe_assignment" model="ir.sequence">
+            <field name="name">Assignment ID</field>
+            <field name="code">school.oe.assignment</field>
+            <field name="prefix">AS</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

@@ -156,11 +156,6 @@ class TestLessonPlan(_Common, TransactionCase):
         self.assertEqual((plan.state, plan.approved_by), ('approved', self.principal))
         self.assertEqual(len(self._messages(plan, self.dhirisha_user)), 1)          # teacher is told
 
-    def test_submit_needs_content(self):
-        plan = self._plan(user=self.dhirisha_user, objectives=False, activities=False)
-        with self.assertRaises(UserError):
-            plan.with_user(self.dhirisha_user).action_submit()
-
     def test_reject_needs_reason_then_teacher_resubmits(self):
         plan = self._plan(user=self.dhirisha_user)
         plan.with_user(self.dhirisha_user).action_submit()

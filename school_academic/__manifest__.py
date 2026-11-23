@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'School Academic Management',
-    'version': '19.0.5.2.0',
+    'version': '19.0.5.3.0',
     'category': 'Education',
     'summary': 'Curriculum management (class + academic year + subjects with periods). '
                'Syllabus, units, lesson plans, homework and more follow in the same module.',
@@ -37,6 +37,7 @@ Step 3 - Unit / topic management
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
+        'data/lesson_plan_sequence.xml',
         'views/curriculum_views.xml',
         'views/syllabus_views.xml',
         'views/learning_views.xml',
