@@ -361,7 +361,31 @@ class SchoolTransportTrip(models.Model):
         existing = self.boarding_ids.filtered(lambda b: b.student_id == student and b.event_type == 'board')
         if existing:
             return existing[:1]
+        # boarded after all: undo an "Absent" mark
+        self.attendance_id.line_ids.filtered(lambda l: l.student_id == student and l.status == 'absent').write(
+            {'status': 'boarded'})
         return self._make_boarding(student, 'board', source, lat, lon, at)
+
+    def action_mark_absent(self, student, source='driver'):
+        """The student did not come today: recorded on the trip's transport attendance."""
+        self.ensure_one()
+        if self.state != 'running':
+            raise UserError(_("Start the trip first."))
+        if student not in self.route_id.student_ids:
+            raise UserError(_("%s is not a student of this route.", student.name))
+        if student in self.boarding_ids.filtered(lambda b: b.event_type == 'board').mapped('student_id'):
+            raise UserError(_("%s has already boarded.", student.name))
+        line = self.attendance_id.line_ids.filtered(lambda l: l.student_id == student)
+        if line:
+            line.write({'status': 'absent'})
+        elif self.attendance_id:
+            self.attendance_id.write({'line_ids': [Command.create({'student_id': student.id, 'status': 'absent'})]})
+        return True
+
+    def _absent_students(self):
+        self.ensure_one()
+        boarded = self.boarding_ids.filtered(lambda b: b.event_type == 'board').mapped('student_id')
+        return self.attendance_id.line_ids.filtered(lambda l: l.status == 'absent').mapped('student_id') - boarded
 
     def action_offboard_student(self, student, source='driver', lat=None, lon=None, at=None):
         self.ensure_one()
