@@ -6,12 +6,14 @@
         <field name="model">school.oe.assignment</field>
         <field name="arch" type="xml">
             <list decoration-success="state == 'published'" decoration-muted="state == 'closed'">
+                <field name="work_code"/>
                 <field name="name"/>
                 <field name="kind"/>
                 <field name="class_id"/>
                 <field name="section_id"/>
                 <field name="subject_id"/>
-                <field name="due_datetime"/>
+                <field name="due_datetime" column_invisible="context.get('default_kind') == 'homework'"/>
+                <field name="due_date" column_invisible="context.get('default_kind') != 'homework'"/>
                 <field name="max_marks"/>
                 <field name="student_count"/>
                 <field name="submission_count"/>
@@ -47,6 +49,10 @@
                         </button>
                     </div>
                     <div class="oe_title">
+                        <div class="text-muted fs-5 fw-bold">
+                            <field name="work_code" readonly="1" invisible="not work_code"/>
+                            <span invisible="work_code">New</span>
+                        </div>
                         <label for="name"/>
                         <h1><field name="name" readonly="state != 'draft'" placeholder="e.g. Science Unit 2 - Answer Paper"/></h1>
                     </div>
@@ -59,7 +65,10 @@
                         </group>
                         <group string="Rules">
                             <field name="start_datetime" readonly="state != 'draft'"/>
-                            <field name="due_datetime" readonly="state != 'draft'"/>
+                            <field name="due_datetime" readonly="state != 'draft'"
+                                   invisible="kind == 'homework'" required="kind != 'homework'"/>
+                            <field name="due_date" readonly="state != 'draft'"
+                                   invisible="kind != 'homework'" required="kind == 'homework'"/>
                             <field name="allow_late" readonly="state != 'draft'"/>
                             <field name="max_marks" readonly="state != 'draft'"/>
                             <field name="school_exam_id" invisible="1"/>
@@ -71,6 +80,22 @@
                             <group string="Question paper files (PDF / images)">
                                 <field name="question_attachment_ids" readonly="state != 'draft'" widget="many2many_binary" nolabel="1"/>
                             </group>
+                        </page>
+                        <page string="Status &amp; Feedback" name="feedback">
+                            <field name="submission_ids" readonly="1">
+                                <list decoration-info="state == 'submitted'" decoration-success="state == 'evaluated'"
+                                      decoration-muted="state == 'draft'">
+                                    <field name="student_id"/>
+                                    <field name="state" widget="badge" decoration-info="state == 'submitted'"
+                                           decoration-success="state == 'evaluated'"/>
+                                    <field name="submitted_datetime"/>
+                                    <field name="is_late"/>
+                                    <field name="marks"/>
+                                    <field name="feedback"/>
+                                </list>
+                            </field>
+                            <p class="text-muted small">A student appears here once they open the work in the portal.
+                                Use the <b>Submissions</b> button above to give marks and feedback.</p>
                         </page>
                         <page string="Students" name="students">
                             <field name="student_ids" readonly="1">
@@ -94,6 +119,7 @@
         <field name="model">school.oe.assignment</field>
         <field name="arch" type="xml">
             <search>
+                <field name="work_code"/>
                 <field name="name"/>
                 <field name="class_id"/>
                 <field name="section_id"/>
@@ -137,6 +163,7 @@
                 <field name="state" widget="badge"/>
                 <field name="marks"/>
                 <field name="max_marks"/>
+                <field name="feedback" optional="show"/>
             </list>
         </field>
     </record>

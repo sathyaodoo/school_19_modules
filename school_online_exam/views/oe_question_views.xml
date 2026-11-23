@@ -114,6 +114,7 @@
         <field name="model">school.oe.question</field>
         <field name="arch" type="xml">
             <list>
+                <field name="question_code"/>
                 <field name="class_id"/>
                 <field name="subject_id"/>
                 <field name="chapter_id"/>
@@ -132,6 +133,13 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_title">
+                        <label for="question_code"/>
+                        <h1>
+                            <field name="question_code" readonly="1" invisible="not question_code"/>
+                            <span invisible="question_code">New</span>
+                        </h1>
+                    </div>
                     <group>
                         <group string="Where does it belong?">
                             <field name="class_id"/>
@@ -172,6 +180,7 @@
         <field name="model">school.oe.question</field>
         <field name="arch" type="xml">
             <search>
+                <field name="question_code"/>
                 <field name="name"/>
                 <field name="class_id"/>
                 <field name="subject_id"/>

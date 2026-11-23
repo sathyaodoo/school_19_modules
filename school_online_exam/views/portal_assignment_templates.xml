@@ -47,7 +47,7 @@
                                     <h5 class="card-title text-primary mb-1" t-out="a.name"/>
                                     <div class="text-muted mb-3"><i class="fa fa-book"/> <t t-out="a.subject_id.name"/></div>
                                     <ul class="list-unstyled small mb-3">
-                                        <li><i class="fa fa-calendar text-muted"/> Due: <span t-field="a.due_datetime"/></li>
+                                        <li><i class="fa fa-calendar text-muted"/> Due: <span t-field="a.due_datetime" t-options="{'widget': 'date'} if a.kind == 'homework' else {}"/></li>
                                         <li t-if="a.duration_minutes"><i class="fa fa-clock-o text-muted"/>
                                             Time limit: <t t-out="a.duration_minutes"/> minute(s)</li>
                                         <li><i class="fa fa-star-o text-muted"/> Max marks: <t t-out="'%g' % a.max_marks"/></li>
@@ -86,7 +86,7 @@
                 <h3 class="mt-2 mb-1" t-out="assignment.name"/>
                 <div class="text-muted mb-3">
                     <t t-out="student.name"/> &#8226; <t t-out="assignment.subject_id.name"/> &#8226;
-                    Due <span t-field="assignment.due_datetime"/> &#8226;
+                    Due <span t-field="assignment.due_datetime" t-options="{'widget': 'date'} if assignment.kind == 'homework' else {}"/> &#8226;
                     Max marks <t t-out="'%g' % assignment.max_marks"/>
                 </div>
 
