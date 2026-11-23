@@ -54,7 +54,11 @@ class SchoolOeQuestion(models.Model):
     _name = 'school.oe.question'
     _description = 'Online Exam Question (Question Bank)'
     _order = 'class_id, subject_id, chapter_id, id'
+    _rec_names_search = ['question_code', 'name']
 
+    question_code = fields.Char(
+        string='Question ID', readonly=True, copy=False, index=True,
+        help="Unique reference of the question, assigned automatically when it is saved.")
     name = fields.Text(string='Question', required=True)
     active = fields.Boolean(default=True)
     class_id = fields.Many2one('school.class', string='Class', required=True, index=True)
@@ -77,6 +81,16 @@ class SchoolOeQuestion(models.Model):
         [('easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')],
         string='Difficulty', default='medium')
     explanation = fields.Text(string='Explanation (shown after the exam)')
+
+    _question_code_uniq = models.Constraint(
+        'UNIQUE(question_code)', 'This Question ID is already used by another question!')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('question_code'):
+                vals['question_code'] = self.env['ir.sequence'].next_by_code('school.oe.question')
+        return super().create(vals_list)
 
     @api.depends('name')
     def _compute_display_name(self):

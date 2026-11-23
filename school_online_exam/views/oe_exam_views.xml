@@ -5,6 +5,7 @@
         <field name="model">school.oe.exam</field>
         <field name="arch" type="xml">
             <list decoration-success="state == 'published'" decoration-muted="state == 'closed'">
+                <field name="exam_code"/>
                 <field name="name"/>
                 <field name="exam_type"/>
                 <field name="class_id"/>
@@ -63,12 +64,16 @@
                         </button>
                     </div>
                     <div class="oe_title">
+                        <div class="text-muted fs-5 fw-bold">
+                            <field name="exam_code" readonly="1" invisible="not exam_code"/>
+                            <span invisible="exam_code">New</span>
+                        </div>
                         <label for="name"/>
                         <h1><field name="name" readonly="state != 'draft'" placeholder="e.g. Maths Quick Test - Chapter 1"/></h1>
                     </div>
                     <div class="alert alert-info" role="status" invisible="exam_type != 'descriptive'">
                         Descriptive exam: students write their answers and upload them; teachers evaluate them.
-                        Set the due date in <b>Available Until</b> and save, then click
+                        Set the due date in <b>End Date</b> and save, then click
                         <b>Question Paper &amp; Submissions</b> to add the question / instructions, question paper
                         files and max marks, and to evaluate the submissions.
                     </div>
@@ -97,9 +102,8 @@
                         <group string="Result">
                             <field name="pass_percentage" readonly="state != 'draft'" invisible="exam_type == 'descriptive'"/>
                             <field name="show_answers" readonly="state != 'draft'" invisible="exam_type == 'descriptive'"/>
-                            <field name="school_exam_id" readonly="state != 'draft'" invisible="exam_type not in ('exam', 'descriptive')"/>
                         </group>
-                        <group string="Availability (optional)">
+                        <group string="Exam Schedule">
                             <field name="date_start" readonly="state != 'draft'" invisible="exam_type == 'descriptive'"/>
                             <field name="date_end" readonly="state != 'draft'" required="exam_type == 'descriptive'"/>
                         </group>
@@ -131,6 +135,7 @@
         <field name="model">school.oe.exam</field>
         <field name="arch" type="xml">
             <search>
+                <field name="exam_code"/>
                 <field name="name"/>
                 <field name="class_id"/>
                 <field name="section_id"/>
