@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'School Online Exam',
-    'version': '19.0.1.7.0',
+    'version': '19.0.1.10.0',
     'category': 'Education',
     'summary': 'Online MCQ exams with question bank, random questions per attempt, '
                'server-side timer, resume on re-login and full attempt history',
@@ -29,6 +29,9 @@ School Online Exam
     'depends': ['ad_school_management', 'portal'],
     'data': [
         'security/ir.model.access.csv',
+        'data/oe_question_sequence.xml',
+        'data/oe_exam_sequence.xml',
+        'data/oe_assignment_sequence.xml',
         'views/oe_question_views.xml',
         'views/oe_exam_views.xml',
         'views/oe_attempt_views.xml',

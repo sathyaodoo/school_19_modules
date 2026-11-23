@@ -17,14 +17,20 @@ class SchoolLessonPlan(models.Model):
     _description = 'Lesson plan'
     _inherit = ['mail.thread']
     _order = 'planned_date desc, id desc'
+    _rec_names_search = ['plan_code', 'name']
 
-    name = fields.Char(string='Lesson Title', required=True)
-    syllabus_id = fields.Many2one('school.syllabus', string='Syllabus', required=True,
-                                  domain="[('state', '!=', 'archived')]", index=True)
-    class_id = fields.Many2one(related='syllabus_id.class_id', store=True, string='Class')
-    subject_id = fields.Many2one(related='syllabus_id.subject_id', store=True, string='Subject')
-    academic_year_id = fields.Many2one(related='syllabus_id.academic_year_id', store=True, string='Academic Year')
-    company_id = fields.Many2one(related='syllabus_id.company_id', store=True, string='School / Board')
+    plan_code = fields.Char(string='Plan ID', readonly=True, copy=False, index=True,
+                            help="Assigned automatically when the plan is saved.")
+    name = fields.Char(string='Lesson Title', help="Filled automatically (subject - planned date) when left empty.")
+    class_id = fields.Many2one('school.class', string='Class', required=True, index=True)
+    subject_id = fields.Many2one('school.subject', string='Subject', required=True, index=True)
+    company_id = fields.Many2one('res.company', string='School / Board', required=True,
+                                 default=lambda self: self.env.company)
+    academic_year_id = fields.Many2one('school.academic.year', string='Academic Year', compute='_compute_year',
+                                       store=True, readonly=False)
+    # found from class + subject + year (no longer chosen on the form); units / topics / outcomes come from it
+    syllabus_id = fields.Many2one('school.syllabus', string='Syllabus', compute='_compute_syllabus',
+                                  store=True, readonly=False, index=True, ondelete='set null')
     section_id = fields.Many2one('school.section', string='Section', domain="[('class_id', '=', class_id)]",
                                  help="Leave empty when the plan is for the whole class.")
     unit_id = fields.Many2one('school.syllabus.unit', string='Unit', domain="[('syllabus_id', '=', syllabus_id)]")
@@ -32,7 +38,13 @@ class SchoolLessonPlan(models.Model):
                                  string='Topics', domain="[('syllabus_id', '=', syllabus_id)]")
     outcome_ids = fields.Many2many('school.learning.outcome', 'school_lesson_outcome_rel', 'plan_id', 'outcome_id',
                                    string='Learning Outcomes', domain="[('syllabus_id', '=', syllabus_id)]")
-    planned_date = fields.Date(string='Date', required=True, default=fields.Date.context_today, tracking=True)
+    planned_date = fields.Date(string='Planned Date', required=True, default=fields.Date.context_today, tracking=True)
+    completed_date = fields.Date(string='Completed Date', tracking=True, copy=False)
+    progress = fields.Selection(
+        [('planned', 'Planned'), ('in_progress', 'In Progress'), ('completed', 'Completed'),
+         ('postponed', 'Postponed')],
+        string='Lesson Status', default='planned', required=True, tracking=True, copy=False,
+        help="How far the lesson is taught. Choosing Completed fills the Completed Date with today.")
     periods = fields.Integer(string='Periods', default=1)
     teacher_id = fields.Many2one('school.teacher', string='Teacher', default=lambda self: _default_teacher(self.env))
     teacher_user_id = fields.Many2one(related='teacher_id.user_id', store=True, string='Teacher Login')
@@ -56,6 +68,33 @@ class SchoolLessonPlan(models.Model):
     diary_ids = fields.One2many('school.class.diary', 'lesson_plan_id', string='Diary Entries')
     diary_count = fields.Integer(compute='_compute_diary_count', string='Diary Count')
 
+    _plan_code_uniq = models.Constraint('UNIQUE(plan_code)', 'This Plan ID is already used!')
+
+    # ------------------------------------------------------------------ computes
+    @api.depends('planned_date')
+    def _compute_year(self):
+        Year = self.env['school.academic.year'].sudo()
+        for plan in self:
+            plan.academic_year_id = Year.search(
+                [('date_start', '<=', plan.planned_date), ('date_end', '>=', plan.planned_date)],
+                order='date_start desc, id desc', limit=1) if plan.planned_date else False
+
+    @api.depends('class_id', 'subject_id', 'academic_year_id', 'company_id', 'topic_ids')
+    def _compute_syllabus(self):
+        Syllabus = self.env['school.syllabus'].sudo()
+        for plan in self:
+            syllabus = plan.topic_ids[:1].sudo().syllabus_id
+            if not syllabus and plan.class_id and plan.subject_id:
+                domain = [('class_id', '=', plan.class_id.id), ('subject_id', '=', plan.subject_id.id),
+                          ('state', '!=', 'archived')]
+                if plan.company_id:
+                    domain.append(('company_id', '=', plan.company_id.id))
+                if plan.academic_year_id:
+                    domain.append(('academic_year_id', '=', plan.academic_year_id.id))
+                syllabus = Syllabus.search(domain + [('section_id', '=', False)], order='state desc, id desc', limit=1) \
+                    or Syllabus.search(domain, order='state desc, id desc', limit=1)
+            plan.syllabus_id = syllabus
+
     def _compute_diary_count(self):
         for plan in self:
             plan.diary_count = len(plan.diary_ids)
@@ -77,12 +116,15 @@ class SchoolLessonPlan(models.Model):
             if plan.outcome_ids.filtered(lambda o: o.syllabus_id != plan.syllabus_id):
                 raise ValidationError(_("Every learning outcome must belong to the syllabus of this lesson."))
 
-    @api.onchange('syllabus_id')
-    def _onchange_syllabus(self):
-        if self.syllabus_id:
-            if not self.name:
-                self.name = _("%s lesson", self.syllabus_id.subject_id.name)
+    @api.onchange('class_id', 'subject_id')
+    def _onchange_scope(self):
+        if self.unit_id or self.topic_ids or self.outcome_ids:
             self.unit_id = self.topic_ids = self.outcome_ids = False
+
+    @api.onchange('progress')
+    def _onchange_progress(self):
+        if self.progress == 'completed' and not self.completed_date:
+            self.completed_date = fields.Date.context_today(self)
 
     @api.onchange('unit_id')
     def _onchange_unit(self):
@@ -103,10 +145,16 @@ class SchoolLessonPlan(models.Model):
 
     def write(self, vals):
         workflow = {'state', 'reject_reason', 'submitted_datetime', 'approved_by', 'approved_datetime'}
+        delivery = {'progress', 'completed_date'}        # the teacher updates these after approval too
         if set(vals) - workflow:
             self._check_author()
-            if any(p.state in ('submitted', 'approved') for p in self) and not is_approver(self.env):
+            if (set(vals) - workflow - delivery and any(p.state in ('submitted', 'approved') for p in self)
+                    and not is_approver(self.env)):
                 raise AccessError(_("A submitted or approved lesson plan is locked. Ask the principal to send it back."))
+        if vals.get('progress') == 'completed' and 'completed_date' not in vals:
+            no_date = self.filtered(lambda p: not p.completed_date)
+            if no_date:                                   # keep a date that is already there
+                super(SchoolLessonPlan, no_date).write({'completed_date': fields.Date.context_today(self)})
         res = super().write(vals)
         if 'attachment_ids' in vals:
             for plan in self:
@@ -116,6 +164,21 @@ class SchoolLessonPlan(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        Sequence = self.env['ir.sequence']
+        for vals in vals_list:
+            if vals.get('syllabus_id'):                 # created from code with a syllabus: take its scope
+                syllabus = self.env['school.syllabus'].sudo().browse(vals['syllabus_id'])
+                vals.setdefault('class_id', syllabus.class_id.id)
+                vals.setdefault('subject_id', syllabus.subject_id.id)
+                vals.setdefault('company_id', syllabus.company_id.id)
+                vals.setdefault('academic_year_id', syllabus.academic_year_id.id)
+            if not vals.get('plan_code'):
+                vals['plan_code'] = Sequence.next_by_code('school.lesson.plan')
+            if not vals.get('name') and vals.get('subject_id'):
+                subject = self.env['school.subject'].sudo().browse(vals['subject_id'])
+                vals['name'] = '%s - %s' % (subject.name, vals.get('planned_date') or fields.Date.context_today(self))
+            if vals.get('progress') == 'completed' and not vals.get('completed_date'):
+                vals['completed_date'] = fields.Date.context_today(self)
         plans = super().create(vals_list)
         for plan in plans:
             plan.attachment_ids.sudo().filtered(lambda a: not a.res_model).write(
@@ -141,8 +204,6 @@ class SchoolLessonPlan(models.Model):
         for plan in self:
             if plan.state not in ('draft', 'rejected'):
                 continue
-            if not (plan.objectives or plan.activities):
-                raise UserError(_("Write the lesson objectives or the teaching activities before submitting."))
             plan.sudo().write({'state': 'submitted', 'submitted_datetime': fields.Datetime.now(),
                                'reject_reason': False, 'approved_by': False, 'approved_datetime': False})
             plan._notify(approver_users(self.env), _("Lesson plan to approve: %s", plan.name),

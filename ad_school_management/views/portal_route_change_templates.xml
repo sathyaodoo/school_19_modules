@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_student_route_change_button" inherit_id="ad_school_management.portal_my_student_profile">
+        <xpath expr="//a[contains(@t-attf-href, '/bus')]" position="after">
+            <a t-attf-href="/my/school/student/#{student.id}/route-change" class="btn btn-outline-primary btn-sm mt-2 ms-1">
+                <i class="fa fa-exchange me-1"/> Route Change Request
+            </a>
+        </xpath>
+    </template>
+
+    <template id="portal_route_change" name="Route Change Request">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3 mb-5">
+                <a t-attf-href="/my/school/student/#{student.id}" class="btn btn-link px-0 mb-2">
+                    <i class="fa fa-arrow-left me-1"/> Back to <t t-out="student.name"/>
+                </a>
+                <h4 class="text-primary mb-3"><i class="fa fa-exchange me-2"/>Route Change Request</h4>
+
+                <div t-if="error" class="alert alert-danger" role="alert"><t t-out="error"/></div>
+                <div t-if="success" class="alert alert-success" role="status"><t t-out="success"/></div>
+
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Current Route:</strong> <t t-out="student.transport_route_id.name or 'No transport'"/></p>
+                        <p class="mb-0"><strong>Boarding Point:</strong> <t t-out="student.van_boarding_point_id.name or '-'"/></p>
+                    </div>
+                </div>
+
+                <div t-if="not routes" class="alert alert-secondary" role="status">No other routes are available.</div>
+                <div t-else="" class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3">New Request</h5>
+                        <div t-if="pending" class="alert alert-warning py-2 small" role="status">
+                            A request to <strong t-out="pending[0].requested_route_id.name"/> is still open.
+                            Sending a new request will replace it.
+                        </div>
+                        <form method="post" t-attf-action="/my/school/student/#{student.id}/route-change">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label class="form-label" for="requested_route_id">New Route</label>
+                                <select class="form-select" name="requested_route_id" id="requested_route_id" required="required">
+                                    <option value="">Choose a route...</option>
+                                    <t t-foreach="routes" t-as="r">
+                                        <option t-att-value="r.id" t-att-selected="str(r.id) == post.get('requested_route_id')">
+                                            <t t-out="r.name"/>
+                                            <t t-if="r.stop_ids"> (<t t-out="', '.join(r.stop_ids.sorted('sequence').mapped('name'))"/>)</t>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="reason">Reason</label>
+                                <textarea class="form-control" name="reason" id="reason" rows="3" required="required"
+                                          placeholder="e.g. We moved to a new house near Vadasery"><t t-out="post.get('reason', '')"/></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send Request</button>
+                        </form>
+                    </div>
+                </div>
+
+                <h5 class="mb-2">My Requests</h5>
+                <div t-if="not requests" class="text-muted">No requests yet.</div>
+                <div t-else="" class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr><th>Date</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th>Decided On</th><th/></tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="requests" t-as="req">
+                                <td><t t-out="req.request_date" t-options="{'widget': 'date'}"/></td>
+                                <td><t t-out="req.current_route_id.name or '-'"/></td>
+                                <td><t t-out="req.requested_route_id.name"/></td>
+                                <td class="small"><t t-out="req.reason or '-'"/></td>
+                                <td>
+                                    <span t-if="req.state == 'approved'" class="badge bg-success">Approved</span>
+                                    <span t-elif="req.state == 'rejected'" class="badge bg-danger">Rejected</span>
+                                    <span t-elif="req.state == 'cancelled'" class="badge bg-secondary">Withdrawn</span>
+                                    <span t-elif="req.state == 'draft'" class="badge bg-light text-dark border">Draft</span>
+                                    <span t-else="" class="badge bg-warning text-dark">Waiting</span>
+                                </td>
+                                <td><t t-if="req.decision_date" t-out="req.decision_date" t-options="{'widget': 'date'}"/></td>
+                                <td class="text-end">
+                                    <form t-if="req.state in ('draft', 'submitted')" method="post"
+                                          t-attf-action="/my/school/student/#{student.id}/route-change/#{req.id}/withdraw">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Withdraw</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

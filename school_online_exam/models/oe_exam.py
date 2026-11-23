@@ -13,7 +13,11 @@ class SchoolOeExam(models.Model):
     _name = 'school.oe.exam'
     _description = 'Online Exam'
     _order = 'id desc'
+    _rec_names_search = ['exam_code', 'name']
 
+    exam_code = fields.Char(
+        string='Exam ID', readonly=True, copy=False, index=True,
+        help="Unique reference of the exam, assigned automatically when it is saved.")
     name = fields.Char(string='Exam Name', required=True)
     state = fields.Selection(
         [('draft', 'Draft'), ('published', 'Published'), ('closed', 'Closed')],
@@ -61,8 +65,8 @@ class SchoolOeExam(models.Model):
         [('best', 'Best attempt'), ('latest', 'Latest attempt'), ('first', 'First attempt')],
         string='Score Counted', default='best', required=True,
         help="Which attempt is used as the student's final score (reports / marks push).")
-    date_start = fields.Datetime(string='Available From')
-    date_end = fields.Datetime(string='Available Until')
+    date_start = fields.Datetime(string='Start Date')
+    date_end = fields.Datetime(string='End Date')
 
     school_exam_id = fields.Many2one(
         'school.exam', string='Linked School Exam',
@@ -135,7 +139,7 @@ class SchoolOeExam(models.Model):
     def _check_dates(self):
         for rec in self:
             if rec.date_start and rec.date_end and rec.date_start >= rec.date_end:
-                raise ValidationError(_("'Available From' must be before 'Available Until'."))
+                raise ValidationError(_("'Start Date' must be before 'End Date'."))
 
     # ------------------------------------------------------------------
     # descriptive exams (linked school.oe.assignment)
@@ -148,7 +152,7 @@ class SchoolOeExam(models.Model):
         for rec in self:
             if rec.exam_type == 'descriptive' and not rec.date_end:
                 raise ValidationError(_(
-                    "Set 'Available Until' for a descriptive exam: it is the due date "
+                    "Set 'End Date' for a descriptive exam: it is the due date "
                     "for the students' answers."))
 
     def _descriptive_vals(self):
@@ -171,8 +175,14 @@ class SchoolOeExam(models.Model):
             else:
                 rec.assignment_id = self.env['school.oe.assignment'].create(vals)
 
+    _exam_code_uniq = models.Constraint(
+        'UNIQUE(exam_code)', 'This Exam ID is already used by another exam!')
+
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('exam_code'):
+                vals['exam_code'] = self.env['ir.sequence'].next_by_code('school.oe.exam')
         records = super().create(vals_list)
         records._sync_descriptive()
         return records
