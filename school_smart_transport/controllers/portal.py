@@ -64,9 +64,10 @@ class SmartTransportPortal(SchoolCustomerPortal):
         on_board = trip._on_board_students()
         boarded = trip.boarding_ids.filtered(lambda b: b.event_type == 'board').mapped('student_id')
         no_stop = trip.route_id.student_ids.filtered(lambda s: not s.van_boarding_point_id)
+        absent = trip._absent_students()
         values = self._prepare_portal_layout_values()
         values.update({'trip': trip, 'route': trip.route_id, 'vehicle': trip.vehicle_id, 'stops': stops,
-                       'on_board': on_board, 'boarded': boarded, 'no_stop': no_stop, 'msg': msg, 'err': err,
+                       'on_board': on_board, 'boarded': boarded, 'no_stop': no_stop, 'absent': absent, 'msg': msg, 'err': err,
                        'role': self._crew_role(trip.route_id), 'driver': trip.route_id.effective_driver_id,
                        'caretaker': trip.route_id.effective_vehicle_id.caretaker_id,
                        'page_name': 'smart_driver_live'})
@@ -99,12 +100,14 @@ class SmartTransportPortal(SchoolCustomerPortal):
     def portal_driver_live_student(self, trip_id, student_id, action, **post):
         trip = self._own_trip(trip_id)
         student = request.env['school.student'].sudo().browse(student_id).exists()
-        if not trip or not student or action not in ('board', 'offboard'):
+        if not trip or not student or action not in ('board', 'offboard', 'absent'):
             return request.redirect('/my/driver')
         try:
             role = self._crew_role(trip.route_id)
             if action == 'board':
                 trip.action_board_student(student, source=role)
+            elif action == 'absent':
+                trip.action_mark_absent(student, source=role)
             else:
                 trip.action_offboard_student(student, source=role)
         except Exception as error:
