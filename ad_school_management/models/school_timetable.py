@@ -46,6 +46,21 @@ class SchoolTimetable(models.Model):
         'school.timetable.line', 'timetable_id', string='Saturday',
         domain=[('day_of_week', '=', 'saturday')], context={'default_day_of_week': 'saturday'})
 
+    _DAY_LINE_FIELDS = ('monday_line_ids', 'tuesday_line_ids', 'wednesday_line_ids',
+                        'thursday_line_ids', 'friday_line_ids', 'saturday_line_ids')
+
+    @api.onchange('class_id')
+    def _onchange_class_id_subjects(self):
+        """The subject dropdown only offers subjects of the selected class
+        (domain in the form view). When the class changes, clear periods whose
+        subject is not taught in the new class, together with their teacher."""
+        for timetable in self:
+            for field_name in self._DAY_LINE_FIELDS:
+                for line in timetable[field_name]:
+                    if line.subject_id and timetable.class_id not in line.subject_id.class_ids:
+                        line.subject_id = False
+                        line.teacher_id = False
+
     @api.model
     def default_get(self, fields_list):
         """Open a new timetable with all 8 periods already listed on every
@@ -157,7 +172,11 @@ class SchoolTimetableLine(models.Model):
     day_sequence = fields.Integer(compute='_compute_day_sequence', store=True, index=True)
     
     subject_id = fields.Many2one('school.subject', string='Subject')
-    teacher_id = fields.Many2one('school.teacher', string='Teacher')
+    # Once a subject is picked, only the teachers assigned to that subject
+    # (school.subject.teacher_ids / school.teacher.subject_ids) are offered.
+    teacher_id = fields.Many2one(
+        'school.teacher', string='Teacher',
+        domain="[('subject_ids', 'in', subject_id)] if subject_id else []")
     # Taken from the timetable header (entered once there). Kept as a stored
     # field on the line so substitutions, the substitute-teacher e-mail, the
     # student portal and the room-conflict check keep working unchanged.
@@ -169,6 +188,19 @@ class SchoolTimetableLine(models.Model):
                               help="Use 9.5 for 09:30 AM")
     end_time = fields.Float(string='End Time (Hour)', default=0.0, aggregator=False,
                             help="Use 10.5 for 10:30 AM")
+
+    @api.onchange('subject_id')
+    def _onchange_subject_id_teacher(self):
+        """Drop a teacher who is not assigned to the newly chosen subject, and
+        pre-fill the teacher when the subject has exactly one."""
+        for line in self:
+            teachers = line.subject_id.teacher_ids
+            if not line.subject_id:
+                continue
+            if line.teacher_id and line.teacher_id not in teachers:
+                line.teacher_id = False
+            if not line.teacher_id and len(teachers) == 1:
+                line.teacher_id = teachers
 
     @api.depends('day_of_week')
     def _compute_day_sequence(self):
