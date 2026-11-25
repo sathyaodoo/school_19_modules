@@ -491,6 +491,79 @@
                     </div>
 
                     <div class="tab-pane fade" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
+                        <div class="card shadow-sm border-0 p-4 mb-3">
+                            <h5 class="text-secondary mb-3">Fee Details</h5>
+                            <div t-if="not student_fees" class="alert alert-info mb-0">No fees assigned yet.</div>
+                            <t t-foreach="student_fees" t-as="fee">
+                                <t t-set="currency" t-value="fee.company_id.currency_id"/>
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <strong t-out="fee.structure_id.name"/>
+                                            <span class="text-muted small ms-2">
+                                                <t t-out="fee.name"/> &#8226; <t t-out="fee.academic_year_id.name"/>
+                                            </span>
+                                        </div>
+                                        <span t-attf-class="badge bg-#{'success' if fee.state == 'paid' else 'warning text-dark' if fee.state == 'invoiced' else 'secondary'}">
+                                            <t t-if="fee.state == 'paid'">Paid</t>
+                                            <t t-elif="fee.state == 'invoiced'">Invoiced</t>
+                                            <t t-else="">Not invoiced yet</t>
+                                        </span>
+                                    </div>
+                                    <t t-set="components" t-value="fee.line_ids if 'line_ids' in fee else fee.structure_id.line_ids"/>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-2">
+                                            <thead class="table-light">
+                                                <tr><th>Fee Component</th><th class="text-end">Amount</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr t-foreach="components" t-as="comp">
+                                                    <td><t t-out="comp.name"/></td>
+                                                    <td class="text-end"><t t-out="comp.amount" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
+                                                </tr>
+                                                <tr t-if="fee.concession_amount">
+                                                    <td class="text-success">Discount / Scholarship</td>
+                                                    <td class="text-end text-success">- <t t-out="fee.concession_amount" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
+                                                </tr>
+                                                <tr class="fw-bold">
+                                                    <td>Net Amount</td>
+                                                    <td class="text-end"><t t-out="fee.net_amount" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Paid</td>
+                                                    <td class="text-end"><t t-out="fee.paid_amount" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
+                                                </tr>
+                                                <tr t-attf-class="fw-bold #{'text-danger' if fee.due_amount &gt; 0 else 'text-success'}">
+                                                    <td>Balance Due</td>
+                                                    <td class="text-end"><t t-out="fee.due_amount" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div t-if="fee.installment_line_ids" class="table-responsive">
+                                        <table class="table table-sm table-borderless small mb-0">
+                                            <thead>
+                                                <tr class="text-muted"><th>Installment</th><th>Due Date</th><th class="text-end">Amount</th><th>Status</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr t-foreach="fee.installment_line_ids" t-as="inst">
+                                                    <td><t t-out="inst.name"/></td>
+                                                    <td><t t-out="inst.due_date" t-options="{'widget': 'date'}"/></td>
+                                                    <td class="text-end"><t t-out="inst.amount" t-options="{'widget': 'monetary', 'display_currency': currency}"/></td>
+                                                    <td>
+                                                        <a t-if="inst.invoice_id and inst.invoice_id.state == 'posted'" t-att-href="inst.invoice_id.get_portal_url()"
+                                                           t-attf-class="badge text-decoration-none bg-#{'success' if inst.state == 'paid' else 'warning text-dark'}">
+                                                            <t t-out="'Paid' if inst.state == 'paid' else 'Pay / View Invoice'"/>
+                                                        </a>
+                                                        <span t-else="" class="badge bg-light text-dark border">Not invoiced yet</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
                         <div class="card shadow-sm border-0 p-4">
                             <h5 class="text-secondary mb-3">Fee Invoices &amp; Payments</h5>
                             <div class="table-responsive" t-if="invoices">
@@ -507,7 +580,7 @@
                                         <t t-foreach="invoices" t-as="inv">
                                             <tr>
                                                 <td>
-                                                    <a t-attf-href="/my/invoices/#{inv.id}"><t t-out="inv.name"/></a>
+                                                    <a t-att-href="inv.get_portal_url()"><t t-out="inv.name"/></a>
                                                 </td>
                                                 <td><t t-out="inv.invoice_date"/></td>
                                                 <td><t t-out="inv.amount_total" t-options="{'widget': 'monetary', 'display_currency': inv.currency_id}"/></td>
