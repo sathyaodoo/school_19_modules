@@ -12,6 +12,10 @@
                 <field name="student_count"/>
                 <field name="driver_id"/>
                 <field name="caretaker_id" optional="show"/>
+                <field name="is_school_bus" optional="show"/>
+                <field name="hire_date" optional="show" invisible="is_school_bus"/>
+                <field name="hire_shift" optional="show" invisible="is_school_bus"/>
+                <field name="hire_rent" optional="show" sum="Total Rent" invisible="is_school_bus"/>
                 <field name="is_over_capacity" column_invisible="1"/>
             </list>
         </field>
@@ -40,11 +44,22 @@
                             <field name="capacity" string="Seats"/>
                             <field name="student_count" string="Seats Used"/>
                             <field name="is_over_capacity" invisible="1"/>
+                            <field name="is_school_bus"/>
                         </group>
                         <group string="Staff">
                             <field name="driver_id" context="{'default_is_school_driver': True}"/>
                             <field name="caretaker_id" context="{'default_is_school_caretaker': True}"/>
                             <field name="route_ids" string="Route" widget="many2many_tags" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Outside Bus (Hired)" invisible="is_school_bus">
+                        <group>
+                            <field name="hire_date" required="not is_school_bus"/>
+                            <field name="hire_shift" widget="radio" required="not is_school_bus"/>
+                        </group>
+                        <group>
+                            <field name="hire_rent" required="not is_school_bus"/>
+                            <field name="hire_note" placeholder="e.g. Hired from ABC Travels for the sports day"/>
                         </group>
                     </group>
                     <notebook>
@@ -204,7 +219,7 @@
                             <field name="is_vehicle_replaced"/>
                         </group>
                     </group>
-                    <button name="action_generate_monthly_fees" type="object"
+                    <button name="action_generate_monthly_fees" type="object" groups="base.group_no_one"
                             string="Generate Bills" class="btn-primary"
                             confirm="Generate bills for the selected Billing Month?"/>
                     <button name="action_mark_driver_on_leave" type="object"
