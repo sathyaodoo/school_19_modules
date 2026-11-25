@@ -55,27 +55,11 @@ class SchoolVehicle(models.Model):
         'unique(vehicle_number)', 'Vehicle number must be unique!'
     )
 
-    @api.constrains('is_school_bus', 'hire_date', 'hire_shift', 'hire_rent')
-    def _check_outside_bus(self):
-        for rec in self:
-            if rec.is_school_bus:
-                continue
-            if not rec.hire_date or not rec.hire_shift:
-                raise ValidationError(_("%s is an outside bus: set the Hired On date and the Trip "
-                                        "(Morning / Evening).") % rec.name)
-            if rec.hire_rent <= 0:
-                raise ValidationError(_("%s is an outside bus: the Rent Amount must be more than zero.") % rec.name)
-
     @api.depends('driver_id.driver_type')
     def _compute_is_school_bus(self):
         for rec in self:
-            if rec.driver_id:
-                # outside driver (vendor / contract) = hired bus; own driver = school bus
-                rec.is_school_bus = rec.driver_id.driver_type != 'outside'
-            elif not rec._origin:
-                rec.is_school_bus = True
-            else:
-                rec.is_school_bus = rec._origin.is_school_bus
+            # outside driver (vendor / contract) = hired bus; own driver or no driver = school bus
+            rec.is_school_bus = not (rec.driver_id and rec.driver_id.driver_type == 'outside')
 
     @api.depends('last_latitude', 'last_longitude', 'last_location_at')
     def _compute_location_map_url(self):
