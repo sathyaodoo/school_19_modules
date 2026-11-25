@@ -72,8 +72,12 @@ class SchoolCustomerPortal(CustomerPortal):
         
         invoices = request.env['account.move'].sudo().search([
             ('partner_id', '=', student.partner_id.id),
-            ('move_type', '=', 'out_invoice')
-        ])
+            ('move_type', '=', 'out_invoice'),
+            ('state', '=', 'posted'),
+        ], order='invoice_date desc, id desc')
+        # Fees given from the Fee Structure (shown even before they are invoiced)
+        student_fees = request.env['school.student.fee'].sudo().search(
+            [('student_id', '=', student.id), ('state', '!=', 'cancelled')], order='id desc')
 
         # Library: books out, reading profile, challenges, "Recommended for you"
         library_loans = request.env['school.book.issue'].sudo().search(
@@ -128,6 +132,7 @@ class SchoolCustomerPortal(CustomerPortal):
             'results': results,
             'timetable': timetable,
             'invoices': invoices,
+            'student_fees': student_fees,
             'library_loans': library_loans,
             'reading_challenges': reading_challenges,
             'recommendations': recommendations,
