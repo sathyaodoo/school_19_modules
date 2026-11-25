@@ -41,8 +41,9 @@ class SchoolVehicle(models.Model):
 
     # School bus or a bus hired from outside for a day
     is_school_bus = fields.Boolean(
-        string='School Bus', default=True,
-        help="Ticked: the school's own bus. Not ticked: a bus hired from outside (out bus).")
+        string='School Bus', compute='_compute_is_school_bus', store=True, readonly=False,
+        help="Ticked: the school's own bus. Not ticked: a bus hired from outside (out bus). "
+             "Unticked automatically when the driver is an Outside Driver (Vendor / Contract).")
     hire_date = fields.Date(string='Hired On', help="Day the outside bus is hired.")
     hire_shift = fields.Selection(
         [('morning', 'Morning'), ('evening', 'Evening'), ('both', 'Morning & Evening')],
@@ -65,10 +66,16 @@ class SchoolVehicle(models.Model):
             if rec.hire_rent <= 0:
                 raise ValidationError(_("%s is an outside bus: the Rent Amount must be more than zero.") % rec.name)
 
-    @api.onchange('is_school_bus')
-    def _onchange_is_school_bus(self):
-        if not self.is_school_bus and not self.hire_rent:
-            self.hire_rent = 1000.0
+    @api.depends('driver_id.driver_type')
+    def _compute_is_school_bus(self):
+        for rec in self:
+            if rec.driver_id:
+                # outside driver (vendor / contract) = hired bus; own driver = school bus
+                rec.is_school_bus = rec.driver_id.driver_type != 'outside'
+            elif not rec._origin:
+                rec.is_school_bus = True
+            else:
+                rec.is_school_bus = rec._origin.is_school_bus
 
     @api.depends('last_latitude', 'last_longitude', 'last_location_at')
     def _compute_location_map_url(self):
