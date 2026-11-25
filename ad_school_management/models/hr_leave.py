@@ -143,7 +143,11 @@ class HrLeave(models.Model):
         return self.request_date_to or (self.date_to and self.date_to.date()) or self._school_start_date()
 
     def _school_user_can(self, level):
-        return self.env.is_superuser() or self.env.user.has_group(SCHOOL_LEVEL_GROUPS[level])
+        """Users of the level's group can act on it. School Admins can act on every level
+        (Admin, HR Manager and Principal), e.g. when the HR Manager or Principal is away."""
+        user = self.env.user
+        return (self.env.is_superuser() or user.has_group(SCHOOL_LEVEL_GROUPS[level])
+                or user.has_group(SCHOOL_LEVEL_GROUPS['admin']))
 
     def _school_has_certificate(self):
         self.ensure_one()
