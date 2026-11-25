@@ -1,6 +1,6 @@
 {
     'name': 'School Management System',
-    'version': '19.0.1.12',
+    'version': '19.0.1.13',
     'summary': 'Comprehensive School Management System for Odoo 19',
     'website': 'https://adreaminnovations.odoo.com',
     'description': """
@@ -88,6 +88,7 @@
         'views/school_canteen_menus.xml',
         'report/school_reports.xml',
         'views/portal_templates.xml',
+        'views/portal_route_change_templates.xml',
         'views/school_leave_views.xml',
         'views/portal_leave_templates.xml',
         'report/school_mark_list_report.xml',
