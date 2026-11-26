@@ -111,6 +111,12 @@ class SchoolFeeInstallment(models.Model):
         for inst in self:
             if inst.amount_percentage <= 0 or inst.amount_percentage > 100:
                 raise ValidationError(_("Installment percentage must be between 1 and 100."))
+        for structure in self.mapped('fee_structure_id'):
+            total = sum(structure.installment_ids.mapped('amount_percentage'))
+            if round(total, 2) > 100:
+                raise ValidationError(_(
+                    "The installments of %(structure)s add up to %(total)s%%. They must not be more than 100%%.",
+                    structure=structure.name, total=round(total, 2)))
 
 class SchoolStudentFee(models.Model):
     _name = 'school.student.fee'
@@ -149,6 +155,9 @@ class SchoolStudentFee(models.Model):
     installment_line_ids = fields.One2many('school.student.fee.installment', 'student_fee_id', string='Installments', copy=True)
     line_ids = fields.One2many('school.student.fee.line', 'student_fee_id', string='Fee Components', copy=True)
     has_invoice = fields.Boolean(compute='_compute_has_invoice')
+    unplanned_percentage = fields.Float(
+        string='Not in Installments (%)', compute='_compute_unplanned_percentage',
+        help="Part of the fee that no installment covers yet (installments add up to less than 100%).")
 
     _student_struct_uniq = models.Constraint(
         'unique(student_id, structure_id)', 'This fee structure is already assigned to this student!'
@@ -265,6 +274,35 @@ class SchoolStudentFee(models.Model):
                     'due_date': fields.Date.context_today(rec),
                     'amount_percentage': 100.0,
                 })
+            # installment plan below 100%: the rest becomes a "Balance" installment
+            rec._add_balance_installment()
+
+    @api.depends('installment_line_ids.amount_percentage', 'installment_line_ids.state')
+    def _compute_unplanned_percentage(self):
+        for rec in self:
+            planned = sum(rec.installment_line_ids.filtered(lambda i: i.state != 'cancelled')
+                          .mapped('amount_percentage'))
+            rec.unplanned_percentage = max(round(100.0 - planned, 2), 0.0)
+
+    def _add_balance_installment(self):
+        Installment = self.env['school.student.fee.installment']
+        for rec in self:
+            if rec.unplanned_percentage > 0.009:
+                Installment.create({
+                    'student_fee_id': rec.id,
+                    'name': _("Balance Payment"),
+                    'due_date': fields.Date.context_today(rec),
+                    'amount_percentage': rec.unplanned_percentage,
+                })
+
+    def action_add_balance_installment(self):
+        """Add an installment for the part of the fee no installment covers, so it can be invoiced and paid."""
+        for rec in self:
+            if rec.unplanned_percentage <= 0.009:
+                raise ValidationError(_("%s: the installments already cover the whole fee.") % rec.name)
+            rec._add_balance_installment()
+            rec.message_post(body=_("Balance Payment installment added for the remaining fee."))
+        return True
 
     # NEW: when a student is selected on the fee form, fill the scholarship discount
     @api.onchange('student_id')
@@ -306,14 +344,14 @@ class SchoolStudentFee(models.Model):
             fee.paid_amount = sum(invoices.mapped('amount_total')) - sum(invoices.mapped('amount_residual'))
             fee.due_amount = fee.net_amount - fee.paid_amount
 
-    @api.depends('installment_line_ids.state')
+    @api.depends('installment_line_ids.state', 'installment_line_ids.amount_percentage')
     def _compute_state_from_invoice(self):
         for rec in self:
             if rec.installment_line_ids:
                 states = rec.installment_line_ids.mapped('state')
                 if all(s == 'draft' for s in states):
                     rec.state = 'draft'
-                elif all(s == 'paid' for s in states):
+                elif all(s == 'paid' for s in states) and rec.unplanned_percentage <= 0.009:
                     rec.state = 'paid'
                 elif all(s == 'cancelled' for s in states):
                     rec.state = 'cancelled'
