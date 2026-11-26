@@ -162,7 +162,7 @@
                             <!-- CHANGED: transport fee can be created / invoiced right here (admin, principal, accountant see it) -->
                             <group string="Transport Fee History" invisible="not transport_route_id"
                                    groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
-                                <div colspan="2" groups="ad_school_management.group_school_admin,ad_school_management.group_school_accountant">
+                                <div colspan="2" groups="base.group_no_one">
                                     <button name="action_generate_transport_fee" type="object" class="btn-primary"
                                             string="Generate This Month's Fee" invisible="not id"/>
                                 </div>

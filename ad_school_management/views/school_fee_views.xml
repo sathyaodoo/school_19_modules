@@ -41,11 +41,19 @@
                         <page string="Fee Components" name="components">
                             <field name="line_ids">
                                 <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="fee_type"/>
                                     <field name="name"/>
                                     <field name="product_id"/>
-                                    <field name="amount"/>
+                                    <field name="amount" invisible="fee_type != 'general'"/>
+                                    <field name="months" invisible="fee_type == 'general'"/>
                                 </list>
                             </field>
+                            <div class="text-muted small">
+                                <b>General</b>: every student pays the Amount.
+                                <b>Transport</b>: only students with a transport route, route Monthly Cost x Months.
+                                <b>Hostel</b>: only students with a hostel room, room Monthly Rent x Months.
+                            </div>
                         </page>
                         <page string="Installments Plan" name="installments">
                             <field name="installment_ids">
@@ -97,6 +105,10 @@
             <form>
                 <header>
                     <button name="action_create_invoice" type="object" string="Generate Invoice" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_refresh_components" type="object" string="Recalculate Components"
+                            invisible="has_invoice or not id"
+                            confirm="Recalculate the fee components from the structure (current route / room)?"/>
+                    <field name="has_invoice" invisible="1"/>
                     <button name="action_view_invoice" type="object" string="View Invoice" class="oe_highlight" invisible="state in ('draft', 'cancelled')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,invoiced,paid"/>
                 </header>
@@ -109,8 +121,13 @@
                     </div>
                     <group>
                         <group string="Student &amp; Structure">
-                            <field name="student_id"/>
-                            <field name="structure_id"/>
+                            <field name="class_id" options="{'no_create': True}"/>
+                            <field name="student_id" domain="[('class_id', '=', class_id)] if class_id else []"
+                                   options="{'no_create': True}"/>
+                            <field name="section_id"/>
+                            <field name="structure_id"
+                                   domain="['|', ('class_ids', '=', False), ('class_ids', 'in', [class_id])]"
+                                   options="{'no_create': True}"/>
                             <field name="academic_year_id"/>
                         </group>
                         <group string="Financials">
@@ -122,6 +139,17 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Fee Components" name="components">
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="fee_type" widget="badge" decoration-info="fee_type == 'transport'"
+                                           decoration-warning="fee_type == 'hostel'"/>
+                                    <field name="name"/>
+                                    <field name="product_id" optional="hide"/>
+                                    <field name="amount" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Installments" name="installments">
                             <field name="installment_line_ids">
                                 <list create="0" edit="0" delete="0" decoration-info="state == 'draft'" decoration-warning="state == 'invoiced'" decoration-success="state == 'paid'" decoration-muted="state == 'cancelled'">
@@ -211,6 +239,7 @@
                         <field name="student_id" readonly="1"/>
                         <field name="admission_no"/>
                         <field name="section_id"/>
+                        <field name="gross_amount"/>
                         <field name="discount" readonly="already_assigned" string="Discount (₹)"/>
                         <field name="scholarship" readonly="already_assigned" string="Scholarship %"/>
                         <field name="net_amount" sum="Total"/>
