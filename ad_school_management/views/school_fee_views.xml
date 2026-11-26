@@ -105,6 +105,9 @@
             <form>
                 <header>
                     <button name="action_create_invoice" type="object" string="Generate Invoice" class="oe_highlight" invisible="state != 'draft'"/>
+                    <field name="unplanned_percentage" invisible="1"/>
+                    <button name="action_add_balance_installment" type="object" string="Add Balance Installment"
+                            class="btn-primary" invisible="not id or unplanned_percentage &lt;= 0"/>
                     <button name="action_refresh_components" type="object" string="Recalculate Components"
                             invisible="has_invoice or not id"
                             confirm="Recalculate the fee components from the structure (current route / room)?"/>
