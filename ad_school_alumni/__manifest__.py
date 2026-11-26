@@ -23,7 +23,7 @@ Life cycle: Student → Graduate → Alumni → Mentor
         'security/alumni_security.xml',
         'security/ir.model.access.csv',
         'data/alumni_sequence.xml',
-        'data/alumni_donation_product.xml',          # NEW – right after the sequence file
+        'data/donation_product.xml',          # NEW – right after the sequence file
         'views/alumni_views.xml',
         'views/alumni_mentorship_views.xml',
         'views/alumni_guidance_views.xml',
