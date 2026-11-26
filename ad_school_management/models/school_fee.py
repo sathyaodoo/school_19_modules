@@ -1,6 +1,13 @@
 from odoo import models, fields, api, _, Command
 from odoo.exceptions import ValidationError
 
+FEE_TYPES = [
+    ('general', 'General (all students)'),
+    ('transport', 'Transport (students with a route)'),
+    ('hostel', 'Hostel (students with a room)'),
+]
+
+
 class SchoolFeeStructure(models.Model):
     _name = 'school.fee.structure'
     _description = 'Fee Structure'
@@ -15,31 +22,79 @@ class SchoolFeeStructure(models.Model):
     class_ids = fields.Many2many('school.class', 'school_fee_structure_class_rel', 'structure_id', 'class_id',
                                  string='Applicable Classes',
                                  help="Classes this fee structure is used for. Used by 'Generate Class Fees'.")
-    total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
+    total_amount = fields.Float(string='General Total', compute='_compute_total_amount', store=True,
+                                help="Total of the General components. Transport and Hostel components are added "
+                                     "per student (route cost / room rent x months).")
 
     _code_uniq = models.Constraint(
         'unique(code)', 'The fee structure code must be unique!'
     )
 
-    @api.depends('line_ids.amount')
+    @api.depends('line_ids.amount', 'line_ids.fee_type')
     def _compute_total_amount(self):
         for struct in self:
-            struct.total_amount = sum(struct.line_ids.mapped('amount'))
+            struct.total_amount = sum(struct.line_ids.filtered(lambda l: l.fee_type == 'general').mapped('amount'))
+
+    def _student_components(self, student):
+        """The fee components of this structure that apply to one student, with their amounts.
+
+        General   : the component amount, for every student.
+        Transport : route Monthly Cost x months, only when the student has a transport route.
+        Hostel    : room Monthly Rent x months, only when the student has a hostel room.
+        """
+        self.ensure_one()
+        components = []
+        for line in self.line_ids:
+            if line.fee_type == 'transport':
+                route = student.transport_route_id
+                if not route or route.cost <= 0:
+                    continue
+                amount = route.cost * line.months
+                name = _("%(name)s - %(route)s (%(cost).2f x %(months)s months)",
+                         name=line.name, route=route.name, cost=route.cost, months=line.months)
+            elif line.fee_type == 'hostel':
+                room = student.hostel_room_id
+                if not room or room.rent <= 0:
+                    continue
+                amount = room.rent * line.months
+                name = _("%(name)s - %(room)s (%(rent).2f x %(months)s months)",
+                         name=line.name, room=room.display_name, rent=room.rent, months=line.months)
+            else:
+                amount = line.amount
+                name = line.name
+            components.append({
+                'name': name,
+                'fee_type': line.fee_type,
+                'product_id': line.product_id.id,
+                'amount': amount,
+                'structure_line_id': line.id,
+            })
+        return components
 
 class SchoolFeeStructureLine(models.Model):
     _name = 'school.fee.structure.line'
     _description = 'Fee Structure Line'
 
     fee_structure_id = fields.Many2one('school.fee.structure', string='Fee Structure', required=True, ondelete='cascade')
+    sequence = fields.Integer(default=10)
+    fee_type = fields.Selection(FEE_TYPES, string='Fee Type', default='general', required=True,
+                                help="General: every student. Transport: only students with a transport route "
+                                     "(route Monthly Cost x Months). Hostel: only students with a hostel room "
+                                     "(room Monthly Rent x Months).")
     name = fields.Char(string='Component Name', required=True)
-    amount = fields.Float(string='Amount', required=True)
+    amount = fields.Float(string='Amount', required=True, default=0.0,
+                          help="Used for General components only.")
+    months = fields.Integer(string='Months', default=10,
+                            help="Transport / Hostel: number of months billed in this structure.")
     product_id = fields.Many2one('product.product', string='Product Reference', required=True)
 
-    @api.constrains('amount')
+    @api.constrains('amount', 'months', 'fee_type')
     def _check_amount(self):
         for line in self:
-            if line.amount <= 0:
-                raise ValidationError(_("Component amount must be greater than zero."))
+            if line.fee_type == 'general' and line.amount <= 0:
+                raise ValidationError(_("Component amount must be greater than zero (%s).") % line.name)
+            if line.fee_type in ('transport', 'hostel') and line.months <= 0:
+                raise ValidationError(_("Months must be greater than zero (%s).") % line.name)
 
 class SchoolFeeInstallment(models.Model):
     _name = 'school.fee.installment'
@@ -66,7 +121,8 @@ class SchoolStudentFee(models.Model):
     student_id = fields.Many2one('school.student', string='Student', required=True, tracking=True)
     structure_id = fields.Many2one('school.fee.structure', string='Fee Structure', required=True, tracking=True)
     academic_year_id = fields.Many2one('school.academic.year', string='Academic Year', related='structure_id.academic_year_id', store=True)
-    class_id = fields.Many2one('school.class', string='Class', related='student_id.class_id', store=True)
+    class_id = fields.Many2one('school.class', string='Class', compute='_compute_class_id', store=True,
+                               readonly=False, help="Choose the class first to list only its students.")
     section_id = fields.Many2one('school.section', string='Section', related='student_id.section_id', store=True)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.company)
 
@@ -91,10 +147,38 @@ class SchoolStudentFee(models.Model):
     invoice_id = fields.Many2one('account.move', string='Invoice', readonly=True, copy=False)
     invoice_state = fields.Selection(related='invoice_id.payment_state', string='Invoice Payment State', store=True)
     installment_line_ids = fields.One2many('school.student.fee.installment', 'student_fee_id', string='Installments', copy=True)
+    line_ids = fields.One2many('school.student.fee.line', 'student_fee_id', string='Fee Components', copy=True)
+    has_invoice = fields.Boolean(compute='_compute_has_invoice')
 
     _student_struct_uniq = models.Constraint(
         'unique(student_id, structure_id)', 'This fee structure is already assigned to this student!'
     )
+
+    @api.depends('student_id.class_id')
+    def _compute_class_id(self):
+        for fee in self:
+            # with a student the class follows the student; without one, keep the class chosen
+            fee.class_id = fee.student_id.class_id if fee.student_id else fee.class_id
+
+    @api.onchange('class_id')
+    def _onchange_class_id(self):
+        # class changed: drop a student / structure that does not belong to it
+        if self.student_id and self.student_id.class_id != self.class_id:
+            self.student_id = False
+        if self.structure_id.class_ids and self.class_id not in self.structure_id.class_ids:
+            self.structure_id = False
+
+    @api.constrains('student_id', 'structure_id')
+    def _check_structure_class(self):
+        """A fee structure with Applicable Classes can only be given to students of those classes."""
+        for fee in self:
+            classes = fee.structure_id.class_ids
+            if classes and fee.student_id.class_id not in classes:
+                raise ValidationError(_(
+                    "%(structure)s is for %(classes)s, but %(student)s is in %(cls)s. "
+                    "Choose the fee structure of the student's class.",
+                    structure=fee.structure_id.name, classes=', '.join(classes.mapped('name')),
+                    student=fee.student_id.name, cls=fee.student_id.class_id.name or _('no class')))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -110,6 +194,8 @@ class SchoolStudentFee(models.Model):
                 vals['discount'] = student._get_scholarship_discount()
         records = super(SchoolStudentFee, self).create(vals_list)
         for record in records:
+            if not record.line_ids:
+                record._generate_fee_lines()
             record._generate_installments()
         return records
 
@@ -120,9 +206,43 @@ class SchoolStudentFee(models.Model):
         res = super(SchoolStudentFee, self).write(vals)
         if 'structure_id' in vals:
             for record in self:
+                if not record.has_invoice:
+                    record.line_ids.unlink()
+                    record._generate_fee_lines()
                 record.installment_line_ids.filtered(lambda i: not i.invoice_id).unlink()
                 record._generate_installments()
         return res
+
+    @api.depends('installment_line_ids.invoice_id')
+    def _compute_has_invoice(self):
+        for rec in self:
+            rec.has_invoice = bool(rec.installment_line_ids.filtered('invoice_id'))
+
+    def _generate_fee_lines(self):
+        """Copy the structure components that apply to the student (amounts frozen at that moment)."""
+        Line = self.env['school.student.fee.line']
+        for rec in self:
+            if rec.structure_id and rec.student_id:
+                Line.create([dict(comp, student_fee_id=rec.id)
+                             for comp in rec.structure_id._student_components(rec.student_id)])
+
+    def _get_components(self):
+        """Fee components to invoice. Fees created before components existed get them on first use."""
+        self.ensure_one()
+        if not self.line_ids:
+            self._generate_fee_lines()
+        return self.line_ids
+
+    def action_refresh_components(self):
+        """Recalculate the components from the structure (e.g. after the student's route changed)."""
+        for rec in self:
+            if rec.has_invoice:
+                raise ValidationError(_(
+                    "%s already has an invoice. Components can only be recalculated before invoicing.") % rec.name)
+            rec.line_ids.unlink()
+            rec._generate_fee_lines()
+            rec.message_post(body=_("Fee components recalculated from %s.") % rec.structure_id.name)
+        return True
 
     def _generate_installments(self):
         for rec in self:
@@ -162,10 +282,11 @@ class SchoolStudentFee(models.Model):
                     "Scholarship is a percentage and must be between 0 and 100 (%s: %s). "
                     "To reduce a fixed amount, use Discount (Flat) instead.") % (fee.student_id.name, fee.scholarship))
 
-    @api.depends('structure_id')
+    @api.depends('line_ids.amount', 'structure_id.total_amount')
     def _compute_amount(self):
         for fee in self:
-            fee.amount = fee.structure_id.total_amount if fee.structure_id else 0.0
+            # fees created before components existed: the structure total
+            fee.amount = sum(fee.line_ids.mapped('amount')) if fee.line_ids else fee.structure_id.total_amount
 
     @api.depends('amount', 'discount', 'scholarship')
     def _compute_net_amount(self):
@@ -232,6 +353,19 @@ class SchoolStudentFee(models.Model):
             'context': {'create': False},
         }
 
+class SchoolStudentFeeLine(models.Model):
+    _name = 'school.student.fee.line'
+    _description = 'Student Fee Component'
+    _order = 'student_fee_id, id'
+
+    student_fee_id = fields.Many2one('school.student.fee', string='Student Fee', required=True, ondelete='cascade')
+    structure_line_id = fields.Many2one('school.fee.structure.line', string='Structure Component', ondelete='set null')
+    name = fields.Char(string='Component', required=True)
+    fee_type = fields.Selection(FEE_TYPES, string='Fee Type', default='general', required=True)
+    product_id = fields.Many2one('product.product', string='Product')
+    amount = fields.Float(string='Amount')
+
+
 class SchoolStudentFeeInstallment(models.Model):
     _name = 'school.student.fee.installment'
     _description = 'Student Fee Installment'
@@ -274,10 +408,10 @@ class SchoolStudentFeeInstallment(models.Model):
                 raise ValidationError(_("Invoice is already created for this installment."))
             
             line_vals = []
-            structure = rec.student_fee_id.structure_id
+            components = rec.student_fee_id._get_components()
             pct = rec.amount_percentage / 100.0
 
-            for line in structure.line_ids:
+            for line in components:
                 line_vals.append({
                     'name': f"{line.name} ({rec.name} - {rec.amount_percentage}%)",
                     'product_id': line.product_id.id,
@@ -286,7 +420,7 @@ class SchoolStudentFeeInstallment(models.Model):
                 })
 
             if rec.student_fee_id.discount > 0:
-                prod = structure.line_ids[0].product_id if structure.line_ids else False
+                prod = components[:1].product_id
                 line_vals.append({
                     'name': f"{_('Discount Allowed')} ({rec.name})",
                     'product_id': prod.id if prod else False,
@@ -295,7 +429,7 @@ class SchoolStudentFeeInstallment(models.Model):
                 })
 
             if rec.student_fee_id.scholarship > 0:
-                prod = structure.line_ids[0].product_id if structure.line_ids else False
+                prod = components[:1].product_id
                 schol_amount = (rec.student_fee_id.amount - rec.student_fee_id.discount) * (rec.student_fee_id.scholarship / 100.0)
                 line_vals.append({
                     'name': f"{_('Scholarship')} ({rec.student_fee_id.scholarship}%) ({rec.name})",
@@ -446,6 +580,8 @@ class SchoolFeeGenerateLine(models.TransientModel):
     section_id = fields.Many2one(related='student_id.section_id', string='Section')
     discount = fields.Float(string='Discount (Amount)')
     scholarship = fields.Float(string='Scholarship %')
+    gross_amount = fields.Float(string='Total', compute='_compute_net_amount',
+                                help="General components + transport / hostel for this student.")
     net_amount = fields.Float(string='Net Amount', compute='_compute_net_amount')
     already_assigned = fields.Boolean(string='Already Assigned', readonly=True)
 
@@ -459,10 +595,14 @@ class SchoolFeeGenerateLine(models.TransientModel):
                     "Scholarship %% must be between 0 and 100 (%s: %s). "
                     "To reduce a fixed amount, use the Discount (Amount) column.") % (line.student_id.name, line.scholarship))
 
-    @api.depends('wizard_id.structure_id', 'discount', 'scholarship')
+    @api.depends('wizard_id.structure_id', 'student_id', 'discount', 'scholarship')
     def _compute_net_amount(self):
         for line in self:
-            net = line.wizard_id.structure_id.total_amount - line.discount
+            structure = line.wizard_id.structure_id
+            gross = sum(c['amount'] for c in structure._student_components(line.student_id)) \
+                if structure and line.student_id else 0.0
+            line.gross_amount = gross
+            net = gross - line.discount
             if line.scholarship:
                 net = net * (1.0 - line.scholarship / 100.0)
             line.net_amount = max(net, 0.0)
