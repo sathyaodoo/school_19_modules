@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Adds invoice items to the existing donation FORM without editing it -->
+    <record id="view_school_alumni_donation_form_invoice" model="ir.ui.view">
+        <field name="name">school.alumni.donation.form.invoice</field>
+        <field name="model">school.alumni.donation</field>
+        <field name="inherit_id" ref="ad_school_alumni.view_school_alumni_donation_form"/>
+        <field name="arch" type="xml">
+            <!-- 1. "Create Invoice" button: hidden while a live invoice exists,
+                    shown again if the invoice was cancelled -->
+            <xpath expr="//header/button[@name='action_print_receipt']" position="before">
+                <button name="action_create_invoice" type="object" string="Create Invoice"
+                        invisible="(invoice_id and invoice_state != 'cancel') or state == 'cancelled'"
+                        groups="account.group_account_invoice"/>
+            </xpath>
+            <!-- 2. "Invoice" smart button at the top of the sheet -->
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_invoice" type="object" class="oe_stat_button"
+                            icon="fa-pencil-square-o" invisible="not invoice_id">
+                        <div class="o_stat_info">
+                            <span class="o_stat_text">Invoice</span>
+                        </div>
+                    </button>
+                </div>
+            </xpath>
+            <!-- 3. Invoice, invoice status (Draft/Posted/Cancelled) and payment status -->
+            <xpath expr="//field[@name='received_date']" position="after">
+                <field name="invoice_id" invisible="not invoice_id"/>
+                <field name="invoice_state" widget="badge" invisible="not invoice_id"
+                       decoration-info="invoice_state == 'draft'"
+                       decoration-success="invoice_state == 'posted'"
+                       decoration-danger="invoice_state == 'cancel'"/>
+                <field name="invoice_payment_state" widget="badge"
+                       invisible="not invoice_id or invoice_state != 'posted'"
+                       decoration-success="invoice_payment_state == 'paid'"
+                       decoration-warning="invoice_payment_state in ('partial', 'in_payment')"
+                       decoration-danger="invoice_payment_state == 'not_paid'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Adds Invoice Status + Payment Status columns to the existing donation LIST -->
+    <record id="view_school_alumni_donation_list_invoice" model="ir.ui.view">
+        <field name="name">school.alumni.donation.list.invoice</field>
+        <field name="model">school.alumni.donation</field>
+        <field name="inherit_id" ref="ad_school_alumni.view_school_alumni_donation_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='currency_id']" position="after">
+                <field name="invoice_state" widget="badge" optional="show"
+                       decoration-info="invoice_state == 'draft'"
+                       decoration-success="invoice_state == 'posted'"
+                       decoration-danger="invoice_state == 'cancel'"/>
+                <field name="invoice_payment_state" widget="badge" optional="show"
+                       decoration-success="invoice_payment_state == 'paid'"
+                       decoration-danger="invoice_payment_state == 'not_paid'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
