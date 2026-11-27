@@ -43,8 +43,6 @@
     <menuitem id="menu_school_fee_structure" name="Fee Structures" parent="menu_school_financials" action="action_school_fee_structure" sequence="10"/>
     <menuitem id="menu_school_student_fee" name="Student Fees" parent="menu_school_financials" action="action_school_student_fee" sequence="20"/>
     <menuitem id="menu_school_fee_generate" name="Generate Class Fees" parent="menu_school_financials" action="action_school_fee_generate" sequence="25"/>
-    <!-- Transport is billed through the Fee Structure (Transport component). Old bills: debug mode only. -->
-    <menuitem id="menu_school_student_transport_fee" name="Transport Fees" parent="menu_school_financials" action="action_school_student_transport_fee" sequence="30" groups="base.group_no_one"/>
 
     <!-- Transport app (own entry in the main app switcher). The Tracking /
          Reports / Configuration dropdowns are added by school_smart_transport. -->
