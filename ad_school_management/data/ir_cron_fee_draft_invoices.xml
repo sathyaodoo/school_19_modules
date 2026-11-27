@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Draft invoices of student fees updated in bulk (fee structure / stop amount changes) -->
+        <record id="ir_cron_fee_draft_invoices" model="ir.cron">
+            <field name="name">School: Fee Draft Invoices</field>
+            <field name="model_id" ref="model_school_student_fee"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_sync_draft_invoices()</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="active">True</field>
+        </record>
+    </data>
+</odoo>

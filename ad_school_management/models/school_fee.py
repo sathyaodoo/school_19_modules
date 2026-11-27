@@ -43,10 +43,12 @@ class SchoolFeeStructure(models.Model):
         return res
 
     def _sync_students(self):
-        """Create / update the fees of the students of the structure's classes."""
+        """Create / update the fees of the students of the structure's classes.
+        Draft invoices for them are made by the 'School: Fee Draft Invoices' scheduled action,
+        so saving a structure with many students stays fast."""
         for structure in self:
             if structure.class_ids and structure.academic_year_id:
-                self.env['school.student'].sudo().search([
+                self.env['school.student'].sudo().with_context(skip_draft_invoices=True).search([
                     ('class_id', 'in', structure.class_ids.ids),
                     ('academic_year_id', '=', structure.academic_year_id.id),
                     ('student_status', 'in', ('approved', 'enrolled')),
@@ -267,17 +269,29 @@ class SchoolStudentFee(models.Model):
     def _sync_draft_invoices(self):
         """Keep one draft invoice per not-yet-invoiced installment, so the fee shows in Invoicing
         right away. Draft invoices are rebuilt whenever the fee changes; confirmed ones are left alone."""
+        defer = self.env.context.get('skip_draft_invoices')
         for rec in self:
             for inst in rec.installment_line_ids:
                 if inst.invoice_id and inst.invoice_id.state != 'draft':
                     continue
                 inst._drop_draft_invoices()
+                if defer:
+                    continue  # the scheduled action creates it
                 try:
                     with self.env.cr.savepoint():
                         inst._create_draft_invoice()
                 except Exception as error:  # e.g. accounting not set up for the company yet
-                    rec.message_post(body=_("Draft invoice for %(inst)s could not be created: %(err)s",
-                                            inst=inst.name, err=error))
+                    if not self.env.context.get('fee_sync_quiet'):
+                        rec.message_post(body=_("Draft invoice for %(inst)s could not be created: %(err)s",
+                                                inst=inst.name, err=error))
+
+    @api.model
+    def _cron_sync_draft_invoices(self, limit=100):
+        """Create the missing draft invoices of not-yet-invoiced fees, a batch at a time."""
+        fees = self.search([('state', '=', 'draft'), ('installment_line_ids.invoice_id', '=', False)], limit=limit)
+        for fee in fees.with_context(fee_sync_quiet=True):
+            fee._sync_draft_invoices()
+            self.env.cr.commit()
 
     def _generate_fee_lines(self):
         """Copy the structure components that apply to the student (amounts frozen at that moment)."""

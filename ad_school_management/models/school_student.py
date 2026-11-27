@@ -60,7 +60,7 @@ class SchoolStudent(models.Model):
     student_fee_ids = fields.One2many('school.student.fee', 'student_id', string='Fees')
     fee_total = fields.Float(string='Overall Fees', compute='_compute_fee_summary',
                              help="All fees together (tuition, transport, hostel...) before scholarship / discount.")
-    fee_general_total = fields.Float(string='Total Fee', compute='_compute_fee_summary',
+    fee_general_total = fields.Float(string='Tuition Fee', compute='_compute_fee_summary',
                                      help="Fees without transport and hostel.")
     fee_transport_total = fields.Float(string='Transport / Hostel Fee', compute='_compute_fee_summary')
     fee_after_scholarship = fields.Float(string='Fee after Scholarship', compute='_compute_fee_summary',
