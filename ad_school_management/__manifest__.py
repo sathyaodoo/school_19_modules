@@ -36,6 +36,7 @@
         'data/mail_templates.xml',
         'data/transport_cron.xml',
         'data/ir_cron_birthday_notification.xml',
+        'data/ir_cron_fee_draft_invoices.xml',
         'data/ir_sequence_exit_interview.xml',
         'data/ir_sequence_canteen.xml',
         'data/ir_cron_canteen_daily_planning.xml',

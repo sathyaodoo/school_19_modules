@@ -529,7 +529,7 @@ class SchoolTransportStop(models.Model):
         res = super().write(vals)
         if 'amount' in vals:
             # not-yet-invoiced fees of the students boarding here follow the new amount
-            self.env['school.student'].sudo().search(
+            self.env['school.student'].sudo().with_context(skip_draft_invoices=True).search(
                 [('van_boarding_point_id', 'in', self.ids)])._sync_student_fees()
         return res
 
