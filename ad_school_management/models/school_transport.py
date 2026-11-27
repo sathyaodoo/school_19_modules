@@ -521,6 +521,17 @@ class SchoolTransportStop(models.Model):
     name = fields.Char(string='Stop Name', required=True)
     sequence = fields.Integer(string='Sequence', default=10)
     time = fields.Float(string='Expected Time (Hour)', help="Use 8.5 for 08:30 AM")
+    amount = fields.Float(string='Monthly Amount',
+                          help="Transport fee per month for students boarding at this stop. "
+                               "The Transport component of a fee structure charges this amount x months.")
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'amount' in vals:
+            # not-yet-invoiced fees of the students boarding here follow the new amount
+            self.env['school.student'].sudo().search(
+                [('van_boarding_point_id', 'in', self.ids)])._sync_student_fees()
+        return res
 
 class SchoolStudentTransportFee(models.Model):
     _name = 'school.student.transport.fee'

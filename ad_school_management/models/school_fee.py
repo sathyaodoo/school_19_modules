@@ -24,11 +24,33 @@ class SchoolFeeStructure(models.Model):
                                  help="Classes this fee structure is used for. Used by 'Generate Class Fees'.")
     total_amount = fields.Float(string='General Total', compute='_compute_total_amount', store=True,
                                 help="Total of the General components. Transport and Hostel components are added "
-                                     "per student (route cost / room rent x months).")
+                                     "per student (stop amount / room rent x months).")
 
     _code_uniq = models.Constraint(
         'unique(code)', 'The fee structure code must be unique!'
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        structures = super().create(vals_list)
+        structures._sync_students()
+        return structures
+
+    def write(self, vals):
+        res = super().write(vals)
+        if {'class_ids', 'academic_year_id', 'line_ids'} & set(vals):
+            self._sync_students()
+        return res
+
+    def _sync_students(self):
+        """Create / update the fees of the students of the structure's classes."""
+        for structure in self:
+            if structure.class_ids and structure.academic_year_id:
+                self.env['school.student'].sudo().search([
+                    ('class_id', 'in', structure.class_ids.ids),
+                    ('academic_year_id', '=', structure.academic_year_id.id),
+                    ('student_status', 'in', ('approved', 'enrolled')),
+                ])._sync_student_fees()
 
     @api.depends('line_ids.amount', 'line_ids.fee_type')
     def _compute_total_amount(self):
@@ -39,34 +61,37 @@ class SchoolFeeStructure(models.Model):
         """The fee components of this structure that apply to one student, with their amounts.
 
         General   : the component amount, for every student.
-        Transport : route Monthly Cost x months, only when the student has a transport route.
+        Transport : boarding stop Monthly Amount x months, only when the student has a route and a stop.
         Hostel    : room Monthly Rent x months, only when the student has a hostel room.
         """
         self.ensure_one()
         components = []
         for line in self.line_ids:
             if line.fee_type == 'transport':
-                route = student.transport_route_id
-                if not route or route.cost <= 0:
+                stop = student.van_boarding_point_id if student.transport_route_id else False
+                if not stop or stop.amount <= 0:
                     continue
-                amount = route.cost * line.months
-                name = _("%(name)s - %(route)s (%(cost).2f x %(months)s months)",
-                         name=line.name, route=route.name, cost=route.cost, months=line.months)
+                rate, months = stop.amount, line.months
+                amount = rate * months
+                name = _("%(name)s - %(stop)s", name=line.name, stop=stop.name)
             elif line.fee_type == 'hostel':
                 room = student.hostel_room_id
                 if not room or room.rent <= 0:
                     continue
-                amount = room.rent * line.months
-                name = _("%(name)s - %(room)s (%(rent).2f x %(months)s months)",
-                         name=line.name, room=room.display_name, rent=room.rent, months=line.months)
+                rate, months = room.rent, line.months
+                amount = rate * months
+                name = _("%(name)s - %(room)s", name=line.name, room=room.display_name)
             else:
                 amount = line.amount
                 name = line.name
+                rate, months = 0.0, 0
             components.append({
                 'name': name,
                 'fee_type': line.fee_type,
                 'product_id': line.product_id.id,
                 'amount': amount,
+                'rate': rate,
+                'months': months,
                 'structure_line_id': line.id,
             })
         return components
@@ -79,7 +104,7 @@ class SchoolFeeStructureLine(models.Model):
     sequence = fields.Integer(default=10)
     fee_type = fields.Selection(FEE_TYPES, string='Fee Type', default='general', required=True,
                                 help="General: every student. Transport: only students with a transport route "
-                                     "(route Monthly Cost x Months). Hostel: only students with a hostel room "
+                                     "(boarding stop Monthly Amount x Months). Hostel: only students with a hostel room "
                                      "(room Monthly Rent x Months).")
     name = fields.Char(string='Component Name', required=True)
     amount = fields.Float(string='Amount', required=True, default=0.0,
@@ -206,6 +231,7 @@ class SchoolStudentFee(models.Model):
             if not record.line_ids:
                 record._generate_fee_lines()
             record._generate_installments()
+        records._sync_draft_invoices()
         return records
 
     def write(self, vals):
@@ -218,14 +244,40 @@ class SchoolStudentFee(models.Model):
                 if not record.has_invoice:
                     record.line_ids.unlink()
                     record._generate_fee_lines()
-                record.installment_line_ids.filtered(lambda i: not i.invoice_id).unlink()
+                open_lines = record.installment_line_ids.filtered(
+                    lambda i: not i.invoice_id or i.invoice_id.state == 'draft')
+                open_lines._drop_draft_invoices()
+                open_lines.unlink()
                 record._generate_installments()
+        if {'structure_id', 'discount', 'scholarship'} & set(vals):
+            self._sync_draft_invoices()
         return res
 
-    @api.depends('installment_line_ids.invoice_id')
+    def unlink(self):
+        self.mapped('installment_line_ids')._drop_draft_invoices()
+        return super().unlink()
+
+    @api.depends('installment_line_ids.invoice_id', 'installment_line_ids.invoice_id.state')
     def _compute_has_invoice(self):
+        # only confirmed (posted / cancelled) invoices lock the fee; draft invoices follow the fee
         for rec in self:
-            rec.has_invoice = bool(rec.installment_line_ids.filtered('invoice_id'))
+            rec.has_invoice = bool(rec.installment_line_ids.filtered(
+                lambda i: i.invoice_id and i.invoice_id.state != 'draft'))
+
+    def _sync_draft_invoices(self):
+        """Keep one draft invoice per not-yet-invoiced installment, so the fee shows in Invoicing
+        right away. Draft invoices are rebuilt whenever the fee changes; confirmed ones are left alone."""
+        for rec in self:
+            for inst in rec.installment_line_ids:
+                if inst.invoice_id and inst.invoice_id.state != 'draft':
+                    continue
+                inst._drop_draft_invoices()
+                try:
+                    with self.env.cr.savepoint():
+                        inst._create_draft_invoice()
+                except Exception as error:  # e.g. accounting not set up for the company yet
+                    rec.message_post(body=_("Draft invoice for %(inst)s could not be created: %(err)s",
+                                            inst=inst.name, err=error))
 
     def _generate_fee_lines(self):
         """Copy the structure components that apply to the student (amounts frozen at that moment)."""
@@ -242,14 +294,32 @@ class SchoolStudentFee(models.Model):
             self._generate_fee_lines()
         return self.line_ids
 
+    def _recompute_components(self):
+        """Rebuild the components from the structure and the student's current route / room / scholarship."""
+        for rec in self:
+            if rec.has_invoice:
+                continue
+            # months reduced / changed by hand on transport / hostel lines are kept
+            kept_months = {l.structure_line_id.id: l.months for l in rec.line_ids
+                           if l.fee_type in ('transport', 'hostel') and l.structure_line_id and l.rate
+                           and l.months != l.structure_line_id.months}
+            rec.line_ids.unlink()
+            rec._generate_fee_lines()
+            for line in rec.line_ids:
+                if line.structure_line_id.id in kept_months:
+                    line.with_context(skip_fee_sync=True).months = kept_months[line.structure_line_id.id]
+            if not rec.discount:
+                # scholarship given to the student after the fee was created
+                rec.discount = rec.student_id._get_scholarship_discount()
+            rec._sync_draft_invoices()
+
     def action_refresh_components(self):
         """Recalculate the components from the structure (e.g. after the student's route changed)."""
         for rec in self:
             if rec.has_invoice:
                 raise ValidationError(_(
                     "%s already has an invoice. Components can only be recalculated before invoicing.") % rec.name)
-            rec.line_ids.unlink()
-            rec._generate_fee_lines()
+            rec._recompute_components()
             rec.message_post(body=_("Fee components recalculated from %s.") % rec.structure_id.name)
         return True
 
@@ -301,6 +371,7 @@ class SchoolStudentFee(models.Model):
             if rec.unplanned_percentage <= 0.009:
                 raise ValidationError(_("%s: the installments already cover the whole fee.") % rec.name)
             rec._add_balance_installment()
+            rec._sync_draft_invoices()
             rec.message_post(body=_("Balance Payment installment added for the remaining fee."))
         return True
 
@@ -362,7 +433,8 @@ class SchoolStudentFee(models.Model):
 
     def action_create_invoice(self):
         for rec in self:
-            uninvoiced = rec.installment_line_ids.filtered(lambda i: not i.invoice_id)
+            uninvoiced = rec.installment_line_ids.filtered(
+                lambda i: not i.invoice_id or i.invoice_id.state == 'draft')
             if not uninvoiced:
                 raise ValidationError(_("No draft installments available to invoice."))
             for inst in uninvoiced:
@@ -401,7 +473,36 @@ class SchoolStudentFeeLine(models.Model):
     name = fields.Char(string='Component', required=True)
     fee_type = fields.Selection(FEE_TYPES, string='Fee Type', default='general', required=True)
     product_id = fields.Many2one('product.product', string='Product')
+    rate = fields.Float(string='Monthly Rate', help="Stop Monthly Amount / room Monthly Rent.")
+    months = fields.Integer(string='Months',
+                            help="Months charged. Reduce it when the student did not use transport / hostel "
+                                 "for some months; the amount follows.")
     amount = fields.Float(string='Amount')
+
+    @api.onchange('months')
+    def _onchange_months(self):
+        if self.fee_type in ('transport', 'hostel'):
+            self.amount = self.rate * self.months
+
+    @api.constrains('months')
+    def _check_months(self):
+        for line in self:
+            if line.fee_type in ('transport', 'hostel') and not 0 <= line.months <= 12:
+                raise ValidationError(_("Months must be between 0 and 12 (%s).") % line.name)
+
+    def write(self, vals):
+        if 'months' in vals and self.mapped('student_fee_id').filtered('has_invoice'):
+            raise ValidationError(_("This fee is already invoiced. Use a credit note to reduce it."))
+        res = super().write(vals)
+        if 'months' in vals:
+            for line in self.filtered(lambda l: l.fee_type in ('transport', 'hostel')):
+                super(SchoolStudentFeeLine, line).write({'amount': line.rate * line.months})
+            if not self.env.context.get('skip_fee_sync'):
+                for fee in self.mapped('student_fee_id'):
+                    fee._sync_draft_invoices()
+                    fee.message_post(body=_("Months changed on %s.") % ', '.join(
+                        '%s: %s' % (l.name, l.months) for l in self if l.student_fee_id == fee))
+        return res
 
 
 class SchoolStudentFeeInstallment(models.Model):
@@ -430,7 +531,7 @@ class SchoolStudentFeeInstallment(models.Model):
     @api.depends('invoice_id', 'invoice_id.payment_state', 'invoice_id.state')
     def _compute_state(self):
         for rec in self:
-            if rec.invoice_id:
+            if rec.invoice_id and rec.invoice_id.state != 'draft':
                 if rec.invoice_id.payment_state == 'paid':
                     rec.state = 'paid'
                 elif rec.invoice_id.state == 'cancel':
@@ -440,55 +541,74 @@ class SchoolStudentFeeInstallment(models.Model):
             else:
                 rec.state = 'draft'
 
-    def action_create_invoice(self):
+    def _drop_draft_invoices(self):
+        drafts = self.mapped('invoice_id').filtered(lambda m: m.state == 'draft')
+        if drafts:
+            self.filtered(lambda i: i.invoice_id in drafts).write({'invoice_id': False})
+            drafts.unlink()
+
+    def _create_draft_invoice(self):
         for rec in self:
-            if rec.invoice_id:
+            invoice = self.env['account.move'].create(rec._prepare_invoice_vals())
+            rec.invoice_id = invoice
+
+    def action_create_invoice(self):
+        """Confirm the installment's invoice (the draft one when it exists)."""
+        for rec in self:
+            if rec.invoice_id and rec.invoice_id.state != 'draft':
                 raise ValidationError(_("Invoice is already created for this installment."))
-            
-            line_vals = []
-            components = rec.student_fee_id._get_components()
-            pct = rec.amount_percentage / 100.0
-
-            for line in components:
-                line_vals.append({
-                    'name': f"{line.name} ({rec.name} - {rec.amount_percentage}%)",
-                    'product_id': line.product_id.id,
-                    'quantity': 1,
-                    'price_unit': line.amount * pct,
-                })
-
-            if rec.student_fee_id.discount > 0:
-                prod = components[:1].product_id
-                line_vals.append({
-                    'name': f"{_('Discount Allowed')} ({rec.name})",
-                    'product_id': prod.id if prod else False,
-                    'quantity': 1,
-                    'price_unit': -rec.student_fee_id.discount * pct,
-                })
-
-            if rec.student_fee_id.scholarship > 0:
-                prod = components[:1].product_id
-                schol_amount = (rec.student_fee_id.amount - rec.student_fee_id.discount) * (rec.student_fee_id.scholarship / 100.0)
-                line_vals.append({
-                    'name': f"{_('Scholarship')} ({rec.student_fee_id.scholarship}%) ({rec.name})",
-                    'product_id': prod.id if prod else False,
-                    'quantity': 1,
-                    'price_unit': -schol_amount * pct,
-                })
-
-            invoice_vals = {
-                'move_type': 'out_invoice',
-                'partner_id': rec.student_fee_id.student_id.partner_id.id,
-                'invoice_date': fields.Date.context_today(rec),
-                'invoice_line_ids': [(0, 0, l) for l in line_vals],
-                'company_id': rec.student_fee_id.company_id.id,
-            }
-            invoice = self.env['account.move'].create(invoice_vals)
+            if not rec.invoice_id:
+                rec._create_draft_invoice()
+            invoice = rec.invoice_id
+            if not invoice.invoice_date:
+                invoice.invoice_date = fields.Date.context_today(rec)
             invoice.action_post()
-            rec.write({
-                'invoice_id': invoice.id,
-                'state': 'invoiced'
+
+    def _prepare_invoice_vals(self):
+        self.ensure_one()
+        rec = self
+        line_vals = []
+        components = rec.student_fee_id._get_components()
+        pct = rec.amount_percentage / 100.0
+
+        for line in components:
+            label = line.name
+            if line.fee_type in ('transport', 'hostel'):
+                label = f"{line.name} ({line.rate:.2f} x {line.months} months)"
+            line_vals.append({
+                'name': f"{label} ({rec.name} - {rec.amount_percentage}%)",
+                'product_id': line.product_id.id,
+                'quantity': 1,
+                'price_unit': line.amount * pct,
             })
+
+        if rec.student_fee_id.discount > 0:
+            prod = components[:1].product_id
+            line_vals.append({
+                'name': f"{_('Discount Allowed')} ({rec.name})",
+                'product_id': prod.id if prod else False,
+                'quantity': 1,
+                'price_unit': -rec.student_fee_id.discount * pct,
+            })
+
+        if rec.student_fee_id.scholarship > 0:
+            prod = components[:1].product_id
+            schol_amount = (rec.student_fee_id.amount - rec.student_fee_id.discount) * (rec.student_fee_id.scholarship / 100.0)
+            line_vals.append({
+                'name': f"{_('Scholarship')} ({rec.student_fee_id.scholarship}%) ({rec.name})",
+                'product_id': prod.id if prod else False,
+                'quantity': 1,
+                'price_unit': -schol_amount * pct,
+            })
+
+        return {
+            'move_type': 'out_invoice',
+            'partner_id': rec.student_fee_id.student_id.partner_id.id,
+            'invoice_date_due': rec.due_date,
+            'invoice_origin': '%s - %s' % (rec.student_fee_id.name, rec.name),
+            'invoice_line_ids': [(0, 0, l) for l in line_vals],
+            'company_id': rec.student_fee_id.company_id.id,
+        }
 
     def action_view_invoice(self):
         self.ensure_one()
@@ -544,6 +664,41 @@ class SchoolFeeGenerate(models.TransientModel):
                 ('academic_year_id', '=', self.academic_year_id.id),
                 ('class_ids', 'in', self.class_id.id)])
             self.structure_id = structures[:1] if len(structures) == 1 else False
+        self._load_students()
+
+    @api.onchange('section_id', 'structure_id', 'apply_scholarship')
+    def _onchange_load_students(self):
+        self._load_students()
+
+    def _student_domain(self):
+        domain = [
+            ('class_id', '=', self.class_id.id),
+            ('academic_year_id', '=', self.academic_year_id.id),
+            ('student_status', 'in', ('approved', 'enrolled')),
+        ]
+        if self.section_id:
+            domain.append(('section_id', '=', self.section_id.id))
+        return domain
+
+    def _student_line_commands(self, students):
+        assigned = self.env['school.student.fee'].search([
+            ('student_id', 'in', students.ids), ('structure_id', '=', self.structure_id.id)]).mapped('student_id') \
+            if self.structure_id else self.env['school.student']
+        return [Command.clear()] + [Command.create({
+            'student_id': st.id,
+            'discount': self._scholarship_discount(st),
+            'already_assigned': st in assigned,
+            'selected': st not in assigned,
+        }) for st in students]
+
+    def _load_students(self):
+        """List the students as soon as class, academic year and fee structure are chosen."""
+        for wiz in self:
+            if not (wiz.class_id and wiz.academic_year_id and wiz.structure_id):
+                wiz.line_ids = [Command.clear()]
+                continue
+            students = self.env['school.student'].search(wiz._student_domain(), order='section_id, roll_number, name')
+            wiz.line_ids = wiz._student_line_commands(students)
 
     def _reopen(self):
         return {
@@ -556,32 +711,14 @@ class SchoolFeeGenerate(models.TransientModel):
         }
 
     def _scholarship_discount(self, student):
-        today = fields.Date.context_today(self)
-        if (self.apply_scholarship and student.sponsorship_status == 'active' and student.scholarship_amount
-                and (not student.scholarship_expiry_date or student.scholarship_expiry_date >= today)):
-            return student.scholarship_amount
-        return 0.0
+        return student._get_scholarship_discount() if self.apply_scholarship else 0.0
 
     def action_fetch_students(self):
         self.ensure_one()
-        domain = [
-            ('class_id', '=', self.class_id.id),
-            ('academic_year_id', '=', self.academic_year_id.id),
-            ('student_status', 'in', ('approved', 'enrolled')),
-        ]
-        if self.section_id:
-            domain.append(('section_id', '=', self.section_id.id))
-        students = self.env['school.student'].search(domain, order='section_id, roll_number, name')
+        students = self.env['school.student'].search(self._student_domain(), order='section_id, roll_number, name')
         if not students:
             raise ValidationError(_("No approved or enrolled students found for this class / section / academic year."))
-        assigned = self.env['school.student.fee'].search([
-            ('student_id', 'in', students.ids), ('structure_id', '=', self.structure_id.id)]).mapped('student_id')
-        self.line_ids = [Command.clear()] + [Command.create({
-            'student_id': st.id,
-            'discount': self._scholarship_discount(st),
-            'already_assigned': st in assigned,
-            'selected': st not in assigned,
-        }) for st in students]
+        self.line_ids = self._student_line_commands(students)
         return self._reopen()
 
     def action_generate(self):

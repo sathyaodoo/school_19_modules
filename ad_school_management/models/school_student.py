@@ -58,7 +58,13 @@ class SchoolStudent(models.Model):
     transport_route_id = fields.Many2one('school.transport.route', string='Transport Route')
     transport_fee_ids = fields.One2many('school.student.transport.fee', 'student_id', string='Transport Fees')
     student_fee_ids = fields.One2many('school.student.fee', 'student_id', string='Fees')
-    fee_total = fields.Float(string='Total Fee', compute='_compute_fee_summary')
+    fee_total = fields.Float(string='Overall Fees', compute='_compute_fee_summary',
+                             help="All fees together (tuition, transport, hostel...) before scholarship / discount.")
+    fee_general_total = fields.Float(string='Total Fee', compute='_compute_fee_summary',
+                                     help="Fees without transport and hostel.")
+    fee_transport_total = fields.Float(string='Transport / Hostel Fee', compute='_compute_fee_summary')
+    fee_after_scholarship = fields.Float(string='Fee after Scholarship', compute='_compute_fee_summary',
+                                         help="Overall Fees - Scholarship / Discount.")
     fee_concession_total = fields.Float(string='Scholarship / Discount Applied', compute='_compute_fee_summary')
     fee_paid_total = fields.Float(string='Paid', compute='_compute_fee_summary')
     fee_due_total = fields.Float(string='Balance Due', compute='_compute_fee_summary')
@@ -161,28 +167,65 @@ class SchoolStudent(models.Model):
                     vals['student_status'] = partner.student_status or 'draft'
                 else:
                     vals['student_status'] = 'draft'
-        return super(SchoolStudent, self).create(vals_list)
-    
+        students = super(SchoolStudent, self).create(vals_list)
+        students._sync_student_fees()
+        return students
+
+    # fields that change what a student pays: the fees follow them automatically
+    FEE_TRIGGER_FIELDS = {
+        'class_id', 'academic_year_id', 'student_status', 'transport_route_id', 'van_boarding_point_id',
+        'hostel_room_id', 'scholarship_amount', 'sponsorship_status', 'scholarship_approved_date',
+        'scholarship_expiry_date',
+    }
+
+    def _sync_student_fees(self):
+        """Give each approved / enrolled student a fee for every fee structure of their class and year,
+        and bring not-yet-invoiced fees up to date (transport stop, hostel room, scholarship)."""
+        Fee = self.env['school.student.fee'].sudo()
+        Structure = self.env['school.fee.structure'].sudo()
+        for student in self:
+            if (student.student_status not in ('approved', 'enrolled')
+                    or not student.class_id or not student.academic_year_id):
+                continue
+            structures = Structure.search([
+                ('class_ids', 'in', student.class_id.id),
+                ('academic_year_id', '=', student.academic_year_id.id),
+            ])
+            for structure in structures:
+                fee = Fee.search([('student_id', '=', student.id), ('structure_id', '=', structure.id)], limit=1)
+                if not fee:
+                    Fee.create({'student_id': student.id, 'structure_id': structure.id})
+                elif fee.state == 'draft' and not fee.has_invoice:
+                    fee._recompute_components()
+
     # ------------------------------------------------------------------
     # NEW: scholarship -> fee link
     # ------------------------------------------------------------------
     def _get_scholarship_discount(self):
-        """Flat discount from the student's active, non-expired scholarship."""
+        """Flat discount from the student's scholarship.
+
+        The scholarship counts when it has an amount, the sponsorship is not marked Inactive,
+        and today is between the approved date and the expiry date (when they are set)."""
         self.ensure_one()
         today = fields.Date.context_today(self)
-        if (self.sponsorship_status == 'active' and self.scholarship_amount
+        if (self.scholarship_amount > 0
+                and self.sponsorship_status != 'inactive'
+                and (not self.scholarship_approved_date or self.scholarship_approved_date <= today)
                 and (not self.scholarship_expiry_date or self.scholarship_expiry_date >= today)):
             return self.scholarship_amount
         return 0.0
 
     def write(self, vals):
         res = super().write(vals)
-        if {'scholarship_amount', 'sponsorship_status', 'scholarship_expiry_date'} & set(vals):
+        if {'scholarship_amount', 'sponsorship_status', 'scholarship_approved_date',
+                'scholarship_expiry_date'} & set(vals):
             for student in self:
                 # only fees that are not invoiced yet can be changed
                 draft_fees = student.student_fee_ids.filtered(lambda f: f.state == 'draft')
                 if draft_fees:
                     draft_fees.write({'discount': student._get_scholarship_discount()})
+        if self.FEE_TRIGGER_FIELDS & set(vals):
+            self._sync_student_fees()
         return res
 
     @api.constrains('roll_number', 'class_id', 'section_id', 'academic_year_id')
@@ -253,12 +296,18 @@ class SchoolStudent(models.Model):
 
 
     @api.depends('student_fee_ids.amount', 'student_fee_ids.concession_amount',
-                 'student_fee_ids.net_amount', 'student_fee_ids.paid_amount')
+                 'student_fee_ids.net_amount', 'student_fee_ids.paid_amount',
+                 'student_fee_ids.line_ids.amount', 'student_fee_ids.line_ids.fee_type')
     def _compute_fee_summary(self):
         for student in self:
             fees = student.student_fee_ids.filtered(lambda f: f.state != 'cancelled')
             student.fee_total = sum(fees.mapped('amount'))
+            lines = fees.mapped('line_ids')
+            transport = sum(lines.filtered(lambda l: l.fee_type in ('transport', 'hostel')).mapped('amount'))
+            student.fee_transport_total = transport
+            student.fee_general_total = student.fee_total - transport
             student.fee_concession_total = sum(fees.mapped('concession_amount'))
+            student.fee_after_scholarship = student.fee_total - student.fee_concession_total
             student.fee_paid_total = sum(fees.mapped('paid_amount'))
             student.fee_due_total = sum(fees.mapped('due_amount'))
 

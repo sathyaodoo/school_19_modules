@@ -51,7 +51,7 @@
                             </field>
                             <div class="text-muted small">
                                 <b>General</b>: every student pays the Amount.
-                                <b>Transport</b>: only students with a transport route, route Monthly Cost x Months.
+                                <b>Transport</b>: only students with a transport route, boarding stop Monthly Amount x Months.
                                 <b>Hostel</b>: only students with a hostel room, room Monthly Rent x Months.
                             </div>
                         </page>
@@ -143,15 +143,21 @@
                     </group>
                     <notebook>
                         <page string="Fee Components" name="components">
-                            <field name="line_ids" readonly="1">
-                                <list>
-                                    <field name="fee_type" widget="badge" decoration-info="fee_type == 'transport'"
+                            <field name="line_ids" readonly="has_invoice">
+                                <list editable="bottom" create="0" delete="0">
+                                    <field name="fee_type" widget="badge" readonly="1" decoration-info="fee_type == 'transport'"
                                            decoration-warning="fee_type == 'hostel'"/>
-                                    <field name="name"/>
-                                    <field name="product_id" optional="hide"/>
-                                    <field name="amount" sum="Total"/>
+                                    <field name="name" readonly="1"/>
+                                    <field name="product_id" optional="hide" readonly="1"/>
+                                    <field name="rate" readonly="1" invisible="fee_type == 'general'"/>
+                                    <field name="months" readonly="fee_type == 'general'" invisible="fee_type == 'general'"/>
+                                    <field name="amount" sum="Total" readonly="1" force_save="1"/>
                                 </list>
                             </field>
+                            <div class="text-muted small">
+                                Transport / Hostel: change <b>Months</b> when the student did not use it for some months.
+                                Possible until the fee is invoiced.
+                            </div>
                         </page>
                         <page string="Installments" name="installments">
                             <field name="installment_line_ids">
@@ -226,8 +232,10 @@
                         <field name="create_invoices"/>
                     </group>
                 </group>
-                <button name="action_fetch_students" type="object" string="Fetch Students" class="btn-secondary"
-                        icon="fa-users" invisible="not class_id or not academic_year_id or not structure_id"/>
+                <div class="alert alert-warning mt-2" role="alert"
+                     invisible="line_ids or not class_id or not academic_year_id or not structure_id">
+                    No approved or enrolled students in this class / section for this academic year.
+                </div>
                 <div class="alert alert-info mt-2" role="alert" invisible="not line_ids">
                     Students: <field name="student_count" class="oe_inline"/> |
                     To Generate: <field name="new_count" class="oe_inline"/> |
@@ -239,14 +247,14 @@
                 <field name="line_ids" invisible="not line_ids">
                     <list editable="bottom" create="0" decoration-muted="already_assigned">
                         <field name="selected" readonly="already_assigned"/>
-                        <field name="student_id" readonly="1"/>
+                        <field name="student_id" readonly="1" force_save="1"/>
                         <field name="admission_no"/>
                         <field name="section_id"/>
                         <field name="gross_amount"/>
                         <field name="discount" readonly="already_assigned" string="Discount (₹)"/>
                         <field name="scholarship" readonly="already_assigned" string="Scholarship %"/>
                         <field name="net_amount" sum="Total"/>
-                        <field name="already_assigned" widget="boolean"/>
+                        <field name="already_assigned" widget="boolean" force_save="1"/>
                     </list>
                 </field>
                 <footer>
