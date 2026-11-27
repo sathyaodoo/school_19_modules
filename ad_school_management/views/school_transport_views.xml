@@ -162,7 +162,6 @@
                 <field name="effective_vehicle_id" optional="show"/>
                 <field name="effective_driver_id" optional="show"/>
                 <field name="is_vehicle_replaced" widget="boolean_toggle" readonly="1" optional="show"/>
-                <field name="cost"/>
             </list>
         </field>
     </record>
@@ -187,11 +186,6 @@
                             <field name="backup_driver_id"/>
                             <field name="is_driver_on_leave" readonly="1"/>
                             <field name="effective_driver_id" readonly="1"/>
-                        </group>
-                        <group>
-                            <field name="cost"/>
-                            <field name="billing_month"/>
-                            <field name="product_id"/>
                         </group>
                     </group>
                     <div class="alert alert-warning" role="alert" invisible="not is_vehicle_replaced">
@@ -241,6 +235,7 @@
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
+                                    <field name="amount" string="Monthly Amount" width="130px"/>
                                     <field name="time" widget="float_time"/>
                                 </list>
                             </field>
@@ -257,7 +252,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Billing History" name="billing">
+                        <page string="Billing History" name="billing" groups="base.group_no_one">
                             <field name="transport_fee_ids" readonly="1">
                                 <list>
                                     <field name="student_id"/>

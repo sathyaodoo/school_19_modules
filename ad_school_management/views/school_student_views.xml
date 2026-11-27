@@ -159,28 +159,6 @@
                                     <field name="vehicle_number" invisible="not vehicle_id"/>
                                 </group>
                             </group>
-                            <!-- CHANGED: transport fee can be created / invoiced right here (admin, principal, accountant see it) -->
-                            <group string="Transport Fee History" invisible="not transport_route_id"
-                                   groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
-                                <div colspan="2" groups="base.group_no_one">
-                                    <button name="action_generate_transport_fee" type="object" class="btn-primary"
-                                            string="Generate This Month's Fee" invisible="not id"/>
-                                </div>
-                                <field name="transport_fee_ids" nolabel="1" colspan="2"
-                                       context="{'default_route_id': transport_route_id}">
-                                    <list editable="bottom">
-                                        <field name="billing_month" readonly="invoice_id"/>
-                                        <field name="route_id" readonly="invoice_id" options="{'no_create': True}"/>
-                                        <field name="amount" readonly="invoice_id"/>
-                                        <field name="state" widget="badge"/>
-                                        <field name="invoice_id" column_invisible="1"/>
-                                        <button name="action_create_invoice" type="object" icon="fa-file-text-o"
-                                                title="Create Invoice" invisible="invoice_id or not id"/>
-                                        <button name="action_view_invoice" type="object" icon="fa-external-link"
-                                                title="View Invoice" invisible="not invoice_id"/>
-                                    </list>
-                                </field>
-                            </group>
                             <!-- only admin / principal / accountant see route change requests -->
                             <group string="Route Change Requests"
                                    groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
@@ -280,10 +258,13 @@
                               groups="ad_school_management.group_school_admin,ad_school_management.group_school_principal,ad_school_management.group_school_accountant">
                             <group>
                                 <group>
-                                    <field name="fee_total"/>
+                                    <field name="fee_general_total"/>
+                                    <field name="fee_transport_total"/>
                                     <field name="fee_concession_total"/>
+                                    <field name="fee_after_scholarship" class="fw-bold"/>
                                 </group>
                                 <group>
+                                    <field name="fee_total" class="fw-bold"/>
                                     <field name="fee_paid_total"/>
                                     <field name="fee_due_total" decoration-danger="fee_due_total &gt; 0"/>
                                 </group>
