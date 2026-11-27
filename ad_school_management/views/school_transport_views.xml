@@ -213,9 +213,6 @@
                             <field name="is_vehicle_replaced"/>
                         </group>
                     </group>
-                    <button name="action_generate_monthly_fees" type="object" groups="base.group_no_one"
-                            string="Generate Bills" class="btn-primary"
-                            confirm="Generate bills for the selected Billing Month?"/>
                     <button name="action_mark_driver_on_leave" type="object"
                             string="Mark Driver On Leave" class="btn-secondary"
                             invisible="is_driver_on_leave"/>
